@@ -13,6 +13,7 @@ import {
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
   DetailTabs,
+  FeedbackBanner,
   PageHeader,
   SessionProgress,
   type DetailTabItem,
@@ -451,18 +452,11 @@ export function AttendanceWorkspaceClient({
       )}
 
       {feedbackBanner && (
-        <div
-          role={feedbackBanner.tone === "danger" ? "alert" : "status"}
-          className={
-            feedbackBanner.tone === "success"
-              ? "rounded-control border border-success/30 bg-success-soft px-4 py-3 text-sm text-success"
-              : feedbackBanner.tone === "warning"
-                ? "rounded-control border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-warning-foreground"
-                : "rounded-control border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
-          }
-        >
-          {feedbackBanner.message}
-        </div>
+        <FeedbackBanner
+          tone={feedbackBanner.tone}
+          message={feedbackBanner.message}
+          onDismiss={() => setFeedbackBanner(null)}
+        />
       )}
 
       {activeTab === "session" && (

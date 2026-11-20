@@ -76,8 +76,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               leftIcon && "pl-10",
               rightElement && "pr-10",
               error
-                ? "border-danger focus-visible:outline-danger"
-                : "border-border hover:border-border-strong focus-visible:border-primary",
+                ? "border-danger focus-visible:border-danger focus-visible:ring-1 focus-visible:ring-danger/20"
+                : "border-border hover:border-border-strong focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/20",
               className
             )}
             {...props}

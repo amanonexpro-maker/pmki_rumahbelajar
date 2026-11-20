@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, CloudOff, RotateCcw, ShieldCheck } from "lucide-react";
 import { StatusBadge } from "@/components/compositions";
 import {
+  FeedbackBanner,
   FormSection,
   ReviewSection,
   StepIndicator,
@@ -381,12 +382,11 @@ export function PublicRegistrationWizard({
       />
 
       {submitError && (
-        <div
-          role="alert"
-          className="rounded-control border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
-        >
-          {submitError}
-        </div>
+        <FeedbackBanner
+          tone="danger"
+          message={submitError}
+          onDismiss={() => setSubmitError(null)}
+        />
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>

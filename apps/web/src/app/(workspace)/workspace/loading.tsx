@@ -17,24 +17,24 @@ export default function WorkspaceLoading() {
         <Skeleton className="h-4 w-full max-w-xl" />
       </div>
 
-      {/* Operational Summary Strip Skeleton */}
-      <div className="border-y border-border py-5 grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <Skeleton className="h-16 w-full" />
-        <Skeleton className="h-16 w-full" />
-        <Skeleton className="h-16 w-full" />
-        <Skeleton className="h-16 w-full" />
+      {/* Operational Summary Strip Skeleton (Mobile snap scroll friendly) */}
+      <div className="border-y border-border py-4 sm:py-5 flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 sm:divide-x sm:divide-border sm:pb-0">
+        <Skeleton className="min-w-[78%] sm:min-w-0 h-20 sm:h-16 rounded-card sm:rounded-none" />
+        <Skeleton className="min-w-[78%] sm:min-w-0 h-20 sm:h-16 rounded-card sm:rounded-none" />
+        <Skeleton className="min-w-[78%] sm:min-w-0 h-20 sm:h-16 rounded-card sm:rounded-none" />
+        <Skeleton className="min-w-[78%] sm:min-w-0 h-20 sm:h-16 rounded-card sm:rounded-none" />
       </div>
 
       {/* Attention & Schedule Columns Skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-6 space-y-3">
           <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-24 w-full rounded-card" />
-          <Skeleton className="h-24 w-full rounded-card" />
+          <Skeleton className="h-28 w-full rounded-card border-l-4 border-warning/40" />
+          <Skeleton className="h-28 w-full rounded-card border-l-4 border-warning/40" />
         </div>
         <div className="lg:col-span-6 space-y-3">
           <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-52 w-full rounded-card" />
+          <Skeleton className="h-48 w-full rounded-card" />
         </div>
       </div>
     </div>

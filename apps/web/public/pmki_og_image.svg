@@ -1,0 +1,248 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480">
+  <defs>
+    <!-- Gradien Latar Belakang Kertas Halus -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5f5f0" />
+      <stop offset="50%" stop-color="#f2f1eb" />
+      <stop offset="100%" stop-color="#ebeae2" />
+    </linearGradient>
+
+    <!-- Gradien Garis Aksen Kuning -->
+    <linearGradient id="yellow-line" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f4c44e" />
+      <stop offset="50%" stop-color="#eab338" />
+      <stop offset="100%" stop-color="#f6cc61" />
+    </linearGradient>
+
+    <!-- Gradien Matahari -->
+    <linearGradient id="sun-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f7c844" />
+      <stop offset="80%" stop-color="#f3b63a" />
+      <stop offset="100%" stop-color="#f3b63a" stop-opacity="0.3" />
+    </linearGradient>
+
+    <style>
+      500;600&display=swap');
+      .title-text {
+        font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+        font-weight: 700;
+        fill: #144936;
+        letter-spacing: -1.5px;
+      }
+      .subtitle-text {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 400;
+        fill: #3d4843;
+      }
+      .footer-text {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 600;
+        fill: #4f5b55;
+        letter-spacing: 2.2px;
+      }
+      .quote-text {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 600;
+        fill: #3d4843;
+        letter-spacing: 2.5px;
+      }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="480" fill="url(#bg-grad)" />
+
+  <!-- ==================== BAGIAN TEKS KIRI ==================== -->
+  <g id="left-content">
+    <!-- Judul Utama -->
+    <text x="54" y="172" font-size="68" class="title-text">Ayo Belajar dan</text>
+    <text x="54" y="246" font-size="68" class="title-text">Tumbuh Bersama.</text>
+
+    <!-- Garis Aksen Kuning -->
+    <rect x="58" y="274" width="465" height="4" rx="2" fill="url(#yellow-line)" />
+
+    <!-- Subjudul -->
+    <text x="60" y="318" font-size="21" class="subtitle-text">
+      Rumah Belajar Griya Asih Lawang <tspan fill="#7d8a84" dx="4" dy="-1">|</tspan><tspan dx="4" dy="1">PMKI Platform</tspan>
+    </text>
+
+    <!-- Footer Kiri -->
+    <text x="58" y="424" font-size="10.5" class="footer-text">
+      RUANG AMAN <tspan dx="8">•</tspan> <tspan dx="8">PELUANG BELAJAR</tspan> <tspan dx="8">•</tspan> <tspan dx="8">MASA DEPAN LEBIH BAIK</tspan>
+    </text>
+  </g>
+
+  <!-- ==================== ILUSTRASI KANAN ==================== -->
+  <g id="illustration">
+    <!-- Matahari -->
+    <circle cx="826" cy="272" r="27" fill="url(#sun-grad)" />
+
+    <!-- Latar Belakang Bukit & Desa (Garis Tipis) -->
+    <g id="landscape" stroke="#184e3b" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Garis Tanah Utama -->
+      <path d="M 490 398 Q 650 386 820 392 L 1160 392" fill="none" stroke-width="1.3" />
+      
+      <!-- Garis Bukit -->
+      <path d="M 520 385 Q 590 345 655 322 Q 705 304 725 292 Q 740 284 755 296 Q 795 326 855 344" fill="none" stroke-width="1.3" />
+      <path d="M 605 340 Q 645 328 690 338" fill="none" stroke-width="1" />
+
+      <!-- Siluet Pohon & Rumah Kecil di Bukit -->
+      <!-- Semak Kiri -->
+      <path d="M 632 385 C 630 375, 636 365, 643 365 C 650 365, 656 375, 654 385 Z" fill="#4f7465" stroke="none" />
+      <path d="M 664 383 C 662 377, 667 372, 672 372 C 677 372, 681 377, 679 383 Z" fill="#4f7465" stroke="none" />
+      <!-- Pohon Ramping -->
+      <path d="M 692 382 C 689 362, 694 345, 701 345 C 708 345, 713 362, 710 382 Z" fill="#4f7465" stroke="none" />
+      <!-- Rumah Kecil -->
+      <path d="M 712 383 L 712 372 L 724 363 L 736 372 L 736 383 Z" fill="#f3f2ec" stroke="#184e3b" stroke-width="1.2" />
+      <!-- Pohon Besar di Belakang Rumah -->
+      <path d="M 744 382 C 740 355, 748 332, 762 332 C 776 332, 784 355, 780 382 Z" fill="#4f7465" stroke="none" />
+      <path d="M 784 382 C 782 368, 787 358, 794 358 C 801 358, 806 368, 804 382 Z" fill="#4f7465" stroke="none" />
+    </g>
+
+    <!-- Pohon Utama Besar -->
+    <g id="main-tree" fill="#144936">
+      <!-- Batang & Cabang Utama -->
+      <path d="M 1090 392 
+               C 1068 370, 1052 325, 1044 265 
+               C 1036 205, 1020 155, 975 120 
+               C 930 85, 875 82, 825 90
+               C 875 94, 922 104, 962 135
+               C 1002 166, 1012 220, 1014 285
+               C 1015 335, 1002 372, 978 392 Z" />
+      
+      <!-- Cabang Tengah Atas -->
+      <path d="M 1012 162 C 1005 115, 982 72, 945 35 L 960 35 C 992 72, 1012 110, 1020 152 Z" />
+      
+      <!-- Cabang Kanan Atas -->
+      <path d="M 1024 165 C 1035 110, 1060 65, 1095 25 L 1112 25 C 1075 68, 1048 115, 1035 178 Z" />
+
+      <!-- Cabang Kecil Kiri -->
+      <path d="M 970 116 C 940 88, 905 65, 875 45 L 888 45 C 915 65, 945 86, 976 112 Z" />
+
+      <!-- Daun-daun Besar -->
+      <!-- Daun Kiri Utama (Besar) -->
+      <path d="M 885 88 C 825 25, 735 32, 685 102 C 745 115, 815 102, 885 88 Z" />
+      <!-- Daun Kiri Bawah 1 -->
+      <path d="M 822 95 C 790 88, 760 105, 750 135 C 782 136, 808 122, 822 95 Z" />
+      <!-- Daun Kiri Bawah 2 -->
+      <path d="M 886 105 C 855 96, 825 108, 812 138 C 845 142, 872 128, 886 105 Z" />
+      <!-- Daun Tengah Kiri -->
+      <path d="M 942 98 C 925 68, 902 52, 878 48 C 885 78, 908 94, 942 98 Z" />
+      <!-- Daun Atas Kiri -->
+      <path d="M 960 68 C 925 22, 875 2, 835 0 C 855 38, 905 62, 960 68 Z" />
+      <!-- Daun Atas Tengah -->
+      <path d="M 1002 65 C 998 32, 985 10, 962 0 C 965 32, 980 52, 1002 65 Z" />
+      <!-- Daun Atas Kanan Kecil -->
+      <path d="M 1018 48 C 1022 22, 1035 8, 1052 0 C 1032 6, 1018 22, 1018 48 Z" />
+      <!-- Daun Kanan Besar -->
+      <path d="M 1045 92 C 1105 88, 1158 55, 1178 0 C 1118 0, 1068 32, 1045 92 Z" />
+    </g>
+
+    <!-- Anak Membaca Buku -->
+    <g id="reading-child" stroke="#144936" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Baju / Punggung -->
+      <path d="M 946 286 C 968 286, 985 304, 990 332 L 994 374 L 946 374 L 940 326 Z" fill="#f3f2ec" stroke-width="1.8" />
+      <!-- Lengan Baju -->
+      <path d="M 948 294 C 964 298, 972 315, 970 334 L 944 334 Z" fill="#f3f2ec" stroke-width="1.6" />
+      
+      <!-- Celana Panjang Hijau Gelap -->
+      <path d="M 946 364 L 988 368 C 992 380, 985 390, 968 390 L 908 388 L 872 342 C 866 334, 875 322, 886 326 L 946 364 Z" fill="#144936" stroke-width="1.6" />
+      <!-- Garis Lipatan Celana -->
+      <path d="M 882 332 L 916 378 L 966 380" fill="none" stroke="#f3f2ec" stroke-width="1.3" />
+
+      <!-- Sepatu -->
+      <g id="shoe">
+        <path d="M 872 374 L 856 378 C 842 380, 822 386, 816 394 C 815 398, 822 400, 835 400 L 874 398 C 878 398, 878 386, 872 374 Z" fill="#f3f2ec" stroke-width="1.6" />
+        <!-- Sol Sepatu -->
+        <path d="M 817 394 L 875 393" fill="none" stroke-width="1.5" />
+        <!-- Tali Sepatu -->
+        <path d="M 848 380 L 852 385 M 840 382 L 844 387" fill="none" stroke-width="1.4" />
+      </g>
+
+      <!-- Lengan Bawah & Tangan Memegang Buku -->
+      <path d="M 948 334 L 922 344 L 902 334 L 906 326 L 926 332 L 946 324" fill="#f3f2ec" stroke-width="1.6" />
+
+      <!-- Buku Terbuka -->
+      <g id="book">
+        <!-- Sampul Bawah -->
+        <path d="M 878 316 L 908 332 L 938 324" fill="none" stroke-width="2" />
+        <!-- Halaman Kiri & Kanan -->
+        <path d="M 880 314 C 892 310, 902 316, 908 326 C 916 318, 926 314, 936 318 L 938 322 L 908 330 L 878 314 Z" fill="#f3f2ec" stroke-width="1.5" />
+        <path d="M 884 310 C 894 307, 903 312, 908 322 C 915 314, 924 311, 933 314" fill="none" stroke-width="1.2" />
+      </g>
+
+      <!-- Kepala & Wajah -->
+      <g id="head">
+        <!-- Leher & Wajah -->
+        <path d="M 932 276 L 930 288 L 946 290 L 952 276" fill="#f3f2ec" stroke-width="1.6" />
+        <path d="M 932 254 C 928 266, 928 278, 934 285 C 940 291, 950 289, 956 280" fill="#f3f2ec" stroke-width="1.6" />
+        <!-- Mata & Alis (Menunduk Membaca) -->
+        <path d="M 933 268 Q 937 271 941 269" fill="none" stroke-width="1.4" />
+        <path d="M 933 263 Q 937 262 940 264" fill="none" stroke-width="1.2" />
+        <!-- Hidung & Mulut -->
+        <path d="M 930 273 L 928 276 L 931 277" fill="none" stroke-width="1.3" />
+        <path d="M 932 281 Q 935 282 937 281" fill="none" stroke-width="1.2" />
+        <!-- Rambut -->
+        <path d="M 930 260 C 926 246, 936 232, 956 232 C 976 232, 988 248, 984 268 C 981 280, 970 286, 960 282 C 962 274, 958 266, 952 266 C 948 266, 946 271, 948 275 C 944 272, 942 264, 938 260 L 934 264 L 933 258 Z" fill="#144936" stroke="none" />
+        <!-- Telinga -->
+        <path d="M 952 268 C 956 266, 959 272, 955 277 C 952 279, 950 277, 950 275" fill="#f3f2ec" stroke-width="1.4" />
+      </g>
+    </g>
+
+    <!-- Rumput & Tanaman di Sekitar Pohon -->
+    <g id="foliage" fill="#144936">
+      <!-- Gundukan Tanah Hijau -->
+      <path d="M 760 394 Q 880 384 990 388 Q 1080 386 1165 394 Z" />
+      
+      <!-- Helai Rumput Tajam -->
+      <path d="M 785 393 Q 780 382 772 378 Q 782 385 788 393 Z" />
+      <path d="M 796 393 Q 795 380 792 372 Q 798 382 800 393 Z" />
+      <path d="M 806 393 Q 810 382 816 376 Q 812 385 809 393 Z" />
+      
+      <!-- Rumput di Belakang Anak / Dekat Batang Pohon -->
+      <path d="M 982 390 Q 974 360 962 342 Q 978 362 986 390 Z" />
+      <path d="M 992 390 Q 990 350 986 322 Q 995 352 996 390 Z" />
+      <path d="M 1002 390 Q 1008 355 1018 332 Q 1012 360 1006 390 Z" />
+      <path d="M 1014 390 Q 1024 362 1038 345 Q 1026 368 1018 390 Z" />
+      <path d="M 1026 390 Q 1038 368 1054 356 Q 1040 374 1030 390 Z" />
+
+      <!-- Tanaman Berdaun di Kanan Pohon -->
+      <!-- Tangkai 1 -->
+      <path d="M 1094 390 Q 1088 340 1082 292" fill="none" stroke="#144936" stroke-width="1.8" />
+      <path d="M 1082 292 C 1076 280, 1078 268, 1084 260 C 1090 268, 1090 280, 1082 292 Z" />
+      <path d="M 1085 316 C 1072 310, 1065 300, 1064 290 C 1074 292, 1082 302, 1085 316 Z" />
+      <path d="M 1086 312 C 1098 304, 1104 294, 1104 284 C 1094 288, 1088 298, 1086 312 Z" />
+      <path d="M 1089 342 C 1075 338, 1066 328, 1064 318 C 1075 320, 1084 328, 1089 342 Z" />
+      <path d="M 1090 338 C 1102 332, 1110 322, 1110 312 C 1100 316, 1092 325, 1090 338 Z" />
+
+      <!-- Tangkai 2 (Kanan) -->
+      <path d="M 1116 390 Q 1124 352 1134 318" fill="none" stroke="#144936" stroke-width="1.6" />
+      <path d="M 1134 318 C 1132 306, 1138 296, 1146 290 C 1148 302, 1142 312, 1134 318 Z" />
+      <path d="M 1126 344 C 1114 338, 1108 328, 1108 318 C 1118 322, 1124 332, 1126 344 Z" />
+      <path d="M 1127 342 C 1140 338, 1148 330, 1152 320 C 1140 322, 1132 330, 1127 342 Z" />
+      <path d="M 1120 368 C 1108 364, 1102 354, 1102 344 C 1112 348, 1118 356, 1120 368 Z" />
+      <path d="M 1121 366 C 1134 362, 1142 354, 1146 344 C 1134 346, 1126 354, 1121 366 Z" />
+
+      <!-- Rumput Ujung Kanan -->
+      <path d="M 1142 392 Q 1152 378 1164 370 Q 1154 382 1146 392 Z" />
+      <path d="M 1152 392 Q 1164 382 1176 378 Q 1164 386 1156 392 Z" />
+    </g>
+  </g>
+
+  <!-- ==================== TEKS KANAN & FOOTER KANAN ==================== -->
+  <g id="right-text">
+    <!-- Kutipan Vertikal di Kanan Pohon -->
+    <text x="1080" y="135" font-size="9.5" class="quote-text">
+      <tspan x="1080" dy="0">ANAK</tspan>
+      <tspan x="1080" dy="17">BERTUMBUH</tspan>
+      <tspan x="1080" dy="17">KARENA</tspan>
+      <tspan x="1080" dy="17">ADA TEMPAT</tspan>
+      <tspan x="1080" dy="17">UNTUK</tspan>
+      <tspan x="1080" dy="17">BERKEMBANG</tspan>
+    </text>
+
+    <!-- Footer Kanan -->
+    <line x1="982" y1="421" x2="1018" y2="421" stroke="#4f5b55" stroke-width="1.2" />
+    <text x="1036" y="424" font-size="10.5" class="footer-text">PMKI PLATFORM</text>
+  </g>
+</svg>

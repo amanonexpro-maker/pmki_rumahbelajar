@@ -16,6 +16,7 @@ import {
 import { SearchInput } from "@/components/compositions";
 import {
   DetailTabs,
+  FeedbackBanner,
   PageHeader,
   StatSummary,
   type DetailTabItem,
@@ -470,18 +471,11 @@ export function AdministrationWorkspaceClient({
       />
 
       {feedback && (
-        <div
-          role={feedback.tone === "danger" ? "alert" : "status"}
-          className={
-            feedback.tone === "success"
-              ? "rounded-control border border-success/30 bg-success-soft px-4 py-3 text-sm text-success"
-              : feedback.tone === "warning"
-                ? "rounded-control border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-warning-foreground"
-                : "rounded-control border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
-          }
-        >
-          {feedback.message}
-        </div>
+        <FeedbackBanner
+          tone={feedback.tone}
+          message={feedback.message}
+          onDismiss={() => setFeedback(null)}
+        />
       )}
 
       <DetailTabs

@@ -1,4 +1,4 @@
-import PublicRegistrationPage, { metadata } from "@/app/pendaftaran/page";
+import PublicRegistrationPage, { metadata } from "@/app/(public)/pendaftaran/page";
 
 export const instant = false;
 

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  Building,
   Calendar,
   Clock,
   MapPin,
@@ -183,19 +182,6 @@ export function PublicFooter() {
                   <span>Ms. Lilian (+62 813-3298-7491)</span>
                 </a>
               </div>
-
-              <div className="pt-2">
-                <Link
-                  href="/workspace"
-                  className="w-full min-h-11 py-2.5 px-3 text-xs font-semibold rounded-control bg-surface hover:bg-surface-subtle text-foreground border border-border transition-colors flex items-center justify-center gap-2 focus-ring shadow-xs"
-                >
-                  <Building
-                    aria-hidden="true"
-                    className="w-4 h-4 text-primary"
-                  />
-                  <span>Akses portal pengurus &amp; pengajar</span>
-                </Link>
-              </div>
             </div>
           </div>
         </div>
@@ -208,7 +194,13 @@ export function PublicFooter() {
               Asih Lawang.
             </span>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-6">
+            <Link
+              href="/auth/login"
+              className="inline-flex min-h-11 items-center text-xs text-muted-foreground hover:text-primary underline-offset-4 hover:underline focus-ring rounded-xs"
+            >
+              Sudah menjadi pengurus? Masuk ke Ruang Kerja
+            </Link>
             <span className="flex items-center gap-1.5 text-secondary-foreground">
               <ShieldCheck
                 aria-hidden="true"

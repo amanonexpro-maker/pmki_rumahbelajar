@@ -225,8 +225,7 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
     const appDir = path.resolve(__dirname, "../../app");
     const publicFiles = [
       ...collectTsFiles(publicFeatureDir),
-      path.join(appDir, "page.tsx"),
-      path.join(appDir, "pendaftaran", "page.tsx"),
+      // `/` dan `/pendaftaran` kini berada di route group (public) (Fase 13b)
       ...collectTsFiles(path.join(appDir, "(public)")),
     ];
 

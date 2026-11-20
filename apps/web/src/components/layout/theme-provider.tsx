@@ -9,6 +9,8 @@ interface ThemeContextValue {
   theme: ThemePreference;
   resolvedTheme: ResolvedTheme;
   setTheme: (theme: ThemePreference) => void;
+  /** Kunci tema efektif per-rute (null = lepas). Tidak mengubah preferensi tersimpan. */
+  lockTheme: (theme: ResolvedTheme | null) => void;
 }
 
 const STORAGE_KEY = "pmki_theme";
@@ -75,9 +77,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     getSystemThemeServer
   );
 
+  // Route-level lock (mis. Public = Light). Preferensi pengguna tidak diubah/dihapus.
+  const [lockedTheme, setLockedTheme] = React.useState<ResolvedTheme | null>(
+    null
+  );
+
   const theme: ThemePreference = overrideTheme ?? storedTheme;
-  const resolvedTheme: ResolvedTheme =
+  const preferredResolved: ResolvedTheme =
     theme === "system" ? systemTheme : theme;
+  const resolvedTheme: ResolvedTheme = lockedTheme ?? preferredResolved;
 
   React.useEffect(() => {
     applyThemeToDom(resolvedTheme);
@@ -91,7 +99,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
+    <ThemeContext.Provider
+      value={{ theme, resolvedTheme, setTheme, lockTheme: setLockedTheme }}
+    >
       {children}
     </ThemeContext.Provider>
   );

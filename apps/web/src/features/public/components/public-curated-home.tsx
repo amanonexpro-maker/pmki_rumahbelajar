@@ -109,22 +109,15 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
               </div>
             </div>
 
-            {/* DUAL CTA BLOCK (Thumb-Zone Friendly: Full-width on mobile, inline on desktop) */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
-              <Link
-                href="/pendaftaran"
-                className="w-full sm:w-auto inline-flex min-h-12 items-center justify-center gap-2 px-7 py-3 rounded-control bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-sm shadow-xs transition-colors active:scale-[0.985] focus-ring"
-              >
-                <span>Daftar peserta didik baru</span>
-                <ArrowRight aria-hidden="true" className="w-4 h-4" />
-              </Link>
-
+            {/* Secondary Action: Explore Programs (Subtle Ghost) */}
+            <div className="pt-1">
               <Link
                 href="/program"
-                className="w-full sm:w-auto inline-flex min-h-12 items-center justify-center gap-2 px-6 py-3 rounded-control bg-surface hover:bg-surface-subtle text-foreground font-medium text-sm border border-border shadow-xs transition-colors active:scale-[0.985] focus-ring"
+                className="inline-flex min-h-11 items-center justify-center gap-2 px-5 py-2.5 rounded-control bg-surface hover:bg-surface-subtle text-foreground font-medium text-xs sm:text-sm border border-border shadow-xs transition-colors active:scale-[0.985] focus-ring"
               >
                 <BookOpen aria-hidden="true" className="w-4 h-4 text-primary" />
                 <span>Lihat program belajar</span>
+                <ArrowRight aria-hidden="true" className="w-3.5 h-3.5 text-muted-foreground" />
               </Link>
             </div>
           </div>

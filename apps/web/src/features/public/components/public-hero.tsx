@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowRight,
   Calendar,
   Clock,
   GraduationCap,
@@ -92,18 +91,10 @@ export function PublicHero({ data }: PublicHeroProps) {
               {data.philosophyQuote}
             </blockquote>
 
-            {/* Welcoming Primary & Secondary Actions (Sentence case per 10 §5A, touch >= 44px) */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
+            {/* Welcoming Secondary Action (Sentence case per 10 §5A, touch >= 44px) */}
+            <div className="pt-2">
               <Link
-                href="/pendaftaran"
-                className="inline-flex min-h-12 items-center justify-center gap-2 px-7 py-3.5 rounded-control bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-base shadow-xs transition-colors active:scale-[0.985] focus-ring"
-              >
-                <span>Daftar peserta didik baru</span>
-                <ArrowRight aria-hidden="true" className="w-4 h-4" />
-              </Link>
-
-              <Link
-                href="#program"
+                href="/program"
                 className="inline-flex min-h-12 items-center justify-center gap-2 px-6 py-3.5 rounded-control bg-surface hover:bg-surface-subtle text-foreground font-medium text-base border border-border shadow-xs transition-colors active:scale-[0.985] focus-ring"
               >
                 <GraduationCap

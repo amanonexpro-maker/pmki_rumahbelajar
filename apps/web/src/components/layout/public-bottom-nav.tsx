@@ -13,7 +13,6 @@ interface BottomNavItem {
   /** Path prefix yang dianggap aktif. Tanpa ini, item tidak pernah aktif (mis. anchor). */
   matchPaths?: string[];
   activeExact?: boolean;
-  isPrimaryCTA?: boolean;
 }
 
 const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
@@ -24,7 +23,6 @@ const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
     href: "/pendaftaran",
     icon: UserPlus,
     matchPaths: ["/pendaftaran", "/registration"],
-    isPrimaryCTA: true,
   },
   { label: "Kontak", href: "/kontak", icon: PhoneCall, matchPaths: ["/kontak"] },
 ];
@@ -37,9 +35,10 @@ function isItemActive(item: BottomNavItem, pathname: string): boolean {
 }
 
 /**
- * Public Bottom Navigation (Fase 13c-1, UI-UX §30–31, 03 §9).
+ * Public Bottom Navigation (Fase 13c-1, Fase 13j, UI-UX §30–31, 03 §9).
  * Hanya mobile (< md). Hanya dipasang di route group (public), bukan Workspace.
  * Touch target >= 44px (setiap item setinggi bar 64px), safe-area iOS dihormati.
+ * Seluruh 4 tab diperlakukan setara secara proporsional tanpa hierarki buatan.
  */
 export function PublicBottomNav() {
   const pathname = usePathname();
@@ -53,7 +52,6 @@ export function PublicBottomNav() {
         {BOTTOM_NAV_ITEMS.map((item) => {
           const active = isItemActive(item, pathname);
           const Icon = item.icon;
-          const isCTA = Boolean(item.isPrimaryCTA);
 
           return (
             <li key={item.label} className="flex-1">
@@ -62,23 +60,16 @@ export function PublicBottomNav() {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex h-full min-h-[44px] w-full flex-col items-center justify-center gap-0.5 text-xs transition-colors duration-150 focus-ring",
-                  isCTA
+                  active
                     ? "font-semibold text-primary"
-                    : active
-                      ? "font-semibold text-primary"
-                      : "font-normal text-muted-foreground hover:text-foreground"
+                    : "font-normal text-muted-foreground hover:text-foreground"
                 )}
               >
-                <span
-                  className={cn(
-                    "inline-flex items-center justify-center transition-all duration-150",
-                    isCTA && "rounded-full bg-primary-soft p-1.5"
-                  )}
-                >
+                <span className="inline-flex items-center justify-center">
                   <Icon
                     aria-hidden="true"
                     className="h-5 w-5"
-                    strokeWidth={active || isCTA ? 2 : 1.5}
+                    strokeWidth={active ? 2 : 1.5}
                   />
                 </span>
                 <span>{item.label}</span>
@@ -90,4 +81,3 @@ export function PublicBottomNav() {
     </nav>
   );
 }
-

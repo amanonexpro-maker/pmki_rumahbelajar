@@ -87,9 +87,13 @@ export default function RootLayout({
   return (
     <html
       lang="id"
+      suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${newsreader.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-background text-foreground font-sans flex flex-col">
+      <body
+        suppressHydrationWarning
+        className="min-h-full bg-background text-foreground font-sans flex flex-col"
+      >
         <ThemeProvider>
           <ConnectivityProvider>
             <TooltipProvider delayDuration={200}>{children}</TooltipProvider>

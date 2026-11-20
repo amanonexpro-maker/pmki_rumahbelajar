@@ -41,6 +41,14 @@ const PUBLIC_NAV_ITEMS: {
   { id: "kontak", label: "Kontak", href: "/#kontak" },
 ];
 
+/** Item yang sudah tersedia di PublicBottomNav (< md) — tidak diulang di drawer mobile. */
+const BOTTOM_NAV_DUPLICATE_IDS: ReadonlySet<string> = new Set([
+  "beranda",
+  "program",
+  "pendaftaran",
+  "kontak",
+]);
+
 /**
  * UI-12 Public Header & Mobile Navigation (`07 §13–14`, `10 §5A`, `UI-UX §31`).
  * Fase 13b: header ringkas (h-14), tanpa ThemePicker (Public dikunci light),
@@ -179,6 +187,8 @@ export function PublicNavbar({ activeSection }: PublicNavbarProps) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "inline-flex min-h-11 items-center text-left px-3.5 py-2.5 rounded-control text-sm font-medium transition-colors focus-ring",
+                    // < md: item yang sudah ada di Bottom Nav disembunyikan (kurangi noise)
+                    BOTTOM_NAV_DUPLICATE_IDS.has(link.id) && "max-md:hidden",
                     active
                       ? "bg-primary-soft font-semibold text-primary"
                       : "text-secondary-foreground hover:bg-surface-subtle hover:text-foreground"

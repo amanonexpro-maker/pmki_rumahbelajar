@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button, Input } from "@/components/ui";
 import {
@@ -65,10 +66,27 @@ export function LoginForm({ redirectTo = "/workspace" }: LoginFormProps) {
       aria-labelledby="auth-form-title"
       className="w-full max-w-md rounded-card border border-border bg-surface p-6 sm:p-8"
     >
-      <header className="space-y-1.5 mb-6">
-        <p className="text-xs font-medium text-secondary-foreground">
-          Platform Pelayanan Terpadu PMKI
-        </p>
+      <header className="space-y-2 mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
+            <Image
+              src="/pmki_logo.svg"
+              alt="Logo PMKI"
+              width={36}
+              height={36}
+              className="w-8 h-8 object-contain"
+              priority
+            />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-primary leading-tight">
+              PMKI Jawa Timur
+            </p>
+            <p className="text-[11px] text-secondary-foreground leading-tight">
+              Platform Pelayanan Terpadu
+            </p>
+          </div>
+        </div>
         <h1
           id="auth-form-title"
           className="text-xl font-semibold text-foreground"

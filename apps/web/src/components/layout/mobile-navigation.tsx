@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import {
   Button,
@@ -40,8 +41,21 @@ export function MobileNavigation({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-72 max-w-[85vw] p-0">
         <SheetHeader>
-          <SheetTitle>{serviceUnitName}</SheetTitle>
-          <SheetDescription>{organizationName}</SheetDescription>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
+              <Image
+                src="/pmki_logo.svg"
+                alt="Logo PMKI"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+              />
+            </div>
+            <div className="min-w-0 text-left">
+              <SheetTitle>{serviceUnitName}</SheetTitle>
+              <SheetDescription>{organizationName}</SheetDescription>
+            </div>
+          </div>
         </SheetHeader>
 
         <SheetBody className="p-0">

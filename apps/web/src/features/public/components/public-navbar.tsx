@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  BookOpen,
   HeartHandshake,
   LayoutDashboard,
   Menu,
@@ -102,8 +102,15 @@ export function PublicNavbar({ activeSection }: PublicNavbarProps) {
             aria-label="Kembali ke beranda Rumah Belajar Griya Asih Lawang"
             className="group flex min-w-0 shrink-0 items-center gap-3 text-left focus-ring rounded-control p-1 min-h-11"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-primary text-primary-foreground shadow-xs">
-              <BookOpen aria-hidden="true" className="w-5 h-5" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-surface border border-border-subtle overflow-hidden">
+              <Image
+                src="/pmki_logo.svg"
+                alt="Logo PMKI"
+                width={40}
+                height={40}
+                className="h-10 w-10 object-contain"
+                priority
+              />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">

@@ -24,6 +24,22 @@ export const metadata: Metadata = {
       "Ayo belajar dan tumbuh bersama. Rumah belajar yang terbuka bagi semua. Setiap anak memiliki kesempatan untuk berkembang.",
     locale: "id_ID",
     type: "website",
+    images: [
+      {
+        url: "/pmki_og_image.svg",
+        width: 1200,
+        height: 480,
+        alt: "Rumah Belajar Griya Asih Lawang — PMKI",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title:
+      "Rumah Belajar Griya Asih Lawang — Ayo Belajar dan Tumbuh Bersama | PMKI",
+    description:
+      "Ayo belajar dan tumbuh bersama. Rumah belajar yang terbuka bagi semua.",
+    images: ["/pmki_og_image.svg"],
   },
 };
 

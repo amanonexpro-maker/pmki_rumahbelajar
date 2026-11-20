@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { LucideIcon } from "lucide-react";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Badge, Button, Icon } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
@@ -143,8 +144,14 @@ export function Sidebar({
       className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col bg-surface border-r border-border sticky top-0 h-screen"
     >
       <div className="h-16 px-4 border-b border-border flex items-center gap-3 shrink-0">
-        <div className="h-9 w-9 rounded-control bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-xs">
-          <Icon icon={BookOpen} size="sm" />
+        <div className="h-9 w-9 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
+          <Image
+            src="/pmki_logo.svg"
+            alt="Logo PMKI"
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain"
+          />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-bold text-foreground truncate leading-tight">

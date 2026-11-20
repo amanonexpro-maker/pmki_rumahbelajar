@@ -32,10 +32,39 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "https://pmkirumahbelajar-web.vercel.app"
+  ),
   title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
   description:
     "Platform Pelayanan Terpadu PMKI (Pilot: Rumah Belajar Griya Asih Lawang). Ruang belajar inklusif, hangat, dan akuntabel.",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/pmki_app_icon.svg",
+    apple: "/pmki_app_icon.svg",
+  },
+  openGraph: {
+    title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
+    description:
+      "Ayo belajar dan tumbuh bersama. Rumah belajar yang terbuka bagi semua di Lawang, Kabupaten Malang.",
+    locale: "id_ID",
+    type: "website",
+    images: [
+      {
+        url: "/pmki_og_image.svg",
+        width: 1200,
+        height: 480,
+        alt: "Rumah Belajar Griya Asih Lawang — PMKI",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
+    description:
+      "Ayo belajar dan tumbuh bersama. Rumah belajar yang terbuka bagi semua.",
+    images: ["/pmki_og_image.svg"],
+  },
 };
 
 export default function RootLayout({

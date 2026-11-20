@@ -1,6 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
-  BookOpen,
   Building,
   Calendar,
   Clock,
@@ -21,8 +21,14 @@ export function PublicFooter() {
           {/* Column 1: Identity & Mission */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-control bg-primary text-primary-foreground flex items-center justify-center font-bold shadow-xs">
-                <BookOpen aria-hidden="true" className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
+                <Image
+                  src="/pmki_logo.svg"
+                  alt="Logo PMKI"
+                  width={36}
+                  height={36}
+                  className="w-8 h-8 object-contain"
+                />
               </div>
               <div>
                 <h2 className="text-foreground font-bold text-base leading-tight">

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import {
   Building,
   Calendar,
@@ -24,12 +23,13 @@ export function PublicFooter() {
               <div className="w-10 h-10 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
                 <picture className="flex items-center justify-center">
                   <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
-                  <Image
+                  <img
                     src="/pmki_logo.png"
                     alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
                     width={36}
                     height={36}
                     className="w-8 h-8 object-contain"
+                    loading="lazy"
                   />
                 </picture>
               </div>

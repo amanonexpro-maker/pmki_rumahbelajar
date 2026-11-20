@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   HeartHandshake,
@@ -105,13 +104,13 @@ export function PublicNavbar({ activeSection }: PublicNavbarProps) {
             <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-control bg-surface border border-border-subtle overflow-hidden">
               <picture className="flex items-center justify-center">
                 <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
-                <Image
+                <img
                   src="/pmki_logo.png"
                   alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
                   width={40}
                   height={40}
                   className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
-                  priority
+                  loading="eager"
                 />
               </picture>
             </div>

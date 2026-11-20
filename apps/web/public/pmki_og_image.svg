@@ -21,8 +21,7 @@
       <stop offset="100%" stop-color="#f3b63a" stop-opacity="0.3" />
     </linearGradient>
 
-    <style>
-      500;600&display=swap');
+    <style><![CDATA[
       .title-text {
         font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
         font-weight: 700;
@@ -46,7 +45,7 @@
         fill: #3d4843;
         letter-spacing: 2.5px;
       }
-    </style>
+    ]]></style>
   </defs>
 
   <!-- Background -->

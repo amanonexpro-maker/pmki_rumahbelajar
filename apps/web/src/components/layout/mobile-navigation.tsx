@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import {
   Button,
@@ -45,12 +44,13 @@ export function MobileNavigation({
             <div className="h-9 w-9 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
               <picture className="flex items-center justify-center">
                 <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
-                <Image
+                <img
                   src="/pmki_logo.png"
                   alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
                   width={32}
                   height={32}
                   className="h-8 w-8 object-contain"
+                  loading="eager"
                 />
               </picture>
             </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button, Input } from "@/components/ui";
 import {
@@ -71,13 +70,13 @@ export function LoginForm({ redirectTo = "/workspace" }: LoginFormProps) {
           <div className="w-10 h-10 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
             <picture className="flex items-center justify-center">
               <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
-              <Image
+              <img
                 src="/pmki_logo.png"
                 alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
                 width={36}
                 height={36}
                 className="w-8 h-8 object-contain"
-                priority
+                loading="eager"
               />
             </picture>
           </div>

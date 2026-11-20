@@ -182,3 +182,46 @@ export function ConnectivityIndicator({ className }: { className?: string }) {
     </div>
   );
 }
+
+/**
+ * Non-intrusive slim connectivity banner (06 §16).
+ * Automatically appears during OFFLINE or SYNCING states and disappears without manual intervention
+ * once re-established to ONLINE + SYNCED.
+ */
+export function ConnectivityTopBanner({ className }: { className?: string }) {
+  const { status } = useConnectivity();
+  if (status === "ONLINE") return null;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={cn(
+        "sticky top-0 z-30 w-full py-1.5 px-4 text-center text-xs font-medium border-b transition-all duration-150",
+        status === "OFFLINE"
+          ? "bg-warning-soft text-warning-foreground border-warning-border"
+          : "bg-info-soft text-info-foreground border-info-border",
+        className
+      )}
+    >
+      <div className="flex items-center justify-center gap-2">
+        {status === "OFFLINE" ? (
+          <>
+            <Icon icon={WifiOff} size="xs" />
+            <span>Mode Luring. Perubahan data tersimpan di perangkat lokal.</span>
+          </>
+        ) : status === "RECONNECTING" ? (
+          <>
+            <Icon icon={RefreshCw} size="xs" className="animate-spin" />
+            <span>Menyambungkan kembali ke server...</span>
+          </>
+        ) : (
+          <>
+            <Icon icon={RefreshCw} size="xs" className="animate-spin" />
+            <span>Menyinkronkan data dengan server...</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -26,7 +26,7 @@ export function PublicHero({ data }: PublicHeroProps) {
     <section
       id="beranda"
       aria-labelledby="hero-main-title"
-      className="scroll-mt-28 bg-surface py-16 lg:py-24 border-b border-border"
+      className="scroll-mt-28 bg-surface py-16 sm:py-24 lg:py-32 border-b border-border"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
@@ -45,7 +45,7 @@ export function PublicHero({ data }: PublicHeroProps) {
             <div className="space-y-3">
               <h1
                 id="hero-main-title"
-                className="type-display-xl text-foreground tracking-tight"
+                className="type-display-xl text-foreground tracking-tight text-balance"
               >
                 Ayo belajar dan{" "}
                 <span className="text-primary italic">tumbuh bersama.</span>

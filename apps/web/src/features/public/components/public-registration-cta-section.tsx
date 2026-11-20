@@ -37,7 +37,7 @@ export function PublicRegistrationCtaSection({
       <section
         id="pendaftaran"
         aria-labelledby="registration-cta-heading"
-        className="scroll-mt-28 py-14 lg:py-20 bg-background"
+        className="scroll-mt-28 py-12 sm:py-20 lg:py-24 bg-background"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="max-w-3xl space-y-4">
@@ -46,7 +46,7 @@ export function PublicRegistrationCtaSection({
             </div>
             <h2
               id="registration-cta-heading"
-              className="type-display text-foreground tracking-tight"
+              className="type-display text-foreground tracking-tight text-balance"
             >
               {ctaHeadline}
             </h2>

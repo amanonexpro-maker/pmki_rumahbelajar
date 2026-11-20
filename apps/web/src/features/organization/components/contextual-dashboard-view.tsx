@@ -4,8 +4,6 @@ import {
   ArrowUpRight,
   Calendar,
   CheckCircle2,
-  MapPin,
-  Users,
 } from "lucide-react";
 import { PageHeader } from "@/components/patterns";
 import { Badge, type BadgeProps } from "@/components/ui";
@@ -105,15 +103,20 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
        * Tablet/Desktop (>=640px): Orientation -> Ringkasan operasional -> [Perlu perhatian | Jadwal belajar] -> Aktivitas terbaru
        */}
 
-      {/* 2. OPERATIONAL SUMMARY STRIP (Inline typography strip with subtle dividers — zero KPI cards) */}
+      {/* 2. OPERATIONAL SUMMARY STRIP (Horizontal Snap Scroll on mobile — zero KPI cards) */}
       <section
         aria-label="Ringkasan operasional"
-        className="order-3 sm:order-2 border-y border-border py-5"
+        className="order-3 sm:order-2 border-y border-border py-4 sm:py-5"
       >
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-6 sm:divide-x sm:divide-border">
+        <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-y-6 sm:gap-x-6 sm:divide-x sm:divide-border sm:pb-0">
           {vm.summaryMetrics.map((item, idx) => {
             const inner = (
-              <div className={cn(idx > 0 && "sm:pl-6")}>
+              <div
+                className={cn(
+                  "p-4 rounded-card border border-border-subtle bg-surface sm:border-0 sm:bg-transparent sm:p-0",
+                  idx > 0 && "sm:pl-6"
+                )}
+              >
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="type-h1 text-foreground tabular-nums tracking-tight">
                     {item.value}
@@ -139,14 +142,21 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
                 <Link
                   key={item.id}
                   href={item.href}
-                  className="group block text-left rounded-control -m-2 p-2 transition-colors hover:bg-surface-subtle/70 focus-ring"
+                  className="snap-start shrink-0 min-w-[78%] sm:min-w-0 group block text-left rounded-control transition-colors hover:bg-surface-subtle/70 focus-ring"
                 >
                   {inner}
                 </Link>
               );
             }
 
-            return <div key={item.id}>{inner}</div>;
+            return (
+              <div
+                key={item.id}
+                className="snap-start shrink-0 min-w-[78%] sm:min-w-0"
+              >
+                {inner}
+              </div>
+            );
           })}
         </div>
       </section>
@@ -196,13 +206,13 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
           ) : (
             <ul
               role="list"
-              className="rounded-card bg-surface border border-border divide-y divide-border overflow-hidden"
+              className="rounded-card bg-warning-soft/30 border border-warning/30 border-l-4 border-l-warning divide-y divide-warning/20 overflow-hidden"
             >
               {vm.attentionItems.map((item) => (
                 <li key={item.id}>
                   <Link
                     href={item.href}
-                    className="group w-full min-h-14 text-left px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-surface-subtle/75 transition-colors focus-ring"
+                    className="group w-full min-h-14 text-left px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-warning-soft/50 transition-colors focus-ring"
                   >
                     <div className="space-y-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -221,7 +231,7 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
                       </p>
                     </div>
 
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary shrink-0 self-start sm:self-center">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary shrink-0 self-start sm:self-center bg-surface px-3 py-1.5 rounded-control border border-border-subtle">
                       <span>{item.actionLabel}</span>
                       <ArrowRight
                         aria-hidden="true"
@@ -264,14 +274,14 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
             )}
           </div>
 
-          <div className="rounded-card bg-surface border border-border divide-y divide-border overflow-hidden">
+          <div className="rounded-card bg-surface border border-border divide-y divide-border-subtle overflow-hidden">
             {vm.upcomingSchedules.slice(0, 5).map((item) => (
               <div
                 key={item.id}
-                className="px-4 sm:px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="px-4 sm:px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3"
               >
                 <div className="flex items-start gap-3.5 min-w-0">
-                  <div className="w-24 shrink-0 pt-0.5">
+                  <div className="w-20 sm:w-24 shrink-0 pt-0.5">
                     <span className="text-xs font-bold text-foreground font-mono tabular-nums block">
                       {item.timeRange}
                     </span>
@@ -280,46 +290,24 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
                     </span>
                   </div>
 
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <p className="text-sm font-semibold text-foreground">
-                        {item.subjectName}
+                        {item.className}
                       </p>
                       {item.isCurrentUserTeacher && (
                         <Badge variant="primary">Kelas Anda</Badge>
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 type-caption text-secondary-foreground">
-                      <span className="font-medium text-foreground">
-                        {item.className}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span className="inline-flex items-center gap-1">
-                        <Users
-                          aria-hidden="true"
-                          className="w-3.5 h-3.5 text-muted-foreground"
-                        />
-                        <span>{item.enrolledCount} peserta didik</span>
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin
-                          aria-hidden="true"
-                          className="w-3.5 h-3.5 text-muted-foreground"
-                        />
-                        <span>{item.roomName}</span>
-                      </span>
-                    </div>
-
-                    <p className="text-[11px] text-muted-foreground">
-                      Pengajar: {item.teacherName}
+                    <p className="text-xs text-secondary-foreground">
+                      Pengajar: <span className="font-medium text-foreground">{item.teacherName}</span>
                     </p>
                   </div>
                 </div>
 
                 {item.canManageAttendance && (
-                  <div className="shrink-0 sm:self-center">
+                  <div className="shrink-0 self-end sm:self-center pt-1 sm:pt-0">
                     <Link
                       href={item.href}
                       className="inline-flex min-h-9 items-center gap-1 rounded-control px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-surface-subtle focus-ring"
@@ -393,14 +381,14 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
           </div>
 
           <div className="space-y-5">
-            {activityGroups.map((group) => (
+            {activityGroups.slice(0, 2).map((group) => (
               <div key={group.dateGroup} className="space-y-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   {group.dateGroup}
                 </h3>
 
                 <ul role="list" className="divide-y divide-border-subtle">
-                  {group.entries.map((entry) => (
+                  {group.entries.slice(0, 3).map((entry) => (
                     <li
                       key={entry.id}
                       className="py-2.5 flex items-start justify-between gap-4"
@@ -433,6 +421,18 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
                 </ul>
               </div>
             ))}
+
+            {vm.canViewAuditLog && (
+              <div className="pt-2 flex justify-start sm:justify-end">
+                <Link
+                  href="/workspace/audit"
+                  className="inline-flex min-h-9 items-center gap-1.5 text-xs font-semibold text-primary hover:underline focus-ring rounded-xs"
+                >
+                  <span>Lihat semua aktivitas di jejak audit</span>
+                  <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
           </div>
         </section>
       )}

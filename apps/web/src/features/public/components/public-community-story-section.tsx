@@ -85,7 +85,7 @@ export function PublicCommunityStorySection({
       {showLocalContext && (
         <section
           aria-labelledby="community-story-heading"
-          className="py-16 lg:py-24 bg-surface"
+          className="py-12 sm:py-20 lg:py-24 bg-surface"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 lg:space-y-16">
             {/* Dignified Local Community Story */}
@@ -233,7 +233,7 @@ export function PublicCommunityStorySection({
         <section
           id="galeri"
           aria-labelledby="gallery-section-heading"
-          className="scroll-mt-28 py-16 lg:py-24 bg-background"
+          className="scroll-mt-28 py-12 sm:py-20 lg:py-24 bg-background"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -243,7 +243,7 @@ export function PublicCommunityStorySection({
                 </div>
                 <h2
                   id="gallery-section-heading"
-                  className="type-section-title text-foreground tracking-tight"
+                  className="type-section-title text-foreground tracking-tight text-balance"
                 >
                   Momen kebersamaan di Rumah Belajar Griya Asih
                 </h2>
@@ -325,8 +325,8 @@ export function PublicCommunityStorySection({
                     >
                       <div
                         className={cn(
-                          "relative overflow-hidden bg-surface-subtle w-full",
-                          isFeatured ? "h-64 sm:h-80" : "h-56 sm:h-64"
+                          "relative overflow-hidden bg-surface-subtle w-full aspect-4/3",
+                          isFeatured && "sm:aspect-16/10"
                         )}
                       >
                         <Image

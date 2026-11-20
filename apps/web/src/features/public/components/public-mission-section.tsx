@@ -15,7 +15,7 @@ export function PublicMissionSection({ data }: PublicMissionSectionProps) {
     <section
       id="tentang"
       aria-labelledby="mission-section-heading"
-      className="scroll-mt-28 py-14 lg:py-20 bg-background border-b border-border"
+      className="scroll-mt-28 py-12 sm:py-20 lg:py-24 bg-background border-b border-border"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 lg:space-y-16">
         {/* Editorial Mission Statement (Newsreader Display Typography) */}
@@ -25,7 +25,7 @@ export function PublicMissionSection({ data }: PublicMissionSectionProps) {
           </div>
           <h2
             id="mission-section-heading"
-            className="type-display text-foreground tracking-tight"
+            className="type-display text-foreground tracking-tight text-balance"
           >
             {data.heroSubheadline} {data.missionHeadline}
           </h2>

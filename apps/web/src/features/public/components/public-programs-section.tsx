@@ -68,7 +68,7 @@ export function PublicProgramsSection({
       <section
         id="program"
         aria-labelledby="program-section-heading"
-        className="scroll-mt-28 py-12 lg:py-16 bg-surface border-b border-border"
+        className="scroll-mt-28 py-12 sm:py-16 lg:py-20 bg-surface border-b border-border"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 lg:space-y-12">
           {/* Header & Accessible Tab Switcher */}
@@ -79,7 +79,7 @@ export function PublicProgramsSection({
               </div>
               <h2
                 id="program-section-heading"
-                className="type-section-title text-foreground tracking-tight"
+                className="type-section-title text-foreground tracking-tight text-balance"
               >
                 Pilihan program pembelajaran unggulan
               </h2>
@@ -318,7 +318,7 @@ export function PublicProgramsSection({
       <section
         id="jadwal"
         aria-labelledby="schedule-section-heading"
-        className="scroll-mt-28 py-12 lg:py-16 bg-background border-b border-border"
+        className="scroll-mt-28 py-12 sm:py-16 lg:py-20 bg-background border-b border-border"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
@@ -330,7 +330,7 @@ export function PublicProgramsSection({
                 </div>
                 <h2
                   id="schedule-section-heading"
-                  className="type-section-title text-foreground tracking-tight"
+                  className="type-section-title text-foreground tracking-tight text-balance"
                 >
                   Waktu pelaksanaan bimbingan belajar
                 </h2>

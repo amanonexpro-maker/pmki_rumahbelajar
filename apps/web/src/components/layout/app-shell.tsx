@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { ConnectivityTopBanner } from "@/hooks/use-connectivity";
 import { MobileNavigation } from "./mobile-navigation";
 import { PageContainer, type ContainerWidth } from "./page-container";
 import { Sidebar, type SidebarNavGroup } from "./sidebar";
@@ -173,6 +174,8 @@ export function AppShell({
             onOpenMobileMenu={() => setMobileMenuOpen(true)}
             rightSlot={headerRightSlot}
           />
+
+          <ConnectivityTopBanner />
 
           <MobileNavigation
             open={mobileMenuOpen}

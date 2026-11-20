@@ -488,18 +488,22 @@ export function AttendanceWorkspaceClient({
               <ul
                 role="list"
                 aria-label="Daftar presensi peserta didik"
-                className="rounded-card border border-border bg-surface divide-y divide-border"
+                className="rounded-card border border-border bg-surface divide-y divide-border-subtle"
               >
                 {rosterItems.map((item) => (
                   <li key={item.studentId} className="p-4 space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-sm">
+                        <p className="font-semibold text-foreground text-base leading-snug">
                           {item.studentFullName}
+                          {item.studentNickname && (
+                            <span className="font-normal text-muted-foreground text-sm ml-1.5">
+                              ({item.studentNickname})
+                            </span>
+                          )}
                         </p>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {item.registrationNumber} · Panggilan:{" "}
-                          {item.studentNickname} · {item.educationLevelLabel}
+                        <p className="text-xs text-secondary-foreground mt-0.5">
+                          {item.educationLevelLabel}
                         </p>
                       </div>
 

@@ -51,7 +51,7 @@ export function EntityHeader({
             size="sm"
             leftIcon={<Icon icon={ArrowLeft} size="xs" />}
             onClick={onBack}
-            className="-ml-2 text-secondary-foreground hover:text-foreground"
+            className="-ml-2 mb-2 text-secondary-foreground hover:text-foreground"
           >
             {backLabel}
           </Button>
@@ -78,13 +78,15 @@ export function EntityHeader({
 
           <div className="space-y-1.5 min-w-0">
             {eyebrow && (
-              <div className="type-eyebrow text-primary uppercase tracking-wider">
+              <div className="text-xs uppercase tracking-wider font-bold text-primary mb-2 select-none">
                 {eyebrow}
               </div>
             )}
 
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="type-h2 text-foreground tracking-tight">{title}</h1>
+              <h1 className="text-xl sm:text-2xl font-semibold leading-tight tracking-tight text-foreground">
+                {title}
+              </h1>
               {badges && (
                 <div className="flex flex-wrap items-center gap-1.5">
                   {badges}
@@ -93,7 +95,7 @@ export function EntityHeader({
             </div>
 
             {subtitle && (
-              <p className="type-body-sm text-secondary-foreground max-w-2xl">
+              <p className="text-sm text-secondary-foreground max-w-2xl leading-relaxed mt-1.5">
                 {subtitle}
               </p>
             )}

@@ -24,6 +24,7 @@
 | 8 | Audit + Administration (Dynamic RBAC) (`UI-9`) | `DONE` | `/workspace/audit` (`Jejak Audit` & `Riwayat Audit` baca-saja append-only), `/workspace/administration` 5 tab (`Pengguna` + Provisioning via Supabase Admin API, `Peran` + peran kustom tanpa coding, `Hak Akses`, `Override akses` Grant/Revoke instan, `Penetapan lingkup`, + dev-only `Lingkungan Uji Coba`), 96/96 test PASS |
 | 9 | Public Experience (`UI-12`) | `DONE` | `features/public` (`PublicHero` 96px, `PublicMissionSection` 80px, `PublicProgramsSection` 64px, `PublicCommunityStorySection` 96px, `PublicRegistrationCtaSection` 80px, `PublicNavbar`, `PublicFooter`), rute `/`, `/program`, `/gallery`, `/news`, `/pendaftaran`, `/registration`; `Newsreader` khusus publik; 105/105 test PASS |
 | 10 | Parity Audit, Contextual Dashboard (`UI-3`), Hardening, Platform Verify & Cutover (`UI-10`, `UI-11`) | `DONE` | Contextual Dashboard `/workspace` (`UI-3`), `PARITY-CHECKLIST.md` **12/12 `TERVERIFIKASI`**, Domain & Terminology & Security & ADR-13 Audit otomatis (`parity-hardening-audit.test.ts`), `operational-telemetry.ts`, `prod-bootstrap-admin.ts`, `CUTOVER-RUNBOOK.md`, **30/30 file test = 110/110 test PASS** |
+| 11 | Mobile Polish & UX Recomposition (Sub-sesi A: Global Layout, Typography & Density) | `DONE` | Tipografi PageHeader/EntityHeader tajam (kontras ≥ 1.5x di mobile), kartu list maksimal 3-4 baris esensial (nama, status, kelas, aksi), eliminasi shadow pada kartu statis, breathing room form (space-y-5/6, padding 44px touch target), Design Gates 1-5 lolos visual 375px |
 
 ---
 

@@ -40,9 +40,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         .join(" ") || undefined;
 
     return (
-      <div className={cn("space-y-1.5", containerClassName)}>
+      <div className={cn("space-y-2", containerClassName)}>
         {label && (
-          <label htmlFor={id} className="type-label block text-foreground">
+          <label htmlFor={id} className="type-label block text-foreground mb-1">
             {label}
             {required && (
               <span aria-hidden="true" className="text-danger ml-0.5">
@@ -91,7 +91,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {hint && !error && (
-          <p id={hintId} className="type-caption text-muted-foreground">
+          <p id={hintId} className="type-caption text-muted-foreground mt-1">
             {hint}
           </p>
         )}
@@ -100,7 +100,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <p
             id={errorId}
             role="alert"
-            className="type-caption text-danger flex items-center gap-1.5 font-medium"
+            className="type-caption text-danger flex items-center gap-1.5 font-medium min-h-[1.25rem] mt-1"
           >
             <AlertCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             <span>{error}</span>

@@ -333,7 +333,7 @@ export function PublicRegistrationWizard({
       className={
         embedded
           ? "space-y-6"
-          : "rounded-card border border-border bg-surface p-5 sm:p-8 space-y-6 shadow-xs"
+          : "rounded-card border border-border bg-surface p-5 sm:p-8 space-y-6"
       }
     >
       {!embedded && (
@@ -395,7 +395,7 @@ export function PublicRegistrationWizard({
             title="Identitas peserta didik"
             description="Masukkan informasi dasar peserta didik yang akan mengikuti kegiatan belajar."
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
               <div className="space-y-1.5">
                 <label
                   htmlFor="reg-fullName"
@@ -521,7 +521,7 @@ export function PublicRegistrationWizard({
             title="Data orang tua atau wali"
             description="Data kontak wali bersifat rahasia dan hanya digunakan untuk komunikasi resmi pelayanan Rumah Belajar."
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
               <div className="space-y-1.5">
                 <label
                   htmlFor="reg-guardianFullName"
@@ -603,7 +603,7 @@ export function PublicRegistrationWizard({
             title="Informasi pendidikan"
             description="Membantu pengurus menempatkan peserta didik ke kelas bimbingan yang sesuai."
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
               <div className="space-y-1.5">
                 <label
                   htmlFor="reg-educationLevel"

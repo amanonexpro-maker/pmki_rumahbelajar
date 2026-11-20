@@ -77,7 +77,7 @@ export function DataTable<T>({
       )}
     >
       {/* Mobile Recomposition List (< 768px) */}
-      <ul role="list" className="md:hidden divide-y divide-border">
+      <ul role="list" className="md:hidden divide-y divide-border-subtle">
         {data.map((row) => {
           const key = getRowKey(row);
           return (

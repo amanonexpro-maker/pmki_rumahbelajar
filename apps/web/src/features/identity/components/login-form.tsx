@@ -63,7 +63,7 @@ export function LoginForm({ redirectTo = "/workspace" }: LoginFormProps) {
   return (
     <section
       aria-labelledby="auth-form-title"
-      className="w-full max-w-md rounded-xl border border-border bg-surface p-6 sm:p-8 shadow-sm"
+      className="w-full max-w-md rounded-card border border-border bg-surface p-6 sm:p-8"
     >
       <header className="space-y-1.5 mb-6">
         <p className="text-xs font-medium text-secondary-foreground">

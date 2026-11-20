@@ -386,56 +386,57 @@ export function StudentsWorkspaceClient({
         caption="Daftar peserta didik Rumah Belajar"
         onRowClick={(row) => router.push(`/workspace/students/${row.id}`)}
         renderMobileRow={(row) => (
-          <div className="space-y-3">
+          <div className="space-y-2">
+            {/* Baris 1: Identitas Utama (Nama Peserta Didik) & Status */}
             <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="font-semibold text-foreground">{row.fullName}</p>
-                <p className="text-xs text-muted-foreground font-mono">
-                  {row.registrationNumber} · {row.educationLevelLabel}
-                </p>
-              </div>
+              <p className="text-base font-semibold text-foreground leading-snug">
+                {row.fullName}
+              </p>
               <StatusBadge
                 domain="registration"
                 status={row.registrationStatus}
               />
             </div>
 
-            <div className="flex items-center justify-between gap-2 text-xs text-secondary-foreground pt-2 border-t border-border-subtle">
-              <span>
-                Kelas:{" "}
-                <strong className="text-foreground">
-                  {row.assignedClassName ?? "Belum ditempatkan"}
-                </strong>
-              </span>
-              <div
-                className="flex items-center gap-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {canVerifyStudent &&
-                  (row.registrationStatus === "VERIFIED" ||
-                    row.registrationStatus === "WAITLIST") &&
-                  !row.assignedClassId && (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        setQuickPlaceStudent(row);
-                        setPlaceError(null);
-                      }}
-                    >
-                      Tempatkan ke kelas
-                    </Button>
-                  )}
-                <Button asChild variant="ghost" size="sm">
+            {/* Baris 2 & 3: Metadata Kunci (Kelas & Jenjang Pendidikan) */}
+            <p className="text-xs text-secondary-foreground leading-normal">
+              <span className="font-medium text-foreground">
+                {row.assignedClassName ?? "Belum ditempatkan"}
+              </span>{" "}
+              · {row.educationLevelLabel}
+            </p>
+
+            {/* Baris 4: Aksi Primer Tunggal */}
+            <div
+              className="pt-1 flex items-center justify-end"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {canVerifyStudent &&
+              (row.registrationStatus === "VERIFIED" ||
+                row.registrationStatus === "WAITLIST") &&
+              !row.assignedClassId ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setQuickPlaceStudent(row);
+                    setPlaceError(null);
+                  }}
+                  className="min-h-10 text-xs"
+                >
+                  Tempatkan ke kelas
+                </Button>
+              ) : (
+                <Button asChild variant="ghost" size="sm" className="min-h-10 text-xs text-secondary-foreground hover:text-foreground">
                   <Link
                     href={`/workspace/students/${row.id}`}
                     aria-label={`Buka profil peserta didik ${row.fullName}`}
                   >
-                    Buka profil
+                    Buka profil →
                   </Link>
                 </Button>
-              </div>
+              )}
             </div>
           </div>
         )}

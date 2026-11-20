@@ -23,7 +23,6 @@ import {
   type WorkflowStageItem,
 } from "@/components/patterns";
 import {
-  Badge,
   Button,
   Dialog,
   DialogBody,
@@ -486,28 +485,24 @@ export function GovernanceWorkspaceClient({
             return (
               <article
                 key={report.id}
-                className="rounded-card border border-border bg-surface p-5 sm:p-6 space-y-5"
+                className="rounded-card border border-border bg-surface p-4 sm:p-6 space-y-4"
               >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="neutral" size="sm">
-                        {report.reportTypeLabel}
-                      </Badge>
-                      <Badge variant="neutral" size="sm">
-                        Periode: {report.period}
-                      </Badge>
-                      <StatusBadge domain="report" status={report.status} />
-                    </div>
-                    <h2 className="text-base font-semibold text-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+                  <div className="space-y-1.5 min-w-0">
+                    <h2 className="text-base font-semibold text-foreground leading-snug">
                       {report.title}
                     </h2>
-                    <p className="text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <StatusBadge domain="report" status={report.status} />
+                      <span className="text-xs text-secondary-foreground">
+                        {report.reportTypeLabel} · Periode: {report.period}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground pt-0.5">
                       Disusun oleh{" "}
-                      <strong className="text-foreground">
+                      <span className="font-medium text-foreground">
                         {report.creatorName}
-                      </strong>{" "}
-                      · {PRIVACY_MESSAGES.auditLogged}
+                      </span>
                     </p>
                   </div>
 

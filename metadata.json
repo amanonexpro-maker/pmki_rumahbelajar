@@ -1,0 +1,8 @@
+{
+  "name": "Remix Platform Pelayanan Terpadu PMKI",
+  "description": "Platform Pelayanan Terpadu PMKI dengan pilot Rumah Belajar Griya Asih Lawang. Sistem terpadu untuk pendidikan, bimbingan belajar, absensi, perkembangan siswa, dan manajemen pelayanan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

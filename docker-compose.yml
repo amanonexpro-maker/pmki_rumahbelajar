@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: pmki_terpadu_postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${SQL_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${SQL_DB_NAME:-pmki_terpadu}
+      POSTGRES_USER: ${SQL_ADMIN_USER:-pmki_admin}
+      POSTGRES_PASSWORD: ${SQL_ADMIN_PASSWORD:?Set SQL_ADMIN_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - pmki_network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pmki_terpadu_pgadmin
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@pmki.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD-}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pmki_network
+    profiles:
+      - dev
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  pmki_network:
+    driver: bridge

@@ -1,0 +1,1574 @@
+You are acting as a Senior Full-Stack Software Architect,
+Senior Next.js Engineer, PostgreSQL Database Architect,
+Security Engineer, UI/UX Engineer, DevOps Engineer,
+and Technical Lead.
+
+Your task is to DESIGN AND IMPLEMENT a production-oriented web application:
+
+PLATFORM PELAYANAN TERPADU PMKI
+
+with the first implementation/pilot:
+
+RUMAH BELAJAR GRIYA ASIH LAWANG
+
+Do not treat this merely as a landing page.
+
+This is a modular web application consisting of:
+1. Public Website
+2. Authentication
+3. Internal Dashboard
+4. Organization & Access Management
+5. Program & Activity Management
+6. Rumah Belajar / Education Module
+7. Beneficiary / Student Management
+8. Attendance
+9. Student Development
+10. Consent & Media Management
+11. Publishing
+12. Reporting
+13. Approval Workflow
+14. Audit Trail
+15. Administration
+
+The application must be designed so that Rumah Belajar is only the FIRST PILOT.
+The architecture must remain general enough to support other PMKI services,
+organizations, units, programs, and target groups later.
+
+========================================================
+1. REQUIRED TECHNOLOGY STACK
+========================================================
+
+Build the application using:
+
+Frontend / Full-stack Framework
+- Next.js
+- React
+- TypeScript
+- App Router
+- React Server Components by default
+- Client Components only where interaction requires them
+- Server Actions and/or Route Handlers where appropriate
+
+UI
+- Tailwind CSS
+- Responsive mobile-first design
+- Accessible UI components
+- Clean, modern, minimal institutional design
+- reusable design system
+- consistent typography, spacing, forms, cards, tables, badges and dialogs
+
+Validation
+- Zod
+
+Database
+- PostgreSQL
+
+ORM
+- Drizzle ORM
+- drizzle-kit migrations
+
+Authentication
+- Auth.js
+- local credentials authentication for MVP
+- secure password hashing
+- session management
+- architecture must allow external identity providers later
+
+Infrastructure
+- Docker
+- Docker Compose
+
+Required containers:
+
+1. app
+   Next.js application
+
+2. db
+   PostgreSQL
+
+Optional development service:
+3. pgAdmin
+
+Development environment must be reproducible using Docker Compose.
+
+========================================================
+2. ARCHITECTURAL PRINCIPLES
+========================================================
+
+Use MODULAR MONOLITH architecture.
+
+DO NOT build microservices.
+
+Use:
+- one primary Next.js application
+- one primary PostgreSQL database
+- domain-oriented modules
+- shared infrastructure only where appropriate
+
+Suggested architecture:
+
+src/
+  app/
+  components/
+  features/
+  lib/
+  db/
+  auth/
+  actions/
+  services/
+  repositories/
+  validators/
+  permissions/
+  types/
+  config/
+
+features/
+  organizations/
+  users/
+  access/
+  service-units/
+  programs/
+  activities/
+  beneficiaries/
+  education/
+  attendance/
+  assessments/
+  development/
+  consent/
+  media/
+  publications/
+  reports/
+  approvals/
+  audit/
+
+Keep domain logic outside React components.
+
+UI components must not directly contain database queries.
+
+Separate:
+
+UI
+   ↓
+Server Action / Route Handler
+   ↓
+Service / Use Case
+   ↓
+Authorization
+   ↓
+Repository / Query layer
+   ↓
+Drizzle ORM
+   ↓
+PostgreSQL
+
+Do not prematurely introduce abstractions.
+
+Prefer code that is:
+- explicit
+- readable
+- testable
+- strongly typed
+- secure by default
+- easy to maintain
+
+========================================================
+3. ORGANIZATIONAL MODEL
+========================================================
+
+The system must support hierarchical organizations.
+
+Initial conceptual hierarchy:
+
+PMKI Sinodal
+    ↓
+Mupel
+    ↓
+Jemaat
+    ↓
+Unit Pelayanan
+    ↓
+Program
+    ↓
+Activity
+
+However, do NOT hard-code a rigid four-level hierarchy.
+
+organizations must support parent-child relationships.
+
+A service unit may belong to:
+- Jemaat
+- Mupel
+- Sinodal
+
+depending on its organizational mandate.
+
+Every Service Unit must have exactly one primary owning organization.
+
+Programs may involve multiple organizations but MUST have:
+- one primary owning organization
+- one responsible person
+
+Cross-organization access IS NOT automatic.
+
+========================================================
+4. MULTI-ORGANIZATION DATA MODEL
+========================================================
+
+Design the database as a multi-organization system.
+
+Important records should contain ownership information where appropriate:
+
+organization_id
+service_unit_id
+created_by
+updated_by
+
+Implement organization scoping systematically.
+
+A user MUST NOT access an organization's operational records merely by knowing:
+- record ID
+- URL
+- API endpoint
+
+Every protected operation must perform server-side authorization.
+
+Never rely solely on UI hiding.
+
+========================================================
+5. AUTHENTICATION
+========================================================
+
+Implement MVP authentication using Auth.js.
+
+Initial login:
+EMAIL + PASSWORD
+
+Requirements:
+
+- administrator-created/invited users
+- password hashing
+- secure session
+- active/inactive account status
+- last login metadata if appropriate
+- logout
+- protected dashboard
+- unauthorized handling
+
+Do NOT require Google OAuth for MVP.
+
+Design authentication so external identity providers can be added later.
+
+Required environment variables should include appropriately named variables for:
+
+DATABASE_URL
+AUTH_SECRET
+AUTH_URL
+
+and any deployment-specific variables.
+
+Never hard-code secrets.
+
+Provide:
+
+.env.example
+
+but NEVER commit real credentials.
+
+========================================================
+6. AUTHORIZATION MODEL
+========================================================
+
+Authorization must implement:
+
+ROLE
++
+ORGANIZATION SCOPE
++
+RESOURCE ASSIGNMENT
++
+DATA CLASSIFICATION
+
+Do NOT implement authorization as:
+
+if (role === "ADMIN")
+
+scattered throughout the project.
+
+Create a centralized permission system.
+
+Examples:
+
+can(user, "student.read", context)
+can(user, "student.update", context)
+can(user, "attendance.create", context)
+can(user, "report.approve", context)
+can(user, "publication.publish", context)
+
+Suggested initial roles:
+
+PLATFORM_ADMIN
+ORG_ADMIN
+UNIT_COORDINATOR
+PROGRAM_COORDINATOR
+TEACHER
+VOLUNTEER
+EDITOR
+REVIEWER
+APPROVER
+AUDITOR
+STAKEHOLDER
+
+Roles are technical security constructs and should not be tightly coupled to job titles.
+
+Permissions should be represented independently.
+
+========================================================
+7. DATA CLASSIFICATION
+========================================================
+
+Support:
+
+PUBLIC
+STAKEHOLDER
+INTERNAL
+CONFIDENTIAL
+
+Examples:
+
+PUBLIC
+- published organizational profile
+- public news
+- public schedules
+
+STAKEHOLDER
+- approved stakeholder reports
+
+INTERNAL
+- program drafts
+- operational activity records
+
+CONFIDENTIAL
+- children's identity
+- guardian contact
+- learning/development records
+
+Rules:
+
+CONFIDENTIAL is DENY-BY-DEFAULT.
+
+Never expose confidential data through public endpoints.
+
+========================================================
+8. DATABASE MODEL
+========================================================
+
+Design normalized PostgreSQL tables using Drizzle ORM.
+
+At minimum consider the following domains.
+
+CORE ORGANIZATION
+
+organizations
+service_units
+
+IDENTITY
+
+users
+memberships
+roles
+permissions
+role_permissions
+user_role_assignments
+resource_assignments
+
+PROGRAM MANAGEMENT
+
+services
+programs
+program_organizations
+activities
+
+PEOPLE / BENEFICIARIES
+
+beneficiaries
+guardians
+beneficiary_guardians
+program_enrollments
+
+EDUCATION / RUMAH BELAJAR
+
+academic_years
+classes
+subjects
+class_subjects
+teachers
+teacher_assignments
+class_enrollments
+class_schedules
+
+ATTENDANCE
+
+attendance_sessions
+attendance_records
+
+LEARNING
+
+learning_materials
+assessments
+assessment_results
+student_development_notes
+
+CONSENT
+
+consents
+
+MEDIA
+
+media_assets
+media_links
+
+CONTENT
+
+posts
+events
+galleries
+publications
+
+REPORTING
+
+indicators
+indicator_targets
+indicator_results
+reports
+report_versions
+
+APPROVAL
+
+approval_workflows
+approval_steps
+approval_instances
+approval_actions
+
+SYSTEM
+
+notifications
+audit_logs
+
+Do not blindly create these tables.
+
+First evaluate:
+- normalization
+- ownership
+- foreign keys
+- indexes
+- unique constraints
+- soft delete/archive needs
+- retention considerations
+- auditability
+
+Use UUID or another deliberate identifier strategy consistently.
+
+Every important table should consider:
+
+id
+created_at
+updated_at
+created_by
+updated_by
+
+when appropriate.
+
+Use database constraints rather than relying only on application validation.
+
+========================================================
+9. PILOT: RUMAH BELAJAR GRIYA ASIH
+========================================================
+
+The first service unit is:
+
+Rumah Belajar Griya Asih Lawang.
+
+Public identity:
+
+Name:
+Rumah Belajar Griya Asih
+
+Headline:
+"Ayo Belajar & Tumbuh Bersama!"
+
+Slogan:
+"Dare to be Great"
+"Berani Menjadi Unggul"
+
+Initial educational programs:
+
+1. Mathematics
+2. English
+3. Character Education
+4. Reading activities / reading assistance
+
+Target students:
+
+TK
+SD grades 1-6
+SMP grades 7-8
+
+General learning schedule:
+
+Saturday
+15:00 - 17:15 WIB
+
+Public website should include at least:
+
+/
+ /tentang
+ /program
+ /program/[slug]
+ /kelas
+ /jadwal
+ /berita
+ /berita/[slug]
+ /agenda
+ /galeri
+ /pendaftaran
+ /kontak
+
+The public homepage should contain:
+
+1. Navbar
+2. Hero
+3. Introduction
+4. Learning programs
+5. About section
+6. Why / mission
+7. Schedule
+8. Activities/documentation
+9. News/events
+10. Registration CTA
+11. Contact
+12. Footer
+
+Do NOT expose participant/student personal information publicly.
+
+========================================================
+10. REGISTRATION
+========================================================
+
+Create a public student registration workflow.
+
+Parent/guardian can submit registration.
+
+Registration must NOT immediately create an active student.
+
+Workflow:
+
+SUBMITTED
+↓
+PENDING_VERIFICATION
+↓
+VERIFIED
+↓
+CLASS_PLACEMENT
+↓
+ACTIVE
+
+Alternative statuses:
+
+REJECTED
+WAITLIST
+CANCELLED
+
+Capture only necessary information.
+
+Consent must be handled independently from enrollment status.
+
+At minimum distinguish:
+
+1. consent to process registration/personal data
+2. consent to publish photo/video
+
+Refusing public photo/video permission MUST NOT prevent participation in learning.
+
+========================================================
+11. PARENT / GUARDIAN MODEL
+========================================================
+
+Do NOT put guardian information directly inside the student table.
+
+Use appropriate relational modeling.
+
+A child may have multiple guardians.
+
+A guardian may be responsible for multiple children.
+
+Store the relationship explicitly.
+
+Examples:
+
+FATHER
+MOTHER
+GUARDIAN
+OTHER
+
+========================================================
+12. EDUCATION MODULE
+========================================================
+
+Implement:
+
+Academic Year
+Class
+Subject
+Teacher
+Teacher Assignment
+Student Enrollment
+Class Schedule
+
+The system should support:
+
+Academic Year
+   ↓
+Classes
+   ↓
+Subjects
+   ↓
+Teacher Assignments
+   ↓
+Student Enrollments
+   ↓
+Schedules
+
+Do not hard-code grade labels into business logic.
+
+Use reference/configurable values where appropriate.
+
+========================================================
+13. ATTENDANCE
+========================================================
+
+Attendance should be session-based.
+
+Teacher:
+1. chooses class/session
+2. sees assigned students
+3. records:
+
+PRESENT
+ABSENT
+SICK
+PERMITTED
+
+Store metadata as necessary.
+
+Teachers may only modify attendance for assigned classes unless authorized otherwise.
+
+========================================================
+14. STUDENT DEVELOPMENT
+========================================================
+
+Support basic learning/development records.
+
+Initial model can contain:
+
+student
+academic_year
+class
+subject
+teacher
+record_date
+category
+observation
+progress
+follow_up
+visibility/classification
+
+Development notes are CONFIDENTIAL by default.
+
+They must never appear on public routes.
+
+========================================================
+15. MEDIA CONSENT
+========================================================
+
+Model media consent explicitly.
+
+Consent record should be able to capture:
+
+participant
+guardian
+consent_type
+status
+scope
+effective date
+revocation date
+recorded_by
+evidence/notes
+
+Possible states:
+
+GRANTED
+DENIED
+REVOKED
+EXPIRED
+
+Before any image is eligible for public publishing:
+
+media consent must be checked.
+
+Do not assume consent from program participation.
+
+========================================================
+16. PUBLICATION WORKFLOW
+========================================================
+
+Implement controlled publishing.
+
+Example states:
+
+DRAFT
+REVIEW
+PRIVACY_REVIEW
+APPROVED
+SCHEDULED
+PUBLISHED
+ARCHIVED
+
+Public content can originate from:
+
+- organizational profile
+- verified activities
+- approved event
+- approved media
+- public version of approved report
+- editorial article
+
+Internal operational data must NEVER automatically become public content.
+
+========================================================
+17. REPORTING
+========================================================
+
+Support initial report types:
+
+ACTIVITY
+PROGRAM
+UNIT
+PERIOD
+PARTICIPANT_RECAP
+STUDENT_DEVELOPMENT
+STAKEHOLDER
+PUBLIC_SUMMARY
+
+Reports should support version/status metadata.
+
+Suggested workflow:
+
+DRAFT
+↓
+PROGRAM_REVIEW
+↓
+UNIT_VALIDATION
+↓
+ORGANIZATION_APPROVAL
+↓
+APPROVED
+
+Then an approved report may produce:
+
+STAKEHOLDER VERSION
+and/or
+PUBLIC SUMMARY
+
+Never expose confidential details in public reports.
+
+========================================================
+18. SEPARATION OF DUTIES
+========================================================
+
+Implement approval logic capable of preventing the same person from:
+
+creating
+AND
+final-approving
+
+the same report/publication when the configured policy requires separation of duties.
+
+Keep approval history immutable.
+
+========================================================
+19. AUDIT LOG
+========================================================
+
+Audit important operations.
+
+At minimum consider:
+
+LOGIN
+LOGIN_FAILED
+LOGOUT
+
+CREATE
+UPDATE
+ARCHIVE
+RESTORE
+
+ROLE_ASSIGN
+ROLE_REVOKE
+
+APPROVE
+REJECT
+RETURN_FOR_REVISION
+
+PUBLISH
+UNPUBLISH
+
+CONSENT_GRANT
+CONSENT_REVOKE
+
+Audit entry should include when appropriate:
+
+actor_user_id
+organization_id
+action
+entity_type
+entity_id
+previous_data or safe diff
+new_data or safe diff
+timestamp
+request metadata
+
+Do not store passwords, session tokens or sensitive secrets in audit logs.
+
+========================================================
+20. DASHBOARD
+========================================================
+
+Create:
+
+/dashboard
+
+with role-aware navigation.
+
+Possible navigation:
+
+Dashboard
+
+Organization
+  Organizations
+  Service Units
+
+Programs
+  Programs
+  Activities
+
+Rumah Belajar
+  Academic Years
+  Classes
+  Subjects
+  Schedules
+  Teachers
+  Students
+  Guardians
+  Attendance
+  Assessments
+  Student Development
+
+Content
+  News
+  Events
+  Gallery
+
+Reports
+  Reports
+  Approvals
+
+Administration
+  Users
+  Roles
+  Permissions
+  Audit Log
+
+The menu is presentation only.
+
+Every corresponding server-side operation MUST independently check permissions.
+
+========================================================
+21. DASHBOARD UX
+========================================================
+
+Use a clean SaaS-like internal UI.
+
+Desktop:
+
+Sidebar
+Topbar
+Breadcrumb
+Page Header
+Content
+
+Mobile:
+
+Drawer navigation.
+
+Create reusable patterns:
+
+DataTable
+Filters
+Search
+Pagination
+Form
+Modal/Dialog
+Confirmation
+Empty state
+Error state
+Loading/skeleton
+Status Badge
+Toast
+Breadcrumb
+Pagination
+
+Forms must have clear:
+- labels
+- descriptions
+- validation
+- error messages
+
+========================================================
+22. PUBLIC WEBSITE VISUAL DESIGN
+========================================================
+
+Design an educational, welcoming, modern, trustworthy interface.
+
+Avoid:
+- visual clutter
+- excessive animation
+- gimmicky effects
+- childish design that reduces institutional credibility
+
+Use:
+
+- generous whitespace
+- strong readable typography
+- clear call-to-actions
+- useful photography
+- accessible contrast
+- subtle transitions
+- consistent card styles
+- responsive typography
+
+Suggested visual direction:
+
+Primary:
+Deep Green / Teal
+
+Secondary:
+Warm Green
+
+Accent:
+Warm Gold / Yellow
+
+Neutral:
+Off-white
+White
+Slate
+
+Do not blindly use exact colors.
+Create semantic design tokens.
+
+========================================================
+23. RESPONSIVENESS
+========================================================
+
+Everything must work on:
+
+smartphone
+tablet
+laptop
+desktop
+
+Test important layouts at minimum around:
+
+375px
+768px
+1024px
+1440px
+
+Avoid horizontal scrolling except intentionally scrollable data tables.
+
+========================================================
+24. ACCESSIBILITY
+========================================================
+
+Implement accessibility as part of the initial architecture.
+
+Requirements:
+
+semantic HTML
+keyboard navigation
+visible focus states
+accessible labels
+sensible ARIA only where needed
+sufficient contrast
+error messages connected to fields
+meaningful headings
+alt text for meaningful images
+reduced-motion consideration
+large touch targets
+
+Do not use color as the only status indicator.
+
+========================================================
+25. SECURITY REQUIREMENTS
+========================================================
+
+Apply:
+
+deny by default
+least privilege
+server-side authorization
+organization scoping
+input validation
+Zod schema validation
+secure cookies
+safe password hashing
+rate limiting strategy for authentication
+safe error responses
+SQL injection protection through parameterized ORM operations
+XSS-aware rendering
+CSRF-aware mutation design
+secret management
+file upload restrictions
+safe filenames
+MIME validation
+size limits
+authorization on downloads
+
+Never trust:
+
+client role
+client organization ID
+hidden form fields
+URL IDs
+
+Re-resolve authorization from server session and database.
+
+========================================================
+26. PRIVACY
+========================================================
+
+The application contains data involving children.
+
+Treat child-related identity information as confidential.
+
+Public UI must not reveal:
+
+full participant lists
+guardian contacts
+student development notes
+assessment details
+private attendance records
+internal consent evidence
+
+Public galleries must use only approved/publication-eligible media.
+
+Build privacy constraints into:
+- schema
+- services
+- permissions
+- publication workflow
+
+not merely the UI.
+
+========================================================
+27. POSTGRESQL
+========================================================
+
+Use PostgreSQL as the single source of truth for structured operational data.
+
+Provide:
+
+- schema
+- constraints
+- indexes
+- migrations
+- seed scripts
+- development fixtures separately if needed
+
+Consider indexes for common filters:
+
+organization_id
+service_unit_id
+program_id
+academic_year_id
+class_id
+student_id
+status
+created_at
+published_at
+
+Do not add indexes blindly.
+
+Explain important index choices.
+
+========================================================
+28. DRIZZLE ORM
+========================================================
+
+Use Drizzle ORM consistently.
+
+Suggested structure:
+
+src/db/
+  index.ts
+  schema/
+      organizations.ts
+      users.ts
+      programs.ts
+      education.ts
+      attendance.ts
+      consent.ts
+      media.ts
+      reports.ts
+      audit.ts
+      index.ts
+  queries/
+  seeds/
+
+drizzle.config.ts
+
+Generate explicit migrations.
+
+Do not rely only on schema push for production.
+
+Provide scripts similar to:
+
+db:generate
+db:migrate
+db:seed
+db:studio
+
+========================================================
+29. DOCKER
+========================================================
+
+Containerize the application.
+
+Provide:
+
+Dockerfile
+docker-compose.yml
+.dockerignore
+.env.example
+
+Dockerfile should use multi-stage build if appropriate.
+
+Application should run as a non-root user where practical.
+
+Docker Compose must define:
+
+app
+db
+
+PostgreSQL must have:
+
+healthcheck
+persistent volume
+environment variables
+
+Application startup must account for database availability.
+
+Do not bake secrets into image layers.
+
+========================================================
+30. LOCAL DEVELOPMENT
+========================================================
+
+Developer should be able to run the project using a predictable sequence such as:
+
+copy .env.example to .env.local
+
+install dependencies
+
+start PostgreSQL / Docker Compose
+
+run migrations
+
+run seed
+
+start development server
+
+Provide exact Windows PowerShell compatible commands where possible.
+
+========================================================
+31. SEED DATA
+========================================================
+
+Provide development seed data.
+
+Seed examples may include:
+
+organization:
+PMKI Sinodal
+Mupel Jawa Timur
+
+service unit:
+Rumah Belajar Griya Asih Lawang
+
+programs:
+Bimbingan Belajar
+Kegiatan Membaca
+Pendidikan Karakter
+
+subjects:
+Matematika
+Bahasa Inggris
+Pendidikan Karakter
+
+Use clearly recognizable development data.
+
+Never pretend seed data is real production data.
+
+========================================================
+32. ERROR HANDLING
+========================================================
+
+Build predictable error handling.
+
+Differentiate:
+
+Validation Error
+Authentication Error
+Authorization Error
+Not Found
+Conflict
+Database Failure
+Server Error
+
+Users should receive useful messages without exposing:
+- stack traces
+- SQL
+- secrets
+- internal infrastructure details
+
+========================================================
+33. OBSERVABILITY
+========================================================
+
+Create an extensible logging approach.
+
+At minimum separate:
+
+console/development diagnostics
+application audit trail
+unexpected application errors
+
+Audit logs are NOT the same as debug logs.
+
+========================================================
+34. TESTING
+========================================================
+
+Provide a testing strategy.
+
+Priority:
+
+1. permission tests
+2. organization isolation tests
+3. authentication tests
+4. core domain service tests
+5. registration workflow tests
+6. attendance tests
+7. media consent/publication tests
+8. approval workflow tests
+
+Include integration tests for security-sensitive workflows.
+
+Important invariant:
+
+User from organization A must not be able to read/write confidential records belonging exclusively to organization B without explicit access.
+
+========================================================
+35. DOCUMENTATION
+========================================================
+
+Generate:
+
+README.md
+docs/
+  architecture.md
+  database.md
+  authentication.md
+  authorization.md
+  docker.md
+  development.md
+  deployment.md
+  security.md
+
+README must explain:
+
+project purpose
+stack
+requirements
+environment variables
+installation
+Docker
+database migration
+seed
+development
+production build
+troubleshooting
+
+========================================================
+36. ENGINEERING RULES
+========================================================
+
+Follow these rules throughout implementation:
+
+1. Never invent requirements silently.
+2. If an assumption is necessary, document it.
+3. Do not remove existing working functionality without explaining why.
+4. Avoid unnecessary dependencies.
+5. Prefer server components by default.
+6. Do not fetch your own internal API unnecessarily from server components.
+7. Validate external/user input.
+8. Authorize every protected mutation.
+9. Apply organization scope to database queries.
+10. Avoid N+1 queries.
+11. Use database transactions for multi-step operations that must remain consistent.
+12. Do not hard-code business statuses across many files.
+13. Keep enums/constants centralized.
+14. Do not mix database models with UI models unnecessarily.
+15. Never expose secrets to NEXT_PUBLIC environment variables.
+16. Never put sensitive data into logs.
+17. Do not use `any` merely to silence TypeScript.
+18. Keep TypeScript strict.
+19. Do not ignore lint/type errors.
+20. Never declare a phase complete if the application does not build.
+
+========================================================
+37. IMPLEMENTATION STRATEGY
+========================================================
+
+DO NOT implement the entire application in one step.
+
+Use phases.
+
+PHASE 0
+Repository and infrastructure
+
+Deliver:
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Docker
+- PostgreSQL
+- Drizzle
+- env configuration
+- migrations
+- basic seed
+- health/readiness mechanism
+- README
+
+STOP and verify.
+
+PHASE 1
+Authentication + Organization + RBAC
+
+Deliver:
+- users
+- credentials login
+- session
+- organizations
+- memberships
+- roles
+- permissions
+- organization scope
+- protected dashboard
+- logout
+- audit login
+
+STOP and verify.
+
+PHASE 2
+Public Website
+
+Deliver:
+- homepage
+- about
+- programs
+- classes
+- schedule
+- news
+- agenda
+- gallery
+- contact
+- public registration
+
+STOP and verify.
+
+PHASE 3
+Rumah Belajar Core
+
+Deliver:
+- academic years
+- classes
+- subjects
+- schedules
+- teachers
+- students
+- guardians
+- enrollment
+
+STOP and verify.
+
+PHASE 4
+Attendance + Development
+
+Deliver:
+- attendance sessions
+- attendance records
+- assessments
+- development notes
+
+STOP and verify.
+
+PHASE 5
+Consent + Media
+
+Deliver:
+- consent records
+- media metadata
+- media privacy status
+- publication eligibility
+
+STOP and verify.
+
+PHASE 6
+Programs + Activities
+
+Deliver:
+- service catalog
+- programs
+- activities
+- participants
+- activity documentation
+
+STOP and verify.
+
+PHASE 7
+Reports + Approval
+
+Deliver:
+- reports
+- report versions
+- reviewer workflow
+- approval
+- stakeholder/public versions
+
+STOP and verify.
+
+PHASE 8
+Publishing
+
+Deliver:
+- news
+- events
+- gallery
+- editorial workflow
+- privacy review
+- scheduled publication
+
+STOP and verify.
+
+PHASE 9
+Hardening
+
+Deliver:
+- security review
+- RBAC test coverage
+- organization isolation testing
+- accessibility review
+- performance review
+- database index review
+- Docker production build
+- backup/restore documentation
+
+========================================================
+38. REQUIRED OUTPUT FOR EVERY IMPLEMENTATION PHASE
+========================================================
+
+Before writing code:
+
+1. Explain the goal.
+2. State assumptions.
+3. Show affected architecture.
+4. Show files that will be created/changed.
+5. Explain database impact.
+
+Then implement.
+
+For EVERY new file:
+
+Print its COMPLETE path.
+
+For existing files:
+
+Prefer presenting precise edits or full replacement when the file is small enough.
+
+After implementation provide:
+
+1. Files created
+2. Files modified
+3. Migration changes
+4. Environment variables
+5. Commands to run
+6. Verification steps
+7. Expected result
+8. Common errors
+9. Troubleshooting
+10. Security notes
+
+========================================================
+39. DEFINITION OF DONE
+========================================================
+
+A phase is not complete until:
+
+- application builds
+- TypeScript passes
+- lint passes
+- migration is valid
+- required pages load
+- authorization checks exist
+- sensitive routes are protected
+- Docker configuration remains valid
+- instructions are reproducible
+
+Do not merely generate code.
+
+VERIFY architectural consistency after every phase.
+
+========================================================
+40. STARTING INSTRUCTION
+========================================================
+
+Begin with:
+
+PHASE 0 — Repository & Infrastructure
+
+Before generating any code, first provide:
+
+A. Final architecture
+B. Folder structure
+C. Dependency list
+D. Database connection strategy
+E. Docker architecture
+F. Environment variable design
+G. Migration strategy
+H. Seed strategy
+I. Development workflow
+J. Phase 0 acceptance criteria
+
+Then proceed with implementation step by step.
+
+Do NOT proceed to Phase 1 until Phase 0 has been verified successfully.

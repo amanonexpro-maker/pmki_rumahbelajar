@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Platform Pelayanan Terpadu PMKI - Rumah Belajar Griya Asih</title>
+    <meta name="description" content="Platform Pelayanan Terpadu PMKI dengan pilot Rumah Belajar Griya Asih Lawang. Ayo Belajar & Tumbuh Bersama! Dare to be Great." />
+    <meta property="og:title" content="Platform Pelayanan Terpadu PMKI - Rumah Belajar Griya Asih" />
+    <meta property="og:description" content="Platform Pelayanan Terpadu PMKI dengan pilot Rumah Belajar Griya Asih Lawang. Ayo Belajar & Tumbuh Bersama! Dare to be Great." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      try {
+        const preference = localStorage.getItem('pmki_theme') || 'system';
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const resolvedTheme = preference === 'system'
+          ? (systemPrefersDark ? 'dark' : 'light')
+          : preference;
+        document.documentElement.dataset.theme = resolvedTheme;
+        document.documentElement.dataset.themePreference = preference;
+      } catch {
+        document.documentElement.dataset.theme = 'light';
+        document.documentElement.dataset.themePreference = 'system';
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

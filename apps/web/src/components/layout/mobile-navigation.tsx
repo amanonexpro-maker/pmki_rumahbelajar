@@ -43,13 +43,16 @@ export function MobileNavigation({
         <SheetHeader>
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
-              <Image
-                src="/pmki_logo.svg"
-                alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
-                width={32}
-                height={32}
-                className="h-8 w-8 object-contain"
-              />
+              <picture className="flex items-center justify-center">
+                <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
+                <Image
+                  src="/pmki_logo.png"
+                  alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 object-contain"
+                />
+              </picture>
             </div>
             <div className="min-w-0 text-left">
               <SheetTitle>{serviceUnitName}</SheetTitle>

@@ -40,8 +40,13 @@ export const metadata: Metadata = {
     "Platform Pelayanan Terpadu PMKI (Pilot: Rumah Belajar Griya Asih Lawang). Ruang belajar inklusif, hangat, dan akuntabel.",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/pmki_app_icon.svg",
-    apple: "/pmki_app_icon.svg",
+    icon: [
+      { url: "/pmki_app_icon.svg", type: "image/svg+xml" },
+      { url: "/pmki_app_icon.png", type: "image/png" },
+    ],
+    apple: [
+      { url: "/pmki_app_icon.png", type: "image/png" },
+    ],
   },
   openGraph: {
     title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
@@ -51,6 +56,12 @@ export const metadata: Metadata = {
     locale: "id_ID",
     type: "website",
     images: [
+      {
+        url: "/pmki_og_image.png",
+        width: 1536,
+        height: 1024,
+        alt: "Rumah Belajar Griya Asih Lawang — PMKI",
+      },
       {
         url: "/pmki_og_image.svg",
         width: 1200,
@@ -64,7 +75,7 @@ export const metadata: Metadata = {
     title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
     description:
       "Ayo belajar dan tumbuh bersama. Rumah belajar yang terbuka bagi semua.",
-    images: ["/pmki_og_image.svg"],
+    images: ["/pmki_og_image.png", "/pmki_og_image.svg"],
   },
 };
 

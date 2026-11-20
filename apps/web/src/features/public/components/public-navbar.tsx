@@ -103,14 +103,17 @@ export function PublicNavbar({ activeSection }: PublicNavbarProps) {
             className="group flex min-w-0 shrink-0 items-center gap-3 text-left focus-ring rounded-control p-1 min-h-11"
           >
             <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-control bg-surface border border-border-subtle overflow-hidden">
-              <Image
-                src="/pmki_logo.svg"
-                alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
-                width={40}
-                height={40}
-                className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
-                priority
-              />
+              <picture className="flex items-center justify-center">
+                <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
+                <Image
+                  src="/pmki_logo.png"
+                  alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
+                  width={40}
+                  height={40}
+                  className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+                  priority
+                />
+              </picture>
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">

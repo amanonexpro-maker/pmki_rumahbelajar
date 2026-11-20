@@ -22,13 +22,16 @@ export function PublicFooter() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
-                <Image
-                  src="/pmki_logo.svg"
-                  alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
-                  width={36}
-                  height={36}
-                  className="w-8 h-8 object-contain"
-                />
+                <picture className="flex items-center justify-center">
+                  <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
+                  <Image
+                    src="/pmki_logo.png"
+                    alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
+                    width={36}
+                    height={36}
+                    className="w-8 h-8 object-contain"
+                  />
+                </picture>
               </div>
               <div>
                 <h2 className="text-foreground font-bold text-base leading-tight">

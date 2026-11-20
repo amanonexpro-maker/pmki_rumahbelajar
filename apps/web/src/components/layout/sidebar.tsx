@@ -145,13 +145,16 @@ export function Sidebar({
     >
       <div className="h-16 px-4 border-b border-border flex items-center gap-3 shrink-0">
         <div className="h-9 w-9 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
-          <Image
-            src="/pmki_logo.svg"
-            alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
-            width={32}
-            height={32}
-            className="h-8 w-8 object-contain"
-          />
+          <picture className="flex items-center justify-center">
+            <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
+            <Image
+              src="/pmki_logo.png"
+              alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
+              width={32}
+              height={32}
+              className="h-8 w-8 object-contain"
+            />
+          </picture>
         </div>
         <div className="min-w-0">
           <p className="text-sm font-bold text-foreground truncate leading-tight">

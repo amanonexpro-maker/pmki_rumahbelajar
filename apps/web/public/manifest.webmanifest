@@ -15,6 +15,24 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable any"
+    },
+    {
+      "src": "/pmki_app_icon.png",
+      "sizes": "1536x1536",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/pmki_app_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/pmki_app_icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
     }
   ],
   "shortcuts": [

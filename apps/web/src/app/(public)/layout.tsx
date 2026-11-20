@@ -21,8 +21,8 @@ export default function PublicLayout({
   return (
     <>
       <ThemeLock theme="light" />
-      {/* Ruang bawah agar konten tidak tertutup Bottom Nav (64px + safe-area) di mobile */}
-      <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+      {/* Ruang bawah agar konten tidak tertutup Bottom Nav (~68px + safe-area gesture bar) di mobile */}
+      <div className="pb-[calc(4.75rem+max(env(safe-area-inset-bottom,0px),12px))] md:pb-0">
         {children}
       </div>
       <PublicBottomNav />

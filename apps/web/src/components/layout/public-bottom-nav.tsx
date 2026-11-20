@@ -47,9 +47,9 @@ export function PublicBottomNav() {
   return (
     <nav
       aria-label="Navigasi cepat situs publik"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border-subtle bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border-subtle bg-surface/98 backdrop-blur-md pt-1 pb-[max(env(safe-area-inset-bottom,0px),12px)] shadow-overlay md:hidden"
     >
-      <ul className="flex h-16 items-stretch justify-around">
+      <ul className="flex h-14 items-stretch justify-around">
         {BOTTOM_NAV_ITEMS.map((item) => {
           const active = isItemActive(item, pathname);
           const Icon = item.icon;
@@ -59,7 +59,7 @@ export function PublicBottomNav() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-full min-h-11 w-full flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors duration-150 focus-ring",
+                  "flex h-full min-h-[44px] w-full flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors duration-150 focus-ring",
                   active || item.isPrimaryCTA
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground",

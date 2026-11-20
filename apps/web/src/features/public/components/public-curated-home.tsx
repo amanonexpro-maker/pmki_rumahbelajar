@@ -12,9 +12,7 @@ import {
   HeartHandshake,
   MapPin,
   MessageCircle,
-  Sparkles,
   Users,
-  WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { PublicPortalDataDTO } from "../types/public-types";
@@ -28,7 +26,6 @@ export interface PublicCuratedHomeProps {
  * - Restrained typography scale on mobile (24-28px, line-height 1.2-1.3).
  * - Concise, non-redundant schedule card with explicit 14.45 WIB arrival guidance.
  * - Swipeable 3-program carousel with 18% peek preview & interactive dot indicators.
- * - Prominent offline/PWA readiness micro-badge ("Bisa diakses luring").
  * - Single authentic classroom photograph (4:3 zero CLS) & canonical philosophy quote.
  */
 export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
@@ -74,30 +71,6 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
           <div className="max-w-3xl space-y-4 sm:space-y-5 text-left">
-            {/* Context Eyebrow & Offline Readiness Micro-badge Row */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-surface-subtle border border-border text-foreground text-xs font-medium">
-                <Sparkles
-                  aria-hidden="true"
-                  className="w-3.5 h-3.5 text-warning shrink-0"
-                />
-                <span>Pilot Pelayanan Terpadu {data.organizationName}</span>
-              </div>
-
-              {/* Offline / PWA Readiness Micro-Badge */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-primary-soft/70 border border-primary/25 text-xs font-medium text-foreground">
-                <WifiOff
-                  aria-hidden="true"
-                  className="w-3.5 h-3.5 text-primary shrink-0"
-                />
-                <span className="font-semibold text-primary">Bisa diakses luring</span>
-                <span className="text-muted-foreground" aria-hidden="true">•</span>
-                <span className="text-secondary-foreground text-[11px] sm:text-xs">
-                  Siap tanpa kuota di Kalirejo &amp; Lawang
-                </span>
-              </div>
-            </div>
-
             {/* Expressive Editorial Headline (Mobile Scale: 26-28px, line-height 1.25) */}
             <div className="space-y-2.5">
               <h1
@@ -108,11 +81,8 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
                 <span className="text-primary italic">tumbuh bersama.</span>
               </h1>
 
-              <p className="font-display text-base leading-snug sm:text-lg sm:leading-normal font-medium text-foreground text-balance">
-                Rumah belajar inklusif untuk anak usia TK hingga SMP di Lawang.{" "}
-                <span className="text-secondary-foreground font-normal">
-                  Mendampingi setiap anak menemukan kegembiraan belajar dengan pendekatan Happy Learning.
-                </span>
+              <p className="text-sm sm:text-base leading-relaxed text-secondary-foreground font-normal text-balance">
+                Rumah belajar inklusif untuk anak usia TK hingga SMP di Lawang.
               </p>
             </div>
 
@@ -388,10 +358,6 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
               <span>Hubungi pengurus via WhatsApp</span>
             </Link>
           </div>
-
-          <p className="text-xs text-muted-foreground pt-1">
-            Sekretariat &amp; Tempat Belajar: {data.locationFull}
-          </p>
         </div>
       </section>
     </div>

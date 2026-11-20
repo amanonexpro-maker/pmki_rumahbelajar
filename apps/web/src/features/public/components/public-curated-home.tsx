@@ -85,14 +85,14 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
               </div>
 
               {/* Offline / PWA Readiness Micro-Badge */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-primary-soft/60 border border-primary/20 text-xs font-medium text-foreground">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-primary-soft/70 border border-primary/25 text-xs font-medium text-foreground">
                 <WifiOff
                   aria-hidden="true"
                   className="w-3.5 h-3.5 text-primary shrink-0"
                 />
                 <span className="font-semibold text-primary">Bisa diakses luring</span>
-                <span className="text-muted-foreground hidden sm:inline" aria-hidden="true">•</span>
-                <span className="text-secondary-foreground text-[11px] sm:text-xs hidden sm:inline">
+                <span className="text-muted-foreground" aria-hidden="true">•</span>
+                <span className="text-secondary-foreground text-[11px] sm:text-xs">
                   Siap tanpa kuota di Kalirejo &amp; Lawang
                 </span>
               </div>
@@ -206,7 +206,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
             </p>
             <h2
               id="highlights-heading"
-              className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight leading-[1.25]"
+              className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-normal leading-tight"
             >
               Pendampingan belajar ramah anak
             </h2>
@@ -326,7 +326,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
                 </p>
                 <h2
                   id="story-preview-heading"
-                  className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight leading-[1.25]"
+                  className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-normal leading-tight"
                 >
                   Setiap anak berhak bertumbuh dengan percaya diri
                 </h2>
@@ -363,7 +363,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       <section className="bg-surface-subtle border-t border-border py-10 sm:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5 sm:space-y-6">
           <div className="space-y-2">
-            <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight leading-[1.25]">
+            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-normal leading-tight">
               {data.ctaHeadline}
             </h2>
             <p className="type-body text-secondary-foreground max-w-xl mx-auto">

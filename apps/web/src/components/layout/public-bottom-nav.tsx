@@ -47,7 +47,7 @@ export function PublicBottomNav() {
   return (
     <nav
       aria-label="Navigasi cepat situs publik"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border-subtle bg-surface/98 backdrop-blur-md pt-1 pb-[max(env(safe-area-inset-bottom,0px),12px)] shadow-overlay md:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border-subtle bg-surface/98 backdrop-blur-md pt-1 pb-[max(env(safe-area-inset-bottom,0px),16px)] shadow-overlay md:hidden"
     >
       <ul className="flex h-14 items-stretch justify-around">
         {BOTTOM_NAV_ITEMS.map((item) => {

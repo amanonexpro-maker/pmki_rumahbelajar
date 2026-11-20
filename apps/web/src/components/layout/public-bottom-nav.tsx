@@ -53,29 +53,32 @@ export function PublicBottomNav() {
         {BOTTOM_NAV_ITEMS.map((item) => {
           const active = isItemActive(item, pathname);
           const Icon = item.icon;
+          const isCTA = Boolean(item.isPrimaryCTA);
+
           return (
             <li key={item.label} className="flex-1">
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-full min-h-[44px] w-full flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors duration-150 focus-ring",
-                  active || item.isPrimaryCTA
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground",
-                  active && "font-semibold"
+                  "flex h-full min-h-[44px] w-full flex-col items-center justify-center gap-0.5 text-xs transition-colors duration-150 focus-ring",
+                  isCTA
+                    ? "font-semibold text-primary"
+                    : active
+                      ? "font-semibold text-primary"
+                      : "font-normal text-muted-foreground hover:text-foreground"
                 )}
               >
                 <span
                   className={cn(
-                    "inline-flex items-center justify-center",
-                    item.isPrimaryCTA && "rounded-full bg-primary-soft p-1"
+                    "inline-flex items-center justify-center transition-all duration-150",
+                    isCTA && "rounded-full bg-primary-soft p-1.5"
                   )}
                 >
                   <Icon
                     aria-hidden="true"
                     className="h-5 w-5"
-                    strokeWidth={active ? 2 : 1.5}
+                    strokeWidth={active || isCTA ? 2 : 1.5}
                   />
                 </span>
                 <span>{item.label}</span>

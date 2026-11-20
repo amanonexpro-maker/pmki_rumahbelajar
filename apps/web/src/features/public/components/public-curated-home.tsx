@@ -82,7 +82,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
               </h1>
 
               <p className="text-sm sm:text-base leading-relaxed text-secondary-foreground font-normal text-balance">
-                Rumah belajar inklusif untuk anak usia TK hingga SMP di Lawang.
+                Rumah belajar inklusif untuk anak usia TK hingga SMP di Lawang. Mendampingi setiap anak menemukan kegembiraan belajar dengan pendekatan Happy Learning.
               </p>
             </div>
 

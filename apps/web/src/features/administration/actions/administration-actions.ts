@@ -1,0 +1,111 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { getCurrentSession } from "@/server/auth/session";
+import type { ActionResult } from "@/server/contracts/result";
+import {
+  applyUserPermissionOverride,
+  createCustomRole,
+  provisionNewPlatformUser,
+  setPlatformUserActiveState,
+  updateUserRoleAssignments,
+  updateUserScopeAssignment,
+} from "../services/access-service";
+import type { AdminRoleRecordDTO } from "../types/administration-types";
+
+/**
+ * Thin Server Actions for Administration Domain (09 §6–8, D-20).
+ * Every mutation calls `revalidatePath("/workspace", "layout")` so dynamic RBAC
+ * changes take effect immediately on the very next request without re-login.
+ */
+export async function provisionNewPlatformUserAction(
+  payload: unknown
+): Promise<ActionResult<{ userId: string; email: string }>> {
+  const session = await getCurrentSession();
+  const result = await provisionNewPlatformUser(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace", "layout");
+    revalidatePath("/workspace/administration");
+    revalidatePath("/workspace/audit");
+  }
+  return result;
+}
+
+export async function updateUserRoleAssignmentsAction(
+  payload: unknown
+): Promise<ActionResult<{ userId: string; roleCodes: string[] }>> {
+  const session = await getCurrentSession();
+  const result = await updateUserRoleAssignments(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace", "layout");
+    revalidatePath("/workspace/administration");
+    revalidatePath("/workspace/audit");
+  }
+  return result;
+}
+
+export async function setPlatformUserActiveStateAction(
+  payload: unknown
+): Promise<ActionResult<{ userId: string; active: boolean }>> {
+  const session = await getCurrentSession();
+  const result = await setPlatformUserActiveState(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace", "layout");
+    revalidatePath("/workspace/administration");
+    revalidatePath("/workspace/audit");
+  }
+  return result;
+}
+
+export async function createCustomRoleAction(
+  payload: unknown
+): Promise<ActionResult<AdminRoleRecordDTO>> {
+  const session = await getCurrentSession();
+  const result = await createCustomRole(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace", "layout");
+    revalidatePath("/workspace/administration");
+    revalidatePath("/workspace/audit");
+  }
+  return result;
+}
+
+export async function applyUserPermissionOverrideAction(
+  payload: unknown
+): Promise<
+  ActionResult<{
+    userId: string;
+    permissionCode: string;
+    mode: "GRANT" | "REVOKE";
+  }>
+> {
+  const session = await getCurrentSession();
+  const result = await applyUserPermissionOverride(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace", "layout");
+    revalidatePath("/workspace/administration");
+    revalidatePath("/workspace/audit");
+  }
+  return result;
+}
+
+export async function updateUserScopeAssignmentAction(
+  payload: unknown
+): Promise<
+  ActionResult<{
+    membershipId: string;
+    userId: string;
+    serviceUnitId: string;
+    active: boolean;
+  }>
+> {
+  const session = await getCurrentSession();
+  const result = await updateUserScopeAssignment(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace", "layout");
+    revalidatePath("/workspace/administration");
+    revalidatePath("/workspace/audit");
+  }
+  return result;
+}
+

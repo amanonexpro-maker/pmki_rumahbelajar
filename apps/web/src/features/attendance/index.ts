@@ -1,0 +1,36 @@
+/**
+ * Attendance Domain Public API (11 §12).
+ */
+export const DOMAIN_NAME = "attendance" as const;
+
+export {
+  getAttendanceSessionWorkspaceView,
+  listAttendanceSessionHistory,
+  recordAttendanceSession,
+} from "./services/attendance-service";
+
+export { recordAttendanceSessionAction } from "./actions/attendance-actions";
+
+export {
+  authorizeReadAttendance,
+  authorizeRecordAttendance,
+  canReadAttendance,
+  canRecordAttendance,
+} from "./permissions/attendance-policy";
+
+export {
+  ATTENDANCE_STATUS_VALUES,
+  attendanceEntrySchema,
+  recordAttendanceSessionSchema,
+  type RecordAttendanceSessionInput,
+} from "./validators/attendance-validator";
+
+export type {
+  AttendanceRecordItemDTO,
+  AttendanceSessionDetailDTO,
+  AttendanceSessionHistoryItemDTO,
+  RecordAttendanceSessionResultDTO,
+} from "./types/attendance-types";
+
+export { AttendanceWorkspaceClient } from "./components/attendance-workspace-client";
+

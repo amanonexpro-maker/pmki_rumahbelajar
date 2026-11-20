@@ -1,0 +1,33 @@
+{
+  "name": "Platform Pelayanan Terpadu PMKI — Rumah Belajar Griya Asih",
+  "short_name": "PMKI Griya Asih",
+  "description": "Ruang belajar inklusif dan pengelolaan pelayanan Rumah Belajar Griya Asih Lawang.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F7F8F4",
+  "theme_color": "#1F6650",
+  "lang": "id-ID",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Catat presensi",
+      "short_name": "Presensi",
+      "url": "/workspace/attendance"
+    },
+    {
+      "name": "Peserta didik",
+      "short_name": "Peserta",
+      "url": "/workspace/students"
+    }
+  ]
+}
+

@@ -1,0 +1,75 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import {
+  Button,
+  Icon,
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui";
+import { SidebarNavigation, type SidebarNavGroup } from "./sidebar";
+import { ThemePicker } from "./theme-picker";
+
+export interface MobileNavigationProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  groups: SidebarNavGroup[];
+  currentPath: string;
+  userPermissions?: string[];
+  serviceUnitName?: string;
+  organizationName?: string;
+}
+
+export function MobileNavigation({
+  open,
+  onOpenChange,
+  groups,
+  currentPath,
+  userPermissions,
+  serviceUnitName = "Griya Asih Lawang",
+  organizationName = "PMKI Mupel Jawa Timur",
+}: MobileNavigationProps) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="left" className="w-72 max-w-[85vw] p-0">
+        <SheetHeader>
+          <SheetTitle>{serviceUnitName}</SheetTitle>
+          <SheetDescription>{organizationName}</SheetDescription>
+        </SheetHeader>
+
+        <SheetBody className="p-0">
+          <SidebarNavigation
+            groups={groups}
+            currentPath={currentPath}
+            userPermissions={userPermissions}
+            touchComfortable
+            onItemSelect={() => onOpenChange(false)}
+          />
+        </SheetBody>
+
+        <SheetFooter className="flex-col items-stretch gap-3">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-medium text-secondary-foreground">
+              Tema tampilan
+            </span>
+            <ThemePicker />
+          </div>
+          <Button asChild variant="secondary" size="md" fullWidth>
+            <Link href="/" onClick={() => onOpenChange(false)}>
+              <Icon icon={ArrowLeft} size="sm" />
+              <span>Kembali ke website publik</span>
+            </Link>
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+}
+

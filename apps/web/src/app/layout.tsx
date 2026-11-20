@@ -57,15 +57,24 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
+        url: "/pmki_og_image.jpg",
+        width: 1200,
+        height: 630,
+        type: "image/jpeg",
+        alt: "Rumah Belajar Griya Asih Lawang — PMKI",
+      },
+      {
         url: "/pmki_og_image.png",
-        width: 1536,
-        height: 1024,
+        width: 1200,
+        height: 630,
+        type: "image/png",
         alt: "Rumah Belajar Griya Asih Lawang — PMKI",
       },
       {
         url: "/pmki_og_image.svg",
         width: 1200,
         height: 480,
+        type: "image/svg+xml",
         alt: "Rumah Belajar Griya Asih Lawang — PMKI",
       },
     ],
@@ -75,7 +84,7 @@ export const metadata: Metadata = {
     title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
     description:
       "Ayo belajar dan tumbuh bersama. Rumah belajar yang terbuka bagi semua.",
-    images: ["/pmki_og_image.png", "/pmki_og_image.svg"],
+    images: ["/pmki_og_image.jpg", "/pmki_og_image.png", "/pmki_og_image.svg"],
   },
 };
 

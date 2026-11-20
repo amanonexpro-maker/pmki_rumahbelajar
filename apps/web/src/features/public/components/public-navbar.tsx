@@ -24,7 +24,7 @@ const PUBLIC_NAV_ITEMS: {
     href: "/program",
     routeMatch: "/program",
   },
-  { id: "jadwal", label: "Jadwal Belajar", href: "/#jadwal" },
+  { id: "jadwal", label: "Jadwal Belajar", href: "/program#jadwal" },
   {
     id: "galeri",
     label: "Dokumentasi",
@@ -38,7 +38,7 @@ const PUBLIC_NAV_ITEMS: {
     href: "/pendaftaran",
     routeMatch: "/pendaftaran",
   },
-  { id: "kontak", label: "Kontak", href: "/#kontak" },
+  { id: "kontak", label: "Kontak", href: "/kontak", routeMatch: "/kontak" },
 ];
 
 /** Item yang sudah tersedia di PublicBottomNav (< md) — tidak diulang di drawer mobile. */

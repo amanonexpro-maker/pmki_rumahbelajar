@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import {
   getPublicPortalData,
+  PublicCommunityStorySection,
   PublicFooter,
   PublicNavbar,
   PublicProgramsSection,
@@ -49,6 +50,15 @@ export default async function PublicProgramPage() {
           scheduleDay={data.scheduleDay}
           scheduleHours={data.scheduleHours}
           locationFull={data.locationFull}
+        />
+
+        <PublicCommunityStorySection
+          volunteerTeachers={data.volunteerTeachers}
+          galleryItems={data.galleryItems}
+          newsItems={data.newsItems}
+          showLocalContext={true}
+          showGallery={false}
+          showNews={false}
         />
 
         <PublicRegistrationCtaSection

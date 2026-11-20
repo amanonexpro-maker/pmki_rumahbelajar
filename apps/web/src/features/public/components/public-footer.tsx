@@ -182,6 +182,15 @@ export function PublicFooter() {
                   <span>Ms. Lilian (+62 813-3298-7491)</span>
                 </a>
               </div>
+
+              <div className="pt-2 border-t border-border-subtle">
+                <Link
+                  href="/kontak"
+                  className="inline-flex min-h-9 items-center text-xs font-semibold text-primary hover:underline"
+                >
+                  Informasi kontak &amp; lokasi lengkap →
+                </Link>
+              </div>
             </div>
           </div>
         </div>

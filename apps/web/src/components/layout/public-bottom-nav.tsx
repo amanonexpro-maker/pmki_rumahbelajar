@@ -26,8 +26,7 @@ const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
     matchPaths: ["/pendaftaran", "/registration"],
     isPrimaryCTA: true,
   },
-  // Kontak berada di anchor beranda (#kontak); aktif-state tidak dapat dibaca dari pathname.
-  { label: "Kontak", href: "/#kontak", icon: PhoneCall },
+  { label: "Kontak", href: "/kontak", icon: PhoneCall, matchPaths: ["/kontak"] },
 ];
 
 function isItemActive(item: BottomNavItem, pathname: string): boolean {

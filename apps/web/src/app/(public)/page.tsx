@@ -2,13 +2,9 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import {
   getPublicPortalData,
-  PublicCommunityStorySection,
+  PublicCuratedHome,
   PublicFooter,
-  PublicHero,
-  PublicMissionSection,
   PublicNavbar,
-  PublicProgramsSection,
-  PublicRegistrationCtaSection,
 } from "@/features/public";
 
 export const instant = false;
@@ -64,36 +60,7 @@ export default async function PublicHomePage() {
       <PublicNavbar />
 
       <main className="flex-1">
-        {/* 1. Hero (96px rhythm — UI-UX §18) */}
-        <PublicHero data={data} />
-
-        {/* 2. Mission (80px rhythm — UI-UX §18) */}
-        <PublicMissionSection data={data} />
-
-        {/* 3. Programs & Saturday Schedule (64px rhythm — UI-UX §18) */}
-        <PublicProgramsSection
-          programs={data.programs}
-          gradeTargets={data.gradeTargets}
-          scheduleSlots={data.scheduleSlots}
-          scheduleDay={data.scheduleDay}
-          scheduleHours={data.scheduleHours}
-          locationFull={data.locationFull}
-        />
-
-        {/* 4. Community Story, 13 Volunteer Teachers, Verified Gallery & Published News (96px rhythm — UI-UX §18) */}
-        <PublicCommunityStorySection
-          volunteerTeachers={data.volunteerTeachers}
-          galleryItems={data.galleryItems}
-          newsItems={data.newsItems}
-        />
-
-        {/* 5. Registration CTA & Community Contact (80px rhythm — UI-UX §18) */}
-        <PublicRegistrationCtaSection
-          ctaHeadline={data.ctaHeadline}
-          locationFull={data.locationFull}
-          coordinators={data.coordinators}
-          embedRegistrationWizard={true}
-        />
+        <PublicCuratedHome data={data} />
       </main>
 
       <PublicFooter />

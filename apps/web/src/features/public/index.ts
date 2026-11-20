@@ -43,3 +43,4 @@ export { PublicProgramsSection } from "./components/public-programs-section";
 export { PublicCommunityStorySection } from "./components/public-community-story-section";
 export { PublicContactForm } from "./components/public-contact-form";
 export { PublicRegistrationCtaSection } from "./components/public-registration-cta-section";
+export { PublicCuratedHome } from "./components/public-curated-home";

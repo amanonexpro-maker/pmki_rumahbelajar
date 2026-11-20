@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { MessageCircle, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 /**
- * Minimalist Sitemap & Trust Signal Footer (Fase 13e, UI-UX §28, 07 §25).
- * - Ultra-compact vertical profile (< 150px height on mobile, < 200px total).
- * - 3 clean rows: Brand & Trust, Essential Links, and Utility/Legal.
- * - Eliminated redundant program & schedule lists (already fully served on /program & /kontak).
+ * Ultra-Minimalist Sitemap & Trust Signal Footer (Fase 13f, UI-UX §28, 03 §9).
+ * - Ultra-compact profile (< 120px height on mobile).
+ * - 3 clean rows: Brand & Trust, Sitemap Links, Legal/Tagline.
+ * - Single Source of Truth: WA communication actions served on /kontak & Bottom Nav.
  */
 export function PublicFooter() {
   return (
@@ -90,37 +90,15 @@ export function PublicFooter() {
           </Link>
         </nav>
 
-        {/* BARIS 3: Utility & WhatsApp Row */}
-        <div className="border-t border-border-subtle pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-muted-foreground">
-          <p>
-            © 2026 Platform Pelayanan Terpadu PMKI. Pilot: RAAL Griya Asih Lawang.
-          </p>
-
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground">
-              Chat Pengurus:
-            </span>
-            <a
-              href="https://wa.me/628123235318"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Hubungi Ms. Evi melalui WhatsApp"
-              className="inline-flex min-h-8 items-center gap-1 px-2 py-1 rounded-control bg-surface hover:bg-surface-subtle border border-border text-[11px] font-medium text-foreground hover:text-primary transition-colors focus-ring"
-            >
-              <MessageCircle aria-hidden="true" className="w-3 h-3 text-primary" />
-              <span>Ms. Evi</span>
-            </a>
-            <a
-              href="https://wa.me/6281332987491"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Hubungi Ms. Lilian melalui WhatsApp"
-              className="inline-flex min-h-8 items-center gap-1 px-2 py-1 rounded-control bg-surface hover:bg-surface-subtle border border-border text-[11px] font-medium text-foreground hover:text-primary transition-colors focus-ring"
-            >
-              <MessageCircle aria-hidden="true" className="w-3 h-3 text-primary" />
-              <span>Ms. Lilian</span>
-            </a>
+        {/* BARIS 3: Legal & Tagline Row */}
+        <div className="border-t border-border-subtle pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 sm:gap-4 text-xs text-muted-foreground">
+          <div className="space-y-0.5">
+            <p className="font-medium text-foreground">Rumah Belajar Griya Asih</p>
+            <p>© 2026 PMKI Hub</p>
           </div>
+          <p className="text-xs text-muted-foreground italic font-medium">
+            Bersama Melayani, Bersama Bertumbuh
+          </p>
         </div>
       </div>
     </footer>

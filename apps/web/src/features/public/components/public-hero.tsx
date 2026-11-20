@@ -1,9 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import {
   Calendar,
   Clock,
-  GraduationCap,
   MapPin,
   Sparkles,
 } from "lucide-react";
@@ -90,20 +88,6 @@ export function PublicHero({ data }: PublicHeroProps) {
             <blockquote className="p-4 rounded-control bg-surface-subtle border-l-4 border-primary text-xs sm:text-sm text-foreground italic max-w-xl">
               {data.philosophyQuote}
             </blockquote>
-
-            {/* Welcoming Secondary Action (Sentence case per 10 §5A, touch >= 44px) */}
-            <div className="pt-2">
-              <Link
-                href="/program"
-                className="inline-flex min-h-12 items-center justify-center gap-2 px-6 py-3.5 rounded-control bg-surface hover:bg-surface-subtle text-foreground font-medium text-base border border-border shadow-xs transition-colors active:scale-[0.985] focus-ring"
-              >
-                <GraduationCap
-                  aria-hidden="true"
-                  className="w-5 h-5 text-primary"
-                />
-                <span>Lihat program dan jadwal</span>
-              </Link>
-            </div>
 
             {/* Authentic Community Indicators (Not KPI Cards — Clean Border Strip) */}
             <dl className="pt-8 border-t border-border grid grid-cols-3 gap-4 max-w-lg">

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Lock, Menu, X } from "lucide-react";
+import { Lock } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export interface PublicNavbarProps {
@@ -41,14 +41,6 @@ const PUBLIC_NAV_ITEMS: {
   { id: "kontak", label: "Kontak", href: "/kontak", routeMatch: "/kontak" },
 ];
 
-/** Item yang sudah tersedia di PublicBottomNav (< md) — tidak diulang di drawer mobile. */
-const BOTTOM_NAV_DUPLICATE_IDS: ReadonlySet<string> = new Set([
-  "beranda",
-  "program",
-  "pendaftaran",
-  "kontak",
-]);
-
 /**
  * UI-12 Public Header & Mobile Navigation (`07 §13–14`, `10 §5A`, `UI-UX §31`).
  * Fase 13b: header ringkas (h-14), tanpa ThemePicker (Public dikunci light),
@@ -58,7 +50,6 @@ const BOTTOM_NAV_DUPLICATE_IDS: ReadonlySet<string> = new Set([
  */
 export function PublicNavbar({ activeSection }: PublicNavbarProps) {
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const isItemActive = (item: (typeof PUBLIC_NAV_ITEMS)[number]): boolean => {
     if (activeSection && activeSection === item.id) return true;
@@ -135,8 +126,8 @@ export function PublicNavbar({ activeSection }: PublicNavbarProps) {
             })}
           </nav>
 
-          {/* Right: ikon akses staf diskrit (tanpa label, bukan CTA) + menu */}
-          <div className="flex shrink-0 items-center gap-1">
+          {/* Right: ikon akses staf diskrit (tanpa label, bukan CTA) */}
+          <div className="flex shrink-0 items-center">
             <Link
               href="/auth/login"
               aria-label="Masuk ke Ruang Kerja pengurus dan pengajar"
@@ -145,62 +136,9 @@ export function PublicNavbar({ activeSection }: PublicNavbarProps) {
             >
               <Lock aria-hidden="true" className="w-4 h-4" />
             </Link>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control p-2.5 text-secondary-foreground hover:text-foreground hover:bg-surface-subtle focus-ring cursor-pointer"
-              aria-label={
-                mobileMenuOpen
-                  ? "Tutup menu navigasi"
-                  : "Buka menu navigasi utama"
-              }
-              aria-expanded={mobileMenuOpen}
-              aria-controls="public-mobile-navigation"
-            >
-              {mobileMenuOpen ? (
-                <X aria-hidden="true" className="w-6 h-6" />
-              ) : (
-                <Menu aria-hidden="true" className="w-6 h-6" />
-              )}
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Mobile Drawer Menu (Touch Target >= 44px) */}
-      {mobileMenuOpen && (
-        <div
-          id="public-mobile-navigation"
-          className="border-b border-border bg-surface px-4 pb-6 pt-3 shadow-overlay xl:hidden"
-        >
-          <nav
-            aria-label="Navigasi seluler situs publik"
-            className="grid grid-cols-2 gap-2 border-b border-border-subtle pb-4"
-          >
-            {PUBLIC_NAV_ITEMS.map((link) => {
-              const active = isItemActive(link);
-              return (
-                <Link
-                  key={link.id}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "inline-flex min-h-11 items-center text-left px-3.5 py-2.5 rounded-control text-sm font-medium transition-colors focus-ring",
-                    // < md: item yang sudah ada di Bottom Nav disembunyikan (kurangi noise)
-                    BOTTOM_NAV_DUPLICATE_IDS.has(link.id) && "max-md:hidden",
-                    active
-                      ? "bg-primary-soft font-semibold text-primary"
-                      : "text-secondary-foreground hover:bg-surface-subtle hover:text-foreground"
-                  )}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      )}
     </header>
   );
 }

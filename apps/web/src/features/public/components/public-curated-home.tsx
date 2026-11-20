@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  BookOpen,
   Calendar,
   Clock,
   GraduationCap,
@@ -107,18 +106,6 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
                 <Calendar aria-hidden="true" className="w-3.5 h-3.5 text-primary" />
                 <span>Setiap Sabtu</span>
               </div>
-            </div>
-
-            {/* Secondary Action: Explore Programs (Subtle Ghost) */}
-            <div className="pt-1">
-              <Link
-                href="/program"
-                className="inline-flex min-h-11 items-center justify-center gap-2 px-5 py-2.5 rounded-control bg-surface hover:bg-surface-subtle text-foreground font-medium text-xs sm:text-sm border border-border shadow-xs transition-colors active:scale-[0.985] focus-ring"
-              >
-                <BookOpen aria-hidden="true" className="w-4 h-4 text-primary" />
-                <span>Lihat program belajar</span>
-                <ArrowRight aria-hidden="true" className="w-3.5 h-3.5 text-muted-foreground" />
-              </Link>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { Viewport } from "next";
 import { PublicBottomNav } from "@/components/layout/public-bottom-nav";
+import { PublicMenuFab } from "@/components/layout/public-menu-fab";
 import { ThemeLock } from "@/components/layout/theme-lock";
 
 /**
@@ -25,6 +26,7 @@ export default function PublicLayout({
       <div className="pb-[calc(4.75rem+max(env(safe-area-inset-bottom,0px),16px))] md:pb-0">
         {children}
       </div>
+      <PublicMenuFab />
       <PublicBottomNav />
     </>
   );

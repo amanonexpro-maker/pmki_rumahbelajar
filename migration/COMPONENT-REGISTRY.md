@@ -108,7 +108,7 @@ Mengikuti parity **UI-2** prototipe dengan navigasi App Router (`next/link`, `us
 | `public` | `PublicProgramsSection` | `src/features/public/components/public-programs-section.tsx` | Program Pembelajaran & Jadwal Sabtu 15.00–17.15 WIB di RAAL Griya Asih Lawang (`UI-12`, ritme `64px`) | `AKTIF` |
 | `public` | `PublicCommunityStorySection` | `src/features/public/components/public-community-story-section.tsx` | Stop-scrolling Moment 3 (`UI-12`, ritme `96px`: Kisah Kalirejo–Lawang, 13 `Pengajar Relawan`, Galeri `Dokumentasi` ber-consent + signed URL, `Publikasi` tayang) | `AKTIF` |
 | `public` | `PublicRegistrationCtaSection` | `src/features/public/components/public-registration-cta-section.tsx` | Stop-scrolling Moment 4 (`UI-12`, ritme `80px`: CTA pendaftaran + `PublicRegistrationWizard` + Kontak WhatsApp pengurus) | `AKTIF` |
-| `public` | `PublicFooter` | `src/features/public/components/public-footer.tsx` | Ultra-minimalist sitemap & trust signal footer (< 120px height, single source of truth for WA communication on /kontak). | `AKTIF` |
+| `public` | `PublicFooter` | `src/features/public/components/public-footer.tsx` | Pure text signature footer (< 60px height, without links or logos; navigation served by Bottom Nav & Header). | `AKTIF` |
 
 
 

@@ -121,46 +121,10 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
               </Link>
             </div>
           </div>
-
-          {/* 2. NEXT SESSION CARD (Concise Non-Redundant Schedule with Arrival Guidance) */}
-          <div className="rounded-card bg-surface-subtle border border-border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="w-10 h-10 rounded-pill bg-primary-soft text-primary flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
-                <Calendar aria-hidden="true" className="w-5 h-5" />
-              </div>
-              <div className="space-y-1 text-left">
-                <p className="font-bold text-foreground text-sm sm:text-base">
-                  Sesi bimbingan belajar terdekat
-                </p>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-secondary-foreground">
-                  <span className="flex items-center gap-1 font-semibold text-foreground">
-                    <Clock aria-hidden="true" className="w-3.5 h-3.5 text-primary" />
-                    <span>Setiap Sabtu • {data.scheduleHours}</span>
-                  </span>
-                  <span aria-hidden="true" className="text-muted-foreground">•</span>
-                  <span className="flex items-center gap-1">
-                    <MapPin aria-hidden="true" className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>RAAL Griya Asih Lawang</span>
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted-foreground font-medium">
-                  Hadir pukul 14.45 WIB untuk persiapan salam santun dan presensi.
-                </p>
-              </div>
-            </div>
-
-            <Link
-              href="/program#jadwal"
-              className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary hover:underline shrink-0 self-start sm:self-center"
-            >
-              <span>Lihat jadwal lengkap</span>
-              <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* 3. PROGRAM HIGHLIGHTS CAROUSEL (18% Peek Preview, Swipeable, Zero CLS) */}
+      {/* 2. PROGRAM HIGHLIGHTS CAROUSEL (18% Peek Preview, Swipeable, Zero CLS) */}
       <section aria-labelledby="highlights-heading" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 text-left">
           <div className="space-y-1">
@@ -169,7 +133,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
             </p>
             <h2
               id="highlights-heading"
-              className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-normal leading-tight"
+              className="font-sans text-xl sm:text-2xl font-bold text-foreground tracking-tight leading-tight"
             >
               Pendampingan belajar ramah anak
             </h2>
@@ -258,6 +222,44 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
         </div>
       </section>
 
+      {/* 3. NEXT SESSION CARD (Reordered after Programs, Persuasive Bridge) */}
+      <section aria-label="Jadwal sesi belajar terdekat" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-card bg-surface-subtle border border-border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-10 h-10 rounded-pill bg-primary-soft text-primary flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+              <Calendar aria-hidden="true" className="w-5 h-5" />
+            </div>
+            <div className="space-y-1 text-left">
+              <p className="font-bold text-foreground text-sm sm:text-base">
+                Sesi bimbingan belajar terdekat
+              </p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-secondary-foreground">
+                <span className="flex items-center gap-1 font-semibold text-foreground">
+                  <Clock aria-hidden="true" className="w-3.5 h-3.5 text-primary" />
+                  <span>Setiap Sabtu • {data.scheduleHours}</span>
+                </span>
+                <span aria-hidden="true" className="text-muted-foreground">•</span>
+                <span className="flex items-center gap-1">
+                  <MapPin aria-hidden="true" className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span>RAAL Griya Asih Lawang</span>
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground font-medium">
+                Hadir pukul 14.45 WIB untuk persiapan salam santun dan presensi.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/program#jadwal"
+            className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary hover:underline shrink-0 self-start sm:self-center"
+          >
+            <span>Lihat jadwal lengkap</span>
+            <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </section>
+
       {/* 4. COMMUNITY STORY PREVIEW (Social Proof — Single Authentic Photo & Canonical Quote) */}
       <section aria-labelledby="story-preview-heading" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-card bg-surface border border-border p-5 sm:p-8 shadow-xs">
@@ -289,7 +291,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
                 </p>
                 <h2
                   id="story-preview-heading"
-                  className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-normal leading-tight"
+                  className="font-sans text-xl sm:text-2xl font-bold text-foreground tracking-tight leading-tight"
                 >
                   Setiap anak berhak bertumbuh dengan percaya diri
                 </h2>
@@ -326,7 +328,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       <section className="bg-surface-subtle border-t border-border py-10 sm:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5 sm:space-y-6">
           <div className="space-y-2">
-            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-normal leading-tight">
+            <h2 className="font-sans text-xl sm:text-2xl font-bold text-foreground tracking-tight leading-tight">
               {data.ctaHeadline}
             </h2>
             <p className="type-body text-secondary-foreground max-w-xl mx-auto">

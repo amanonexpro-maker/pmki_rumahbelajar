@@ -97,14 +97,14 @@ export function PublicNavbar({ activeSection }: PublicNavbarProps) {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="whitespace-nowrap text-base font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                <span className="whitespace-nowrap text-sm font-bold leading-none text-foreground group-hover:text-primary transition-colors">
                   Rumah Belajar Griya Asih
-                </span>
-                <span className="hidden lg:inline-flex rounded-pill bg-primary-soft px-2.5 py-0.5 text-[11px] font-semibold text-primary border border-primary/20">
-                  Lawang
+                  <span className="text-muted-foreground font-normal text-xs ml-1 whitespace-nowrap">
+                    • Lawang
+                  </span>
                 </span>
               </div>
-              <p className="hidden sm:block whitespace-nowrap text-xs font-medium text-secondary-foreground">
+              <p className="hidden sm:block whitespace-nowrap text-xs font-medium text-secondary-foreground pt-0.5">
                 Ayo belajar dan tumbuh bersama.
               </p>
             </div>

@@ -47,6 +47,7 @@ export const metadata: Metadata = {
     title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
     description:
       "Ayo belajar dan tumbuh bersama. Rumah belajar yang terbuka bagi semua di Lawang, Kabupaten Malang.",
+    siteName: "PMKI Platform",
     locale: "id_ID",
     type: "website",
     images: [

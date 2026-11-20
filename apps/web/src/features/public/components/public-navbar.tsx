@@ -102,13 +102,13 @@ export function PublicNavbar({ activeSection }: PublicNavbarProps) {
             aria-label="Kembali ke beranda Rumah Belajar Griya Asih Lawang"
             className="group flex min-w-0 shrink-0 items-center gap-3 text-left focus-ring rounded-control p-1 min-h-11"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-surface border border-border-subtle overflow-hidden">
+            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-control bg-surface border border-border-subtle overflow-hidden">
               <Image
                 src="/pmki_logo.svg"
-                alt="Logo PMKI"
+                alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
                 width={40}
                 height={40}
-                className="h-10 w-10 object-contain"
+                className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
                 priority
               />
             </div>

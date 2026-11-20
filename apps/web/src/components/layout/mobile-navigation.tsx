@@ -45,7 +45,7 @@ export function MobileNavigation({
             <div className="h-9 w-9 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
               <Image
                 src="/pmki_logo.svg"
-                alt="Logo PMKI"
+                alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
                 width={32}
                 height={32}
                 className="h-8 w-8 object-contain"

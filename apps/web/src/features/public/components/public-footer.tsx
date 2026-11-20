@@ -24,7 +24,7 @@ export function PublicFooter() {
               <div className="w-10 h-10 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
                 <Image
                   src="/pmki_logo.svg"
-                  alt="Logo PMKI"
+                  alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
                   width={36}
                   height={36}
                   className="w-8 h-8 object-contain"

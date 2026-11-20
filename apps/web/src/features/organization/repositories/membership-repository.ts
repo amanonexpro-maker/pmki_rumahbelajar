@@ -76,18 +76,23 @@ export async function findActiveMembershipsByUserId(
 export async function findPilotServiceUnit(
   code = "RB_GRIYA_ASIH_LAWANG"
 ): Promise<ServiceUnitScope | null> {
-  const [unit] = await db
-    .select({
-      organizationId: serviceUnits.organizationId,
-      serviceUnitId: serviceUnits.id,
-      code: serviceUnits.code,
-      name: serviceUnits.name,
-    })
-    .from(serviceUnits)
-    .where(and(eq(serviceUnits.code, code), isNull(serviceUnits.archivedAt)))
-    .limit(1);
+  try {
+    const [unit] = await db
+      .select({
+        organizationId: serviceUnits.organizationId,
+        serviceUnitId: serviceUnits.id,
+        code: serviceUnits.code,
+        name: serviceUnits.name,
+      })
+      .from(serviceUnits)
+      .where(and(eq(serviceUnits.code, code), isNull(serviceUnits.archivedAt)))
+      .limit(1);
 
-  return unit ?? null;
+    return unit ?? null;
+  } catch (error) {
+    console.error("[findPilotServiceUnit] Failed to query pilot service unit:", error);
+    return null;
+  }
 }
 
 export async function findScopeCatalog(): Promise<ScopeCatalogDTO> {

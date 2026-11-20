@@ -16,6 +16,7 @@ if (!connectionString) {
  */
 const globalForDb = globalThis as unknown as {
   pmkiPgClient?: ReturnType<typeof postgres>;
+  pmkiDb?: ReturnType<typeof drizzle>;
 };
 
 export const pgClient =
@@ -24,13 +25,16 @@ export const pgClient =
     prepare: false,
     max: 5,
     idle_timeout: 20,
-    connect_timeout: 15,
+    connect_timeout: 30,
   });
+
+export const db =
+  globalForDb.pmkiDb ??
+  drizzle(pgClient, { schema });
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb.pmkiPgClient = pgClient;
+  globalForDb.pmkiDb = db;
 }
-
-export const db = drizzle(pgClient, { schema });
 export type Database = typeof db;
 

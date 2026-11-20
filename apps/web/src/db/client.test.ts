@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { config as loadEnv } from "dotenv";
 import path from "node:path";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { describe, expect, it, afterAll } from "vitest";
 import postgres from "postgres";
 
@@ -43,11 +43,11 @@ describe("Platform Wiring Verification (ADR-13)", () => {
     expect(res.ok).toBe(true);
   });
 
-  it("keeps src/middleware.ts strictly edge-safe without Drizzle or postgres imports", () => {
-    const middlewareSrc = readFileSync(
-      path.resolve(process.cwd(), "src/middleware.ts"),
-      "utf-8"
-    );
+  it("keeps src/proxy.ts strictly edge-safe without Drizzle or postgres imports", () => {
+    const targetFile = existsSync(path.resolve(process.cwd(), "src/proxy.ts"))
+      ? path.resolve(process.cwd(), "src/proxy.ts")
+      : path.resolve(process.cwd(), "src/middleware.ts");
+    const middlewareSrc = readFileSync(targetFile, "utf-8");
     expect(middlewareSrc).not.toMatch(/drizzle-orm/);
     expect(middlewareSrc).not.toMatch(/from\s+["']postgres["']/);
     expect(middlewareSrc).not.toMatch(/@\/db\/client/);

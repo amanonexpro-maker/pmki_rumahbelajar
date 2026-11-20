@@ -349,13 +349,32 @@ export function filterAndMapPublicNewsItems(
  * Fetches public data strictly through `organization`, `media`, and `publishing` Public APIs.
  */
 export async function getPublicPortalData(): Promise<PublicPortalDataDTO> {
-  const pilotScope = await getDefaultPilotServiceUnit();
-  const serviceUnitId = pilotScope?.serviceUnitId;
+  let rawGallery: MediaAssetDTO[] = [];
+  let rawPublications: PublicationDTO[] = [];
 
-  const [rawGallery, rawPublications] = await Promise.all([
-    listPublicGalleryMedia(serviceUnitId),
-    listPublishedContent(serviceUnitId),
-  ]);
+  try {
+    const pilotScope = await getDefaultPilotServiceUnit().catch(() => null);
+    const serviceUnitId = pilotScope?.serviceUnitId;
+
+    const [galleryRes, pubRes] = await Promise.allSettled([
+      listPublicGalleryMedia(serviceUnitId),
+      listPublishedContent(serviceUnitId),
+    ]);
+
+    if (galleryRes.status === "fulfilled") {
+      rawGallery = galleryRes.value;
+    } else {
+      console.error("[getPublicPortalData] Gallery fetch failed:", galleryRes.reason);
+    }
+
+    if (pubRes.status === "fulfilled") {
+      rawPublications = pubRes.value;
+    } else {
+      console.error("[getPublicPortalData] Publications fetch failed:", pubRes.reason);
+    }
+  } catch (err) {
+    console.error("[getPublicPortalData] Fallback triggered due to transient database error:", err);
+  }
 
   const galleryItems = filterAndMapPublicGalleryItems(rawGallery);
   const newsItems = filterAndMapPublicNewsItems(rawPublications);

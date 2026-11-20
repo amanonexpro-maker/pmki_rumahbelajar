@@ -112,11 +112,11 @@ describe("Fase 10 — System-Wide Parity Audit, Domain Boundaries, Terminology S
     expect(sessionFile).toContain("supabase.auth.getUser()");
     expect(sessionFile).not.toContain("supabase.auth.getSession(");
 
-    // 3b. Middleware is edge-safe (zero Drizzle / postgres imports)
-    const middlewareFile = fs.readFileSync(
-      path.join(srcRoot, "middleware.ts"),
-      "utf8"
-    );
+    // 3b. Proxy / Middleware is edge-safe (zero Drizzle / postgres imports)
+    const proxyTarget = fs.existsSync(path.join(srcRoot, "proxy.ts"))
+      ? path.join(srcRoot, "proxy.ts")
+      : path.join(srcRoot, "middleware.ts");
+    const middlewareFile = fs.readFileSync(proxyTarget, "utf8");
     expect(middlewareFile).not.toMatch(
       /from\s+["'](drizzle-orm|@\/db|postgres)/
     );

@@ -2,11 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Edge-safe Middleware (ADR-13 / D-28).
+ * Edge-safe Proxy (formerly Middleware, ADR-13 / D-28).
  * ONLY refreshes Supabase Auth session cookies and applies coarse route gating.
  * FORBIDDEN: importing Drizzle, postgres-js, or domain repositories here.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request,
   });
@@ -54,6 +54,9 @@ export async function middleware(request: NextRequest) {
 
   return response;
 }
+
+// Default export for Proxy compatibility
+export default proxy;
 
 export const config = {
   matcher: [

@@ -1,226 +1,128 @@
 import Link from "next/link";
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Phone,
-  ShieldCheck,
-} from "lucide-react";
+import { MessageCircle, ShieldCheck } from "lucide-react";
 
 /**
- * UI-12 Institutional Public Footer (`07 §14`, `10 §5`, `10 §21`).
- * Warm, trustworthy community orientation with direct WhatsApp links and privacy assurance.
+ * Minimalist Sitemap & Trust Signal Footer (Fase 13e, UI-UX §28, 07 §25).
+ * - Ultra-compact vertical profile (< 150px height on mobile, < 200px total).
+ * - 3 clean rows: Brand & Trust, Essential Links, and Utility/Legal.
+ * - Eliminated redundant program & schedule lists (already fully served on /program & /kontak).
  */
 export function PublicFooter() {
   return (
-    <footer className="bg-surface-subtle text-secondary-foreground border-t border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {/* Column 1: Identity & Mission */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
-                <picture className="flex items-center justify-center">
-                  <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
-                  <img
-                    src="/pmki_logo.png"
-                    alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
-                    width={36}
-                    height={36}
-                    className="w-8 h-8 object-contain"
-                    loading="lazy"
-                  />
-                </picture>
-              </div>
-              <div>
-                <h2 className="text-foreground font-bold text-base leading-tight">
-                  Rumah Belajar Griya Asih
-                </h2>
-                <p className="text-xs text-primary font-medium">
-                  PMKI Mupel Jawa Timur
-                </p>
-              </div>
+    <footer className="bg-surface-subtle text-secondary-foreground border-t border-border py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        {/* BARIS 1: Brand & Privacy Trust Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
+              <picture className="flex items-center justify-center">
+                <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
+                <img
+                  src="/pmki_logo.png"
+                  alt="Logo PMKI - Rumah Belajar Griya Asih"
+                  width={24}
+                  height={24}
+                  className="w-5 h-5 object-contain"
+                  loading="lazy"
+                />
+              </picture>
             </div>
-            <p className="type-body-sm text-secondary-foreground leading-relaxed">
-              Rumah belajar yang terbuka bagi semua. Mendampingi peserta didik
-              bertumbuh lewat pendekatan Happy Learning, mengembangkan nalar
-              kreatif, dan memupuk karakter luhur tanpa memandang latar belakang
-              suku maupun agama.
-            </p>
-            <p className="pt-1 text-xs text-warning font-semibold italic">
-              &ldquo;Belajar itu bukan tentang menjadi sempurna, tetapi tentang
-              menjadi lebih baik setiap hari.&rdquo;
-            </p>
-          </div>
-
-          {/* Column 2: Program & Layanan */}
-          <div className="space-y-4">
-            <h3 className="text-foreground font-bold text-xs tracking-wider uppercase border-b border-border pb-2">
-              Program pembelajaran
-            </h3>
-            <ul className="space-y-2 text-xs sm:text-sm text-secondary-foreground">
-              <li>
-                <Link
-                  href="/program"
-                  className="inline-flex min-h-9 items-center hover:text-primary transition-colors text-left focus-ring rounded-xs"
-                >
-                  Bimbingan Matematika &amp; Berhitung Ceria
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/program"
-                  className="inline-flex min-h-9 items-center hover:text-primary transition-colors text-left focus-ring rounded-xs"
-                >
-                  Bahasa Inggris Praktis &amp; Percakapan
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/program"
-                  className="inline-flex min-h-9 items-center hover:text-primary transition-colors text-left focus-ring rounded-xs"
-                >
-                  Pendidikan Karakter &amp; Budi Pekerti
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/program"
-                  className="inline-flex min-h-9 items-center hover:text-primary transition-colors text-left focus-ring rounded-xs"
-                >
-                  Kelas Khusus Membaca (Literasi 1 jam)
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/program"
-                  className="inline-flex min-h-9 items-center hover:text-primary transition-colors text-left focus-ring rounded-xs"
-                >
-                  Pemantapan Ujian SD &amp; SMP Kelas 7 – 8
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 3: Jadwal & Lokasi */}
-          <div className="space-y-4">
-            <h3 className="text-foreground font-bold text-xs tracking-wider uppercase border-b border-border pb-2">
-              Jadwal &amp; lokasi belajar
-            </h3>
-            <div className="space-y-3 text-xs sm:text-sm text-secondary-foreground">
-              <div className="flex items-start gap-2.5">
-                <Calendar
-                  aria-hidden="true"
-                  className="w-4 h-4 text-primary shrink-0 mt-0.5"
-                />
-                <span>
-                  Setiap hari <strong className="text-foreground">Sabtu</strong>
-                </span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <Clock
-                  aria-hidden="true"
-                  className="w-4 h-4 text-primary shrink-0 mt-0.5"
-                />
-                <span>
-                  Pukul{" "}
-                  <strong className="text-foreground">
-                    15.00 s/d 17.15 WIB
-                  </strong>
-                </span>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <MapPin
-                  aria-hidden="true"
-                  className="w-4 h-4 text-primary shrink-0 mt-0.5"
-                />
-                <span>
-                  RAAL (Rumah Asuh Anak &amp; Lansia) &ldquo;Griya Asih&rdquo;,
-                  Lawang, Kab. Malang, Jawa Timur
-                  <span className="block text-xs text-muted-foreground mt-0.5">
-                    (Wilayah Kelurahan Kalirejo &amp; Kelurahan Lawang)
-                  </span>
-                </span>
-              </div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-bold text-sm text-foreground">
+                PMKI Griya Asih
+              </span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                • Lawang, Kab. Malang
+              </span>
             </div>
           </div>
 
-          {/* Column 4: Kontak Pengurus */}
-          <div className="space-y-4">
-            <h3 className="text-foreground font-bold text-xs tracking-wider uppercase border-b border-border pb-2">
-              Hubungi pengurus
-            </h3>
-            <div className="space-y-3 text-xs sm:text-sm text-secondary-foreground">
-              <div>
-                <span className="text-xs text-muted-foreground block">
-                  Koordinator pelayanan:
-                </span>
-                <a
-                  href="https://wa.me/628123235318"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Hubungi Ms. Evi melalui WhatsApp"
-                  className="inline-flex min-h-10 items-center gap-2 text-foreground font-medium hover:text-primary mt-0.5 focus-ring rounded-xs"
-                >
-                  <Phone aria-hidden="true" className="w-4 h-4 text-primary" />
-                  <span>Ms. Evi (+62 812-323-5318)</span>
-                </a>
-              </div>
-
-              <div>
-                <span className="text-xs text-muted-foreground block">
-                  Pengurus &amp; humas:
-                </span>
-                <a
-                  href="https://wa.me/6281332987491"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Hubungi Ms. Lilian melalui WhatsApp"
-                  className="inline-flex min-h-10 items-center gap-2 text-foreground font-medium hover:text-primary mt-0.5 focus-ring rounded-xs"
-                >
-                  <Phone aria-hidden="true" className="w-4 h-4 text-primary" />
-                  <span>Ms. Lilian (+62 813-3298-7491)</span>
-                </a>
-              </div>
-
-              <div className="pt-2 border-t border-border-subtle">
-                <Link
-                  href="/kontak"
-                  className="inline-flex min-h-9 items-center text-xs font-semibold text-primary hover:underline"
-                >
-                  Informasi kontak &amp; lokasi lengkap →
-                </Link>
-              </div>
-            </div>
+          {/* Privacy Trust Signal */}
+          <div className="inline-flex items-center gap-1.5 text-xs text-secondary-foreground font-medium self-start sm:self-center">
+            <ShieldCheck
+              aria-hidden="true"
+              className="w-4 h-4 text-primary shrink-0"
+            />
+            <span>Data Anak Terlindungi</span>
           </div>
         </div>
 
-        {/* Bottom Copyright & Privacy Assurance */}
-        <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
-          <div>
-            <span>
-              © 2026 Platform Pelayanan Terpadu PMKI. Pilot: Rumah Belajar Griya
-              Asih Lawang.
+        {/* BARIS 2: Essential Sitemap Links Row */}
+        <nav
+          aria-label="Tautan navigasi footer"
+          className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground pt-1"
+        >
+          <Link
+            href="/"
+            className="hover:text-primary transition-colors focus-ring rounded-xs py-1"
+          >
+            Beranda
+          </Link>
+          <Link
+            href="/program"
+            className="hover:text-primary transition-colors focus-ring rounded-xs py-1"
+          >
+            Program
+          </Link>
+          <Link
+            href="/gallery"
+            className="hover:text-primary transition-colors focus-ring rounded-xs py-1"
+          >
+            Galeri
+          </Link>
+          <Link
+            href="/news"
+            className="hover:text-primary transition-colors focus-ring rounded-xs py-1"
+          >
+            Berita
+          </Link>
+          <Link
+            href="/kontak"
+            className="hover:text-primary transition-colors focus-ring rounded-xs py-1"
+          >
+            Kontak
+          </Link>
+          <Link
+            href="/auth/login"
+            className="hover:text-primary transition-colors focus-ring rounded-xs py-1 text-xs text-muted-foreground/80 sm:ml-auto"
+          >
+            Portal Pengurus
+          </Link>
+        </nav>
+
+        {/* BARIS 3: Utility & WhatsApp Row */}
+        <div className="border-t border-border-subtle pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-muted-foreground">
+          <p>
+            © 2026 Platform Pelayanan Terpadu PMKI. Pilot: RAAL Griya Asih Lawang.
+          </p>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-muted-foreground">
+              Chat Pengurus:
             </span>
-          </div>
-          <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-6">
-            <Link
-              href="/auth/login"
-              className="inline-flex min-h-11 items-center text-xs text-muted-foreground hover:text-primary underline-offset-4 hover:underline focus-ring rounded-xs"
+            <a
+              href="https://wa.me/628123235318"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Hubungi Ms. Evi melalui WhatsApp"
+              className="inline-flex min-h-8 items-center gap-1 px-2 py-1 rounded-control bg-surface hover:bg-surface-subtle border border-border text-[11px] font-medium text-foreground hover:text-primary transition-colors focus-ring"
             >
-              Sudah menjadi pengurus? Masuk ke Ruang Kerja
-            </Link>
-            <span className="flex items-center gap-1.5 text-secondary-foreground">
-              <ShieldCheck
-                aria-hidden="true"
-                className="w-4 h-4 text-primary"
-              />
-              <span>Perlindungan privasi peserta didik &amp; data aman</span>
-            </span>
+              <MessageCircle aria-hidden="true" className="w-3 h-3 text-primary" />
+              <span>Ms. Evi</span>
+            </a>
+            <a
+              href="https://wa.me/6281332987491"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Hubungi Ms. Lilian melalui WhatsApp"
+              className="inline-flex min-h-8 items-center gap-1 px-2 py-1 rounded-control bg-surface hover:bg-surface-subtle border border-border text-[11px] font-medium text-foreground hover:text-primary transition-colors focus-ring"
+            >
+              <MessageCircle aria-hidden="true" className="w-3 h-3 text-primary" />
+              <span>Ms. Lilian</span>
+            </a>
           </div>
         </div>
       </div>
     </footer>
   );
 }
-

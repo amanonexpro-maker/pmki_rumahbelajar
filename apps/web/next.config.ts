@@ -4,6 +4,20 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  async redirects() {
+    return [
+      {
+        source: "/gallery",
+        destination: "/kabar?tab=galeri",
+        permanent: true,
+      },
+      {
+        source: "/news",
+        destination: "/kabar?tab=berita",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

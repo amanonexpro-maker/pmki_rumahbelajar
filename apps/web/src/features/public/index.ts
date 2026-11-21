@@ -43,8 +43,9 @@ export { PublicCommunityStorySection } from "./components/public-community-story
 export { PublicContactForm } from "./components/public-contact-form";
 export { PublicRegistrationCtaSection } from "./components/public-registration-cta-section";
 export { PublicCuratedHome } from "./components/public-curated-home";
-export { KabarFeedView } from "./components/kabar-feed-view";
+export { KabarFeedView, type KabarTabFilter } from "./components/kabar-feed-view";
 export { KabarEmptyState } from "./components/kabar-empty-state";
+export { KabarAlbumLightbox } from "./components/kabar-album-lightbox";
 export { PrivacyPolicyModal } from "./components/privacy-policy-modal";
 export { ProgramDetailAccordion } from "./components/program-detail-accordion";
 export { VolunteerGrid } from "./components/volunteer-grid";

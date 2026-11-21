@@ -51,6 +51,7 @@
 | 14-Step4 | Footer Utilitarian & Legal Modal | `DONE` | Fase 14 Step 4: DONE — footer signature-only 3-baris (sosmed config-gated graceful-absent saat [], legal modal accessible graceful-msg saat undefined, copyright ORG+UNIT dinamis), nol hardcode/nol brand-duplikasi, zero-new-dep vanilla modal, DUBLEKASI RENDER FOOTER DIBERSIHKAN (solo source di layout, 5 page.tsx dibersihkan). |
 | 14-Step5 | Beranda Storytelling Gateway Komunitas | `DONE` | Fase 14 Step 5: DONE — beranda gateway komunitas (Hero->About id=siapa-kami->Facts->News/Gallery Preview->Programs->CTA), semua data real dari service/config read-first, nol hardcode narasi/statistik, defensive query sorotan kabar. |
 | 14-Step6 | Halaman Program Academic Hub | `DONE` | Fase 14 Step 6: DONE — halaman program academic hub (Header->Accordion 4-programs->Schedule Card->Volunteer Grid 13-relawans), semua data real dari service/config read-first, nol hardcode narasi/statistik/nama relawan, slot Kamis difilter-out dari publik. |
+| 14-Step7 | Feed Hybrid Kabar & Consent-Gated Media | `DONE` | Fase 14 Step 7: DONE — halaman kabar feed nyata (Header->Filter->HybridCards->Lightbox->Agenda), consent-gated media via server query WHERE clause, redirect fase-2 308 permanent via next.config, semua data real dari service/config/DB read-first, nol hardcode narasi/statistik/nama anak/jam. |
 
 ---
 

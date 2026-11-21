@@ -151,7 +151,7 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
         coverSignedUrl: "/images/gallery/griya_asih_8.jpg",
         status: "PUBLISHED",
         publishedAt: "2026-08-01T09:00:00Z",
-        eventDate: null,
+        eventDate: "2026-11-28",
         eventLocation: null,
         authorId: "ed-1",
         createdAt: "2026-08-01T08:00:00Z",
@@ -182,6 +182,7 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
     const filtered = filterAndMapPublicNewsItems(samplePosts);
     expect(filtered).toHaveLength(1);
     expect(filtered[0]?.id).toBe("p-published");
+    expect(filtered[0]?.eventDate).toBe("28 November 2026");
   });
 
   it("validates publicContactInquirySchema and publicGalleryFilterSchema with Bahasa Indonesia messages", () => {

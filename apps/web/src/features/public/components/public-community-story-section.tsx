@@ -618,7 +618,7 @@ export function PublicCommunityStorySection({
                           className="w-4 h-4 shrink-0"
                         />
                         <span>
-                          Jadwal agenda: {selectedPost.eventDate}
+                          Jadwal agenda: {formatToIndonesianStandard(selectedPost.eventDate)}
                           {selectedPost.eventLocation
                             ? ` · Lokasi: ${selectedPost.eventLocation}`
                             : ""}

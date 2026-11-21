@@ -354,7 +354,7 @@ export function filterAndMapPublicNewsItems(
       publishedAt: post.publishedAt,
       publishedDateFormatted: formatIndonesianDate(post.publishedAt),
       authorLabel: "Tim Pelayanan Griya Asih",
-      eventDate: post.eventDate,
+      eventDate: post.eventDate ? formatToIndonesianStandard(post.eventDate) : null,
       eventLocation: post.eventLocation,
     }));
 }
@@ -421,7 +421,7 @@ Peserta didik diharapkan hadir 15 menit sebelum jam belajar dimulai dengan memba
     coverSignedUrl: "/images/gallery/griya_asih_4.jpg",
     publishedAt: "2026-10-01T08:00:00.000Z",
     publishedDateFormatted: "1 Oktober 2026",
-    eventDate: "2026-11-28",
+    eventDate: "28 November 2026",
     eventLocation: 'RAAL "Griya Asih" Lawang (Setiap Sabtu, 15.00 – 17.00 WIB)',
     authorLabel: "Tim Pelayanan Griya Asih",
   },

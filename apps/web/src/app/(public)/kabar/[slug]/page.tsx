@@ -310,7 +310,7 @@ export default async function PublicKabarDetailPage({
                 {content.eventDate && (
                   <p className="flex items-center gap-2 text-foreground font-medium">
                     <Calendar aria-hidden="true" className="w-4 h-4 text-primary shrink-0" />
-                    <span>Jadwal agenda: <strong className="font-bold">{content.eventDate}</strong></span>
+                    <span>Jadwal agenda: <strong className="font-bold">{formatToIndonesianStandard(content.eventDate)}</strong></span>
                   </p>
                 )}
                 {content.eventLocation && (

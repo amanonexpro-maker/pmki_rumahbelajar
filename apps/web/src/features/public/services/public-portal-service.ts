@@ -41,7 +41,7 @@ export const CANONICAL_PUBLIC_COPY = {
   philosophyQuote:
     "“Belajar itu bukan tentang menjadi sempurna, tetapi tentang menjadi lebih baik setiap hari.”",
   scheduleDay: "Setiap hari Sabtu",
-  scheduleHours: "15.00 – 17.15 WIB",
+  scheduleHours: "15.00 – 17.00 WIB",
   locationFull:
     'RAAL (Rumah Asuh Anak & Lansia) "Griya Asih", Kecamatan Lawang, Kabupaten Malang, Jawa Timur',
   subDistrictsLabel: "Kelurahan Kalirejo & Kelurahan Lawang",
@@ -179,7 +179,7 @@ export const PUBLIC_SCHEDULE_SLOTS: PublicScheduleSlotDTO[] = [
     accentTone: "learning",
   },
   {
-    time: "16.30 – 17.15 WIB",
+    time: "16.30 – 17.00 WIB",
     activity: "Sesi pembelajaran III: Pendidikan karakter & budi pekerti",
     description:
       "Pembiasaan respons santun, empati saling menolong, etika menghormati orang tua dan pengajar, serta refleksi bersama.",
@@ -379,7 +379,7 @@ Keputusan penting ini diambil berkaitan langsung dengan permintaan peserta didik
 
 "Kami melihat semangat belajar anak-anak luar biasa. Dengan ditambahkannya kelas 8, kami menyiapkan metode penalaran matematika yang lebih mendalam, Bahasa Inggris lanjutan dengan metode percakapan serta role-play, dan buku referensi khusus," tutur Ms. Evi selaku Koordinator Unit.
 
-Rumah Belajar Griya Asih kini didukung oleh 13 pengajar relawan berdedikasi yang berasal dari guru sekolah Katolik dan guru sekolah negeri di sekitar Lawang. Pembelajaran dilaksanakan setiap hari Sabtu pukul 15.00 s/d 17.15 WIB.`,
+Rumah Belajar Griya Asih kini didukung oleh 13 pengajar relawan berdedikasi yang berasal dari guru sekolah Katolik dan guru sekolah negeri di sekitar Lawang. Pembelajaran dilaksanakan setiap hari Sabtu pukul 15.00 s/d 17.00 WIB.`,
     coverSignedUrl: "/images/gallery/griya_asih_8.jpg",
     publishedAt: "2026-08-01T09:00:00.000Z",
     publishedDateFormatted: "1 Agustus 2026",
@@ -414,11 +414,11 @@ Kami percaya bahwa setiap anak memiliki kesempatan untuk berkembang. Dengan pend
     category: "AGENDA",
     categoryLabel: "Agenda",
     excerpt:
-      "Bimbingan belajar rutin setiap hari Sabtu pukul 15.00 – 17.15 WIB bertempat di RAAL Griya Asih Lawang.",
+      "Bimbingan belajar rutin setiap hari Sabtu pukul 15.00 – 17.00 WIB bertempat di RAAL Griya Asih Lawang.",
     content: `Diumumkan kepada seluruh orang tua dan wali peserta didik bahwa jadwal kegiatan bimbingan belajar Rumah Belajar Griya Asih berjalan rutin:
 
 - Hari: Setiap Hari Sabtu
-- Waktu: Pukul 15.00 s/d 17.15 WIB
+- Waktu: Pukul 15.00 s/d 17.00 WIB
 - Tempat: RAAL (Rumah Asuh Anak & Lansia) "Griya Asih" Lawang, Kab. Malang
 - Mata Pelajaran: Matematika Ceria, Bahasa Inggris Praktis, Pendidikan Karakter, dan Kelas Khusus Membaca (1 Jam).
 
@@ -427,7 +427,7 @@ Peserta didik diharapkan hadir 15 menit sebelum jam belajar dimulai dengan memba
     publishedAt: "2026-10-01T08:00:00.000Z",
     publishedDateFormatted: "1 Oktober 2026",
     eventDate: "2026-11-28",
-    eventLocation: 'RAAL "Griya Asih" Lawang (Setiap Sabtu, 15.00 – 17.15 WIB)',
+    eventLocation: 'RAAL "Griya Asih" Lawang (Setiap Sabtu, 15.00 – 17.00 WIB)',
     authorLabel: "Tim Pelayanan Griya Asih",
   },
   {

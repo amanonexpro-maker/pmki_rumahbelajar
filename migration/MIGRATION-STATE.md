@@ -65,6 +65,7 @@
 | HOTFIX-LABEL-ADDR | Penyederhanaan Kartu Alamat di Tab Info & Lokasi | `DONE` | HOTFIX-LABEL-ADDR: Simplified Address heading to 'Alamat'; Removed redundant 'Get Directions' button relying on map interaction. |
 | HOTFIX-LABEL-DONATION | Penyederhanaan Tombol Aksi di Tab Donasi | `DONE` | HOTFIX-LABEL-DONATION: Simplified donation action button to 'Konfirmasi Donasi & Dukungan' for clearer intent-based CTA. |
 | HOTFIX-MAPS-INTEGRATION | Integrasi Tautan Google Maps Resmi di Tab Info & Lokasi | `DONE` | HOTFIX-MAPS-INTEGRATION: Updated Address Copy button to copy official Google Maps Short URL; Synced embedded map source to match precise location pin. |
+| HOTFIX-SCHEDULE-SYNC | Sinkronisasi Waktu Akhir Alur Sesi Belajar | `DONE` | HOTFIX-SCHEDULE-SYNC: Corrected Saturday Session Flow end-time to match official HOURS.window (17.00); Eliminated 17.15 data drift. |
 
 ---
 

@@ -44,12 +44,12 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       "Setiap anak memiliki kesempatan untuk berkembang."
     );
     expect(CANONICAL_PUBLIC_COPY.scheduleDay).toBe("Setiap hari Sabtu");
-    expect(CANONICAL_PUBLIC_COPY.scheduleHours).toBe("15.00 – 17.15 WIB");
+    expect(CANONICAL_PUBLIC_COPY.scheduleHours).toBe("15.00 – 17.00 WIB");
     expect(CANONICAL_PUBLIC_COPY.locationFull).toContain("RAAL");
     expect(CANONICAL_PUBLIC_COPY.locationFull).toContain("Lawang");
   });
 
-  it("includes the 4 core learning programs, Saturday 15.00–17.15 WIB schedule, and 13 Pengajar Relawan", () => {
+  it("includes the 4 core learning programs, Saturday 15.00–17.00 WIB schedule, and 13 Pengajar Relawan", () => {
     expect(PUBLIC_PROGRAMS_LIST).toHaveLength(4);
     expect(PUBLIC_SCHEDULE_SLOTS).toHaveLength(5);
     expect(PUBLIC_VOLUNTEER_TEACHERS).toHaveLength(13);
@@ -57,7 +57,7 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       PUBLIC_SCHEDULE_SLOTS.some((s) => s.time.includes("15.00 – 15.45 WIB"))
     ).toBe(true);
     expect(
-      PUBLIC_SCHEDULE_SLOTS.some((s) => s.time.includes("16.30 – 17.15 WIB"))
+      PUBLIC_SCHEDULE_SLOTS.some((s) => s.time.includes("16.30 – 17.00 WIB"))
     ).toBe(true);
   });
 

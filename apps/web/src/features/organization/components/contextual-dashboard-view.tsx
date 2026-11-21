@@ -259,7 +259,7 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
                 Jadwal belajar
               </h2>
               <p className="type-caption text-secondary-foreground mt-0.5">
-                Sesi rutin setiap Sabtu · 15.00 – 17.15 WIB di RAAL Griya Asih
+                Sesi rutin setiap Sabtu · 15.00 – 17.00 WIB di RAAL Griya Asih
               </p>
             </div>
 

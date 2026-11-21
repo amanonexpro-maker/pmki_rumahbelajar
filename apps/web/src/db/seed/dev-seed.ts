@@ -709,7 +709,7 @@ async function main() {
       category: "BERITA",
       excerpt: "Cerita kebersamaan peserta didik dan pengajar relawan di Lawang.",
       content:
-        "Setiap hari Sabtu pukul 15.00 hingga 17.15 WIB, peserta didik dan pengajar relawan berkumpul untuk belajar Matematika, Bahasa Inggris, Karakter, dan Literasi Membaca.",
+        "Setiap hari Sabtu pukul 15.00 hingga 17.00 WIB, peserta didik dan pengajar relawan berkumpul untuk belajar Matematika, Bahasa Inggris, Karakter, dan Literasi Membaca.",
       coverMediaId: media1.id,
       status: "PUBLISHED",
       publishedAt: new Date("2026-11-15T08:00:00Z"),
@@ -934,7 +934,7 @@ Keputusan penting ini diambil berkaitan langsung dengan permintaan peserta didik
 
 "Kami melihat semangat belajar anak-anak luar biasa. Dengan ditambahkannya kelas 8, kami menyiapkan metode penalaran matematika yang lebih mendalam, Bahasa Inggris lanjutan dengan metode percakapan serta role-play, dan buku referensi khusus," tutur Ms. Evi selaku Koordinator Unit.
 
-Rumah Belajar Griya Asih kini didukung oleh 13 pengajar relawan berdedikasi yang berasal dari guru sekolah Katolik dan guru sekolah negeri di sekitar Lawang. Pembelajaran dilaksanakan setiap hari Sabtu pukul 15.00 s/d 17.15 WIB.`,
+Rumah Belajar Griya Asih kini didukung oleh 13 pengajar relawan berdedikasi yang berasal dari guru sekolah Katolik dan guru sekolah negeri di sekitar Lawang. Pembelajaran dilaksanakan setiap hari Sabtu pukul 15.00 s/d 17.00 WIB.`,
       coverPath: "griya-asih/griya_asih_8.jpg",
       status: "PUBLISHED",
       publishedAt: new Date("2026-08-01T09:00:00Z"),
@@ -959,11 +959,11 @@ Kami percaya bahwa setiap anak memiliki kesempatan untuk berkembang. Dengan pend
       title: "Jadwal Bimbingan Belajar Semester Ganjil 2026/2027",
       category: "AGENDA",
       excerpt:
-        "Bimbingan belajar rutin setiap hari Sabtu pukul 15.00 – 17.15 WIB bertempat di RAAL Griya Asih Lawang.",
+        "Bimbingan belajar rutin setiap hari Sabtu pukul 15.00 – 17.00 WIB bertempat di RAAL Griya Asih Lawang.",
       content: `Diumumkan kepada seluruh orang tua dan wali peserta didik bahwa jadwal kegiatan bimbingan belajar Rumah Belajar Griya Asih berjalan rutin:
 
 - Hari: Setiap Hari Sabtu
-- Waktu: Pukul 15.00 s/d 17.15 WIB
+- Waktu: Pukul 15.00 s/d 17.00 WIB
 - Tempat: RAAL (Rumah Asuh Anak & Lansia) "Griya Asih" Lawang, Kab. Malang
 - Mata Pelajaran: Matematika Ceria, Bahasa Inggris Praktis, Pendidikan Karakter, dan Kelas Khusus Membaca (1 Jam).
 
@@ -972,7 +972,7 @@ Peserta didik diharapkan hadir 15 menit sebelum jam belajar dimulai dengan memba
       status: "PUBLISHED",
       publishedAt: new Date("2026-10-01T08:00:00Z"),
       eventDate: "2026-11-28",
-      eventLocation: 'RAAL "Griya Asih" Lawang (Setiap Sabtu, 15.00 – 17.15 WIB)',
+      eventLocation: 'RAAL "Griya Asih" Lawang (Setiap Sabtu, 15.00 – 17.00 WIB)',
     },
     {
       slug: "sosialisasi-persiapan-ebta-sd-kelas-6",

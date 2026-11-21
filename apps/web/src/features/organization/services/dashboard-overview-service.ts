@@ -569,7 +569,7 @@ export async function buildContextualDashboardViewModel(
     } else {
       upcomingSchedules.push({
         id: `cls-${ctx.classInfo.id}`,
-        timeRange: "15:00 – 17:15",
+        timeRange: "15:00 – 17:00",
         subjectName: "Sesi Bimbingan Belajar Sabtu",
         className: ctx.classInfo.name,
         roomName: ctx.classInfo.roomName ?? "Ruang Belajar",
@@ -742,7 +742,7 @@ export async function buildContextualDashboardViewModel(
       activityItems.push({
         id: "act-latest-attendance",
         dateGroup: getRelativeDateGroupLabel(latestSessionDate, now),
-        timeLabel: "17:15",
+        timeLabel: "17:00",
         title: "Presensi sesi belajar Sabtu tercatat",
         context: `${sessionsOnLatestDate.length} kelas tercatat pada buku presensi`,
         tone: "primary",

@@ -119,7 +119,7 @@ export default async function PublicKabarDetailPage({
       : "https://pmkirumahbelajar-web.vercel.app");
   const canonicalUrl = `${baseUrl}/kabar/${content.slug}`;
   const waShareUrl = `https://wa.me/?text=${encodeURIComponent(
-    generateWaShareText(content, baseUrl)
+    generateWaShareText(content, canonicalUrl)
   )}`;
 
   // ==========================================

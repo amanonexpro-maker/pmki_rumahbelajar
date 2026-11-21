@@ -168,21 +168,21 @@ export function EnhancedPhotoLightbox({
 
         {/* Center Image Display with Swipe Listener */}
         <div
-          className="relative flex-1 min-h-[45vh] sm:min-h-[55vh] max-h-[65vh] flex items-center justify-center bg-surface-subtle border-y border-border-subtle overflow-hidden select-none touch-pan-y"
+          className="relative flex-1 min-h-[45vh] sm:min-h-[55vh] flex items-center justify-center bg-surface-subtle border-y border-border-subtle overflow-hidden select-none touch-pan-y p-2 sm:p-4"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
           {currentPhoto.url && (
-            <div className="relative w-full h-full aspect-video sm:aspect-auto flex items-center justify-center p-2 sm:p-4">
+            <div className="relative w-full max-w-[min(100%,calc(60vh*4/5))] aspect-[4/5] bg-surface-subtle rounded-lg overflow-hidden flex items-center justify-center border border-border-subtle shadow-inner mx-auto">
               <Image
                 key={currentPhoto.url}
                 src={currentPhoto.url}
                 alt={currentPhoto.caption || `${albumTitle} - Foto ${currentIndex + 1}`}
                 fill
                 priority
-                sizes="(max-width: 1024px) 100vw, 896px"
-                className="object-contain animate-in fade-in duration-200"
+                sizes="(max-width: 1024px) 100vw, 600px"
+                className="max-w-full max-h-full object-contain transition-opacity duration-200"
               />
             </div>
           )}
@@ -193,7 +193,7 @@ export function EnhancedPhotoLightbox({
               type="button"
               onClick={handlePrev}
               aria-label="Foto sebelumnya"
-              className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 min-w-11 min-h-11 rounded-full items-center justify-center bg-surface/90 hover:bg-surface text-secondary-foreground hover:text-primary border border-border shadow-xs transition-colors focus-ring cursor-pointer"
+              className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 min-w-11 min-h-11 rounded-full items-center justify-center bg-surface/90 hover:bg-surface text-secondary-foreground hover:text-primary border border-border shadow-xs transition-colors focus-ring cursor-pointer z-10"
             >
               <ChevronLeft aria-hidden="true" className="w-6 h-6 shrink-0" />
             </button>
@@ -205,20 +205,20 @@ export function EnhancedPhotoLightbox({
               type="button"
               onClick={handleNext}
               aria-label="Foto selanjutnya"
-              className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 min-w-11 min-h-11 rounded-full items-center justify-center bg-surface/90 hover:bg-surface text-secondary-foreground hover:text-primary border border-border shadow-xs transition-colors focus-ring cursor-pointer"
+              className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 min-w-11 min-h-11 rounded-full items-center justify-center bg-surface/90 hover:bg-surface text-secondary-foreground hover:text-primary border border-border shadow-xs transition-colors focus-ring cursor-pointer z-10"
             >
               <ChevronRight aria-hidden="true" className="w-6 h-6 shrink-0" />
             </button>
           )}
 
           {/* Mobile Swipe Hint Indicator */}
-          <div className="sm:hidden absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-pill bg-surface/80 border border-border text-[10px] text-muted-foreground pointer-events-none">
+          <div className="sm:hidden absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-pill bg-surface/80 border border-border text-[10px] text-muted-foreground pointer-events-none z-10">
             Geser untuk navigasi foto
           </div>
         </div>
 
         {/* Bottom Caption Bar */}
-        <div className="p-3 sm:p-4 bg-surface-subtle shrink-0 text-center">
+        <div className="p-3 sm:p-4 bg-surface-subtle shrink-0 text-center border-t border-border-subtle">
           <p className="text-xs sm:text-sm text-muted-foreground italic leading-relaxed max-w-2xl mx-auto">
             {currentPhoto.caption || "Dokumentasi kegiatan belajar bersama di Rumah Belajar Griya Asih Lawang."}
           </p>

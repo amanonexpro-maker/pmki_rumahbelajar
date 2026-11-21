@@ -9,12 +9,28 @@ import {
   GalleryAlbumGrid,
   getPublicArticleDetail,
   PublicNavbar,
+  type PublicContent,
 } from "@/features/public";
 
 export const instant = false;
 
 interface PublicKabarDetailPageProps {
   params: Promise<{ slug: string }>;
+}
+
+/**
+ * Standardized WhatsApp Share Formatter for Articles and Gallery Albums.
+ * Ensures consistent tone, warm narrative, correct date formatting, canonical URL, and canonical hashtags.
+ */
+export function generateWaShareText(content: PublicContent, baseUrl: string): string {
+  const url = `${baseUrl}/kabar/${content.slug}`;
+
+  if (content.type === "gallery_album") {
+    return `📸 Dokumentasi Kegiatan: "${content.title}"\n\nHari ini anak-anak Griya Asih belajar dengan semangat! Senang melihat perkembangan mereka.\n\nTanggal: ${content.date}\n\nLihat momen lengkapnya di sini:\n${url}\n\n#GriyaAsih #HappyLearning`;
+  }
+
+  const dateStr = content.publishedDateFormatted || content.date;
+  return `📰 Warta Griya Asih: "${content.title}"\n\n${content.excerpt}\n\nTanggal: ${dateStr}\n\nBaca warta selengkapnya di sini:\n${url}\n\n#GriyaAsih #KabarGriyaAsih #RumahBelajar`;
 }
 
 export async function generateMetadata({
@@ -30,6 +46,10 @@ export async function generateMetadata({
     };
   }
 
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://pmkirumahbelajar-web.vercel.app";
+  const canonicalUrl = `${baseUrl}/kabar/${content.slug}`;
+
   const coverUrl =
     content.type === "article"
       ? content.coverSignedUrl || content.coverImage
@@ -41,9 +61,14 @@ export async function generateMetadata({
   return {
     title: `${content.title} | Kabar Griya Asih`,
     description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: content.title,
       description,
+      url: canonicalUrl,
+      type: "article",
       images: coverUrl
         ? [
             {
@@ -52,6 +77,12 @@ export async function generateMetadata({
             },
           ]
         : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: content.title,
+      description,
+      images: coverUrl ? [coverUrl] : undefined,
     },
   };
 }
@@ -74,14 +105,17 @@ export default async function PublicKabarDetailPage({
     notFound();
   }
 
-  const canonicalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://pmki-rumahbelajar.vercel.app"}/kabar/${content.slug}`;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://pmkirumahbelajar-web.vercel.app";
+  const canonicalUrl = `${baseUrl}/kabar/${content.slug}`;
+  const waShareUrl = `https://wa.me/?text=${encodeURIComponent(
+    generateWaShareText(content, baseUrl)
+  )}`;
 
   // ==========================================
   // MODE 1: DOKUMENTASI GALERI (gallery_album)
   // ==========================================
   if (content.type === "gallery_album") {
-    const shareMessage = `📸 Dokumentasi Kegiatan: "${content.title}"\n\nHari ini anak-anak Griya Asih belajar dengan semangat! Senang melihat perkembangan mereka.\n\nTanggal: ${content.date}\n\nLihat momen lengkapnya di sini:\n${canonicalUrl}\n\n#GriyaAsih #HappyLearning`;
-    const waShareUrl = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
 
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
@@ -193,9 +227,6 @@ export default async function PublicKabarDetailPage({
   // ==========================================
   // MODE 2: WARTA BERITA (article)
   // ==========================================
-  const shareText = `${content.title}\n\n${content.excerpt}\n\nBaca selengkapnya di Kabar Rumah Belajar Griya Asih:\n${canonicalUrl}`;
-  const waShareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-
   const paragraphs = content.content
     .split(/\n\n+/)
     .map((p) => p.trim())

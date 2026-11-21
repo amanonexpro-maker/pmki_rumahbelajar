@@ -29,6 +29,16 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Environment Variables
+
+Pastikan environment variables berikut telah dikonfigurasi di Vercel Settings & `.env.local`:
+- `NEXT_PUBLIC_APP_URL="https://pmkirumahbelajar-web.vercel.app"` (Domain Produksi Final — Canonical Base URL untuk Metadata OpenGraph, Twitter Card, dan Tautan Share WhatsApp)
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `DATABASE_URL`
+- `DIRECT_URL`
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

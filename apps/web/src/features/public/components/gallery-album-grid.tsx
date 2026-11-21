@@ -95,3 +95,4 @@ export function GalleryAlbumGrid({ photos, albumTitle }: GalleryAlbumGridProps) 
     </>
   );
 }
+

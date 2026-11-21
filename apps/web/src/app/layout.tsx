@@ -32,8 +32,11 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_APP_URL || "https://pmkirumahbelajar-web.vercel.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://pmkirumahbelajar-web.vercel.app"),
+  metadataBase: new URL(siteUrl),
   title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
   description:
     "Platform Pelayanan Terpadu PMKI (Pilot: Rumah Belajar Griya Asih Lawang). Ruang belajar inklusif, hangat, dan akuntabel.",
@@ -51,22 +54,22 @@ export const metadata: Metadata = {
     title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
     description:
       "Ayo belajar dan tumbuh bersama. Rumah belajar yang terbuka bagi semua di Lawang, Kabupaten Malang.",
-    url: "https://pmkirumahbelajar-web.vercel.app",
+    url: siteUrl,
     siteName: "PMKI Platform",
     locale: "id_ID",
     type: "website",
     images: [
       {
-        url: "https://pmkirumahbelajar-web.vercel.app/pmki_og_image.jpg",
-        secureUrl: "https://pmkirumahbelajar-web.vercel.app/pmki_og_image.jpg",
+        url: `${siteUrl}/pmki_og_image.jpg`,
+        secureUrl: `${siteUrl}/pmki_og_image.jpg`,
         width: 1200,
         height: 630,
         type: "image/jpeg",
         alt: "Rumah Belajar Griya Asih Lawang — PMKI",
       },
       {
-        url: "https://pmkirumahbelajar-web.vercel.app/pmki_og_image.png",
-        secureUrl: "https://pmkirumahbelajar-web.vercel.app/pmki_og_image.png",
+        url: `${siteUrl}/pmki_og_image.png`,
+        secureUrl: `${siteUrl}/pmki_og_image.png`,
         width: 1200,
         height: 630,
         type: "image/png",
@@ -79,7 +82,7 @@ export const metadata: Metadata = {
     title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
     description:
       "Ayo belajar dan tumbuh bersama. Rumah belajar yang terbuka bagi semua.",
-    images: ["https://pmkirumahbelajar-web.vercel.app/pmki_og_image.jpg"],
+    images: [`${siteUrl}/pmki_og_image.jpg`],
   },
 };
 

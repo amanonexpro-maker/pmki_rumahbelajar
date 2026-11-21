@@ -166,9 +166,11 @@ export function KabarFeedView({
             {visibleItems.map((item) => {
               if (item.type === "berita") {
                 return (
-                  <article
+                  <Link
                     key={item.id}
-                    className="group flex flex-col justify-between rounded-card bg-surface border border-border hover:border-primary/40 transition-colors overflow-hidden h-full shadow-xs"
+                    href={`/kabar/${item.slug}`}
+                    className="group flex flex-col justify-between rounded-card bg-surface border border-border hover:border-primary/40 transition-all duration-200 overflow-hidden h-full shadow-xs hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.99] text-inherit no-underline"
+                    aria-label={`Buka berita: ${item.title}`}
                   >
                     <div>
                       {/* Thumbnail Berita */}
@@ -178,7 +180,7 @@ export function KabarFeedView({
                           alt={`${item.title} (Berita)`}
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 380px"
-                          className="object-cover group-hover:scale-105 transition-transform duration-200"
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         {/* Discrete Type Badge */}
                         <span className="absolute top-2.5 left-2.5 rounded-pill px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-info-soft text-info shadow-xs">
@@ -205,43 +207,38 @@ export function KabarFeedView({
                     </div>
 
                     <div className="p-4 sm:p-5 pt-0">
-                      <Link
-                        href={`/kabar/${item.slug}`}
-                        className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary hover:underline focus-ring rounded-control"
-                      >
+                      <span className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary group-hover:underline">
                         <span>Baca selengkapnya</span>
                         <span aria-hidden="true">→</span>
-                      </Link>
+                      </span>
                     </div>
-                  </article>
+                  </Link>
                 );
               }
 
               // Kartu Galeri Dokumentasi (Mengarahkan ke Halaman Album Detail)
               return (
-                <article
+                <Link
                   key={item.id}
-                  className="group flex flex-col justify-between rounded-card bg-surface border border-border hover:border-primary/40 transition-colors overflow-hidden h-full shadow-xs"
+                  href={`/kabar/${item.slug}`}
+                  className="group flex flex-col justify-between rounded-card bg-surface border border-border hover:border-primary/40 transition-all duration-200 overflow-hidden h-full shadow-xs hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.99] text-inherit no-underline"
+                  aria-label={`Buka album dokumentasi: ${item.title}`}
                 >
                   <div>
                     {/* Cover Galeri */}
-                    <Link
-                      href={`/kabar/${item.slug}`}
-                      className="block relative aspect-video w-full overflow-hidden bg-surface-subtle border-b border-border-subtle focus-ring"
-                      aria-label={`Buka album dokumentasi: ${item.title}`}
-                    >
+                    <div className="relative aspect-video w-full overflow-hidden bg-surface-subtle border-b border-border-subtle">
                       <Image
                         src={item.coverUrl}
                         alt={`${item.title} (Galeri)`}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 380px"
-                        className="object-cover group-hover:scale-105 transition-transform duration-200"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       {/* Discrete Type Badge */}
                       <span className="absolute top-2.5 left-2.5 rounded-pill px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-success-soft text-success shadow-xs">
                         Galeri
                       </span>
-                    </Link>
+                    </div>
 
                     {/* Content Body */}
                     <div className="p-4 sm:p-5 space-y-2">
@@ -252,12 +249,7 @@ export function KabarFeedView({
                       </div>
 
                       <h3 className="font-sans font-bold text-sm sm:text-base text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                        <Link
-                          href={`/kabar/${item.slug}`}
-                          className="hover:underline focus-ring rounded-xs"
-                        >
-                          {item.title}
-                        </Link>
+                        {item.title}
                       </h3>
 
                       <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
@@ -267,15 +259,12 @@ export function KabarFeedView({
                   </div>
 
                   <div className="p-4 sm:p-5 pt-0">
-                    <Link
-                      href={`/kabar/${item.slug}`}
-                      className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary hover:underline focus-ring rounded-control"
-                    >
+                    <span className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary group-hover:underline">
                       <span>Lihat album dokumentasi</span>
                       <span aria-hidden="true">→</span>
-                    </Link>
+                    </span>
                   </div>
-                </article>
+                </Link>
               );
             })}
           </div>

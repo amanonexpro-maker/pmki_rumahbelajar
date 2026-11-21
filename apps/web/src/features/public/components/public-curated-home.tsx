@@ -175,7 +175,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
             {latestAlbum ? (
               <div className={latestArticle ? "md:col-span-5" : "md:col-span-12"}>
                 <Link
-                  href="/kabar?tab=galeri"
+                  href={latestAlbum.slug ? `/kabar/${latestAlbum.slug}` : "/kabar?tab=galeri"}
                   className="group flex flex-col justify-between p-3.5 rounded-card bg-surface border border-border hover:border-primary/40 transition-colors h-full space-y-2.5"
                 >
                   <div className="relative aspect-video w-full rounded-card overflow-hidden bg-surface-subtle border border-border-subtle">

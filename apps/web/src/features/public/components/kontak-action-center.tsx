@@ -839,14 +839,14 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
             <div className="pt-2">
               <a
                 href={`https://wa.me/${CONTACTS[1].waNumber}?text=${encodeURIComponent(
-                  `Halo ${CONTACTS[1].name}, saya ingin bertanya dan konfirmasi dukungan donasi untuk kegiatan belajar di Rumah Belajar Griya Asih Lawang.`
+                  `Halo ${CONTACTS[1].name}, saya ingin mengonfirmasi metode donasi resmi dan dukungan untuk Rumah Belajar Griya Asih Lawang.`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full inline-flex min-h-12 items-center justify-center gap-2.5 px-5 py-3 rounded-control bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-sm transition-colors shadow-xs active:scale-[0.985] focus-ring"
               >
                 <KontakIcon aria-hidden="true" className="w-4 h-4" />
-                <span>Chat WhatsApp {CONTACTS[1].name} (Konfirmasi Donasi &amp; Dukungan)</span>
+                <span>Konfirmasi Donasi &amp; Dukungan</span>
               </a>
             </div>
           )}

@@ -213,8 +213,11 @@ export async function requestPasswordReset(
 ): Promise<ActionResult<{ requested: true }>> {
   const supabase = await createSupabaseServerClient();
   const appUrl =
+    process.env.APP_URL?.replace(/\/$/, "") ||
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "http://localhost:3000";
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "https://pmkirumahbelajar-web.vercel.app");
 
   const { error } = await supabase.auth.resetPasswordForEmail(input.email, {
     redirectTo: `${appUrl}/auth/login`,

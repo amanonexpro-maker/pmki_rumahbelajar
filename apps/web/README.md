@@ -32,7 +32,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 ## Environment Variables
 
 Pastikan environment variables berikut telah dikonfigurasi di Vercel Settings & `.env.local`:
-- `NEXT_PUBLIC_APP_URL="https://pmkirumahbelajar-web.vercel.app"` (Domain Produksi Final — Canonical Base URL untuk Metadata OpenGraph, Twitter Card, dan Tautan Share WhatsApp)
+- `APP_URL="https://pmkirumahbelajar-web.vercel.app"` atau `NEXT_PUBLIC_APP_URL="https://pmkirumahbelajar-web.vercel.app"` (Opsional di Vercel, karena kode secara otomatis mengenali VERCEL_PROJECT_PRODUCTION_URL dan memiliki fallback kanonikal https://pmkirumahbelajar-web.vercel.app)
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`

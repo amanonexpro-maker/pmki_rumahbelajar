@@ -47,7 +47,11 @@ export async function generateMetadata({
   }
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://pmkirumahbelajar-web.vercel.app";
+    process.env.APP_URL?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "https://pmkirumahbelajar-web.vercel.app");
   const canonicalUrl = `${baseUrl}/kabar/${content.slug}`;
 
   const coverUrl =
@@ -106,7 +110,11 @@ export default async function PublicKabarDetailPage({
   }
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://pmkirumahbelajar-web.vercel.app";
+    process.env.APP_URL?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "https://pmkirumahbelajar-web.vercel.app");
   const canonicalUrl = `${baseUrl}/kabar/${content.slug}`;
   const waShareUrl = `https://wa.me/?text=${encodeURIComponent(
     generateWaShareText(content, baseUrl)

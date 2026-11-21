@@ -3,42 +3,29 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Home, PhoneCall, UserPlus, type LucideIcon } from "lucide-react";
+import { ICON_MAP } from "@/config/icons";
 import { cn } from "@/lib/cn";
 
 interface BottomNavItem {
-  label: string;
-  href: string;
-  icon: LucideIcon;
-  /** Path prefix yang dianggap aktif. Tanpa ini, item tidak pernah aktif (mis. anchor). */
-  matchPaths?: string[];
-  activeExact?: boolean;
+  readonly label: string;
+  readonly href: string;
+  readonly iconKey: "beranda" | "program" | "kabar" | "kontak";
 }
 
-const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
-  { label: "Beranda", href: "/", icon: Home, matchPaths: ["/"], activeExact: true },
-  { label: "Program", href: "/program", icon: BookOpen, matchPaths: ["/program"] },
-  {
-    label: "Daftar",
-    href: "/pendaftaran",
-    icon: UserPlus,
-    matchPaths: ["/pendaftaran", "/registration"],
-  },
-  { label: "Kontak", href: "/kontak", icon: PhoneCall, matchPaths: ["/kontak"] },
-];
-
-function isItemActive(item: BottomNavItem, pathname: string): boolean {
-  if (!item.matchPaths) return false;
-  return item.matchPaths.some((path) =>
-    item.activeExact ? pathname === path : pathname === path || pathname.startsWith(`${path}/`)
-  );
-}
+const BOTTOM_NAV_ITEMS: readonly BottomNavItem[] = [
+  { label: "Beranda", href: "/", iconKey: "beranda" },
+  { label: "Program", href: "/program", iconKey: "program" },
+  { label: "Kabar", href: "/kabar", iconKey: "kabar" },
+  { label: "Kontak", href: "/kontak", iconKey: "kontak" },
+] as const;
 
 /**
- * Public Bottom Navigation (Fase 13c-1, Fase 13j, UI-UX §30–31, 03 §9).
- * Hanya mobile (< md). Hanya dipasang di route group (public), bukan Workspace.
- * Touch target >= 44px (setiap item setinggi bar 64px), safe-area iOS dihormati.
- * Seluruh 4 tab diperlakukan setara secara proporsional tanpa hierarki buatan.
+ * Public Bottom Navigation Bar (Fase 14 Step 3, UI-UX §30–31, 03 §9).
+ * - 4 item kanonik: [Beranda] [Program] [Kabar] [Kontak].
+ * - Item "Daftar" dihapus total dari bottom nav.
+ * - Mobile-only (< md). Seluruh item proporsional setara tanpa hierarki buatan.
+ * - Touch target >= 44px (min-h-11), safe-area padding dihormati.
+ * - Menggunakan ICON_MAP dari registry semantik (anti-drift).
  */
 export function PublicBottomNav() {
   const pathname = usePathname();
@@ -46,33 +33,32 @@ export function PublicBottomNav() {
   return (
     <nav
       aria-label="Navigasi cepat situs publik"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border-subtle bg-surface/98 backdrop-blur-md pt-1 pb-[max(env(safe-area-inset-bottom,0px),16px)] shadow-overlay md:hidden"
+      className="fixed bottom-0 inset-x-0 z-40 bg-surface border-t border-border-subtle pb-[max(env(safe-area-inset-bottom,0px),16px)] md:hidden"
     >
-      <ul className="flex h-14 items-stretch justify-around">
+      <ul className="flex h-16 items-stretch justify-around">
         {BOTTOM_NAV_ITEMS.map((item) => {
-          const active = isItemActive(item, pathname);
-          const Icon = item.icon;
+          const isActive =
+            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const Icon = ICON_MAP[item.iconKey];
 
           return (
-            <li key={item.label} className="flex-1">
+            <li key={item.label} className="flex-1 min-w-0">
               <Link
                 href={item.href}
-                aria-current={active ? "page" : undefined}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex h-full min-h-[44px] w-full flex-col items-center justify-center gap-0.5 text-xs transition-colors duration-150 focus-ring",
-                  active
+                  "flex h-full min-h-[44px] w-full flex-col items-center justify-center gap-1 py-2 text-[10px] transition-colors duration-200 focus-ring rounded-xs",
+                  isActive
                     ? "font-semibold text-primary"
                     : "font-normal text-muted-foreground hover:text-foreground"
                 )}
               >
-                <span className="inline-flex items-center justify-center">
-                  <Icon
-                    aria-hidden="true"
-                    className="h-5 w-5"
-                    strokeWidth={active ? 2 : 1.5}
-                  />
-                </span>
-                <span>{item.label}</span>
+                <Icon
+                  aria-hidden="true"
+                  className="w-5 h-5 shrink-0"
+                  strokeWidth={2}
+                />
+                <span className="truncate max-w-full px-1">{item.label}</span>
               </Link>
             </li>
           );

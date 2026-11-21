@@ -3,7 +3,6 @@ import { connection } from "next/server";
 import {
   getPublicPortalData,
   PublicCuratedHome,
-  PublicFooter,
   PublicNavbar,
 } from "@/features/public";
 
@@ -62,8 +61,6 @@ export default async function PublicHomePage() {
       <main className="flex-1">
         <PublicCuratedHome data={data} />
       </main>
-
-      <PublicFooter />
     </div>
   );
 }

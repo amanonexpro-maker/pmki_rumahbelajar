@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PublicFooter, PublicNavbar } from "@/features/public";
+import { PublicNavbar } from "@/features/public";
 import { PublicRegistrationWizard } from "@/features/students";
 
 export const instant = false;
@@ -35,8 +35,6 @@ export default function PublicRegistrationPage() {
           <PublicRegistrationWizard />
         </div>
       </main>
-
-      <PublicFooter />
     </div>
   );
 }

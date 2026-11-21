@@ -12,7 +12,6 @@ import {
 import {
   getPublicPortalData,
   PublicContactForm,
-  PublicFooter,
   PublicNavbar,
 } from "@/features/public";
 
@@ -151,12 +150,13 @@ export default async function PublicContactPage() {
 
                   <div className="flex items-start gap-3">
                     <MapPin aria-hidden="true" className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    {/* TD-ADDR: literal stopgap keselamatan komunitas (PO-confirmed 2026-11-21) -> dilunasi di Step 2 via config/site.ts */}
                     <div>
                       <p className="font-semibold text-foreground">
-                        {data.locationFull}
+                        Jl. Ngamarto Selatan, RT.06/RW.02
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {data.subDistrictsLabel}
+                        Desa Ngamarto, Lawang, Malang, Jawa Timur 65211
                       </p>
                     </div>
                   </div>
@@ -202,8 +202,6 @@ export default async function PublicContactPage() {
           </div>
         </div>
       </main>
-
-      <PublicFooter />
     </div>
   );
 }

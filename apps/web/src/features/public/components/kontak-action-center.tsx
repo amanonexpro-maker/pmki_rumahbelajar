@@ -286,7 +286,7 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
                       className="w-full inline-flex min-h-12 items-center justify-center gap-2.5 px-5 py-3 rounded-control bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-sm transition-colors shadow-xs active:scale-[0.985] focus-ring"
                     >
                       <KontakIcon aria-hidden="true" className="w-4 h-4" />
-                      <span>Chat WhatsApp {CONTACTS[0].name} (Pendaftaran &amp; Belajar)</span>
+                      <span>WhatsApp {CONTACTS[0].name}</span>
                     </a>
                   </div>
                 )}
@@ -320,7 +320,7 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
                       className="w-full inline-flex min-h-12 items-center justify-center gap-2.5 px-5 py-3 rounded-control bg-surface hover:bg-surface-subtle text-foreground border border-border font-semibold text-sm transition-colors shadow-xs active:scale-[0.985] focus-ring"
                     >
                       <KontakIcon aria-hidden="true" className="w-4 h-4 text-primary" />
-                      <span>Chat WhatsApp {CONTACTS[1].name} (Informasi &amp; Humas)</span>
+                      <span>WhatsApp {CONTACTS[1].name}</span>
                     </a>
                   </div>
                 )}

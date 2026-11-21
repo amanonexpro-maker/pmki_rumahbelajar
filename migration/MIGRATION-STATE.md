@@ -61,6 +61,7 @@
 | HOTFIX-DOMAIN-FINAL | Sinkronisasi Domain Eksternal & Standarisasi Share WA | `DONE` | HOTFIX-DOMAIN-FINAL: Synced all external URLs to pmkirumahbelajar-web.vercel.app; Standardized WA Share templates; Removed legacy domain hardcodes; Documented Vercel NEXT_PUBLIC_APP_URL requirement. |
 | HOTFIX-LABEL-SHARE | Penyederhanaan Label Tombol Share Galeri | `DONE` | HOTFIX-LABEL-SHARE: Simplified Gallery Share button label to 'Bagikan Album Ini' for better UX universality. |
 | HOTFIX-USABILITY | Perluasan Area Clickable Kartu Berita & Galeri | `DONE` | HOTFIX-USABILITY: Expanded clickable area for News/Gallery cards to include Image and Title wrappers for better mobile touch experience. |
+| HOTFIX-LABEL-WA | Penyederhanaan Label Tombol Chat WhatsApp Kontak | `DONE` | HOTFIX-LABEL-WA: Simplified WhatsApp button labels to 'WhatsApp [Name]' removing redundant role descriptions for cleaner UI. |
 
 ---
 

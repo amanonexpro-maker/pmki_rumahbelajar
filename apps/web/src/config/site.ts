@@ -157,7 +157,52 @@ export const SOCIAL_LINKS: readonly PublicSocialLink[] = []; // MISSING — PO T
  * Ringkasan Hukum & Kebijakan Privasi
  */
 export const LEGAL: PublicLegalInformation = {
-  privacySummary: undefined, // MISSING — PO TO SUPPLY
-  termsSummary: undefined, // MISSING — PO TO SUPPLY
+  privacySummary: `Kebijakan Privasi Rumah Belajar Griya Asih
+Pembaruan Terakhir: November 2026
+
+Rumah Belajar Griya Asih (di bawah naungan Yayasan Pelayanan Masyarakat Kota & Industri / PMKI) berkomitmen penuh untuk melindungi privasi, martabat, dan rasa aman seluruh peserta didik serta keluarga.
+
+1. Prinsip Perlindungan Data Anak
+Data peserta didik bersifat privat secara bawaan (private by default). Kami menerapkan pengumpulan data seminimal mungkin (minimum disclosure) yang hanya relevan untuk kebutuhan bimbingan belajar dan pendampingan karakter.
+
+2. Informasi yang Kami Kelola
+• Data Pendaftaran: Nama lengkap peserta didik, tanggal lahir/usia, jenjang kelas sekolah, serta nama orang tua/wali.
+• Kontak Resmi: Nomor telepon/WhatsApp orang tua atau wali untuk koordinasi kegiatan, jadwal, dan keadaan darurat.
+• Catatan Operasional: Presensi kehadiran dan catatan perkembangan belajar yang dikelola secara internal oleh pengajar.
+
+3. Pemisahan Hak Persetujuan (Explicit Consent)
+Kami memisahkan secara tegas antara persetujuan operasional data dan publikasi media:
+• Persetujuan Data: Digunakan semata-mata untuk verifikasi administrasi dan penempatan kelas belajar.
+• Persetujuan Foto & Video: Dokumentasi kegiatan hanya dipublikasikan di portal atau media resmi setelah memperoleh izin eksplisit dari orang tua/wali dan lolos peninjauan privasi pengurus.
+
+4. Keamanan & Kerahasiaan
+Data Anda tidak pernah diperjualbelikan, disewakan, atau dibagikan kepada pihak ketiga mana pun untuk tujuan komersial. Akses terhadap data dibatasi secara ketat hanya bagi pengurus dan pengajar yang bertugas (need-to-know basis).
+
+5. Hak Orang Tua & Wali
+Orang tua atau wali berhak memeriksa data pribadi peserta didik, mengajukan pembaruan data, atau mencabut persetujuan dokumentasi publikasi kapan saja dengan menghubungi pengurus melalui kanal resmi kami.`,
+
+  termsSummary: `Syarat & Ketentuan Rumah Belajar Griya Asih
+Pembaruan Terakhir: November 2026
+
+Selamat datang di Rumah Belajar Griya Asih Lawang. Ketentuan ini dibuat demi kenyamanan, keselamatan, dan kebaikan bersama seluruh keluarga besar peserta didik, pengajar relawan, dan pengurus.
+
+1. Sifat Layanan & Pembiayaan
+Rumah Belajar Griya Asih adalah gerakan pelayanan bimbingan belajar komunitas non-profit yang terbuka bagi anak-anak usia sekolah (jenjang TK hingga SMP Kelas 8). Seluruh kegiatan belajar mengajar diselenggarakan secara 100% GRATIS tanpa pungutan biaya pendidikan.
+
+2. Jadwal & Disiplin Belajar
+• Sesi belajar rutin diadakan setiap hari Sabtu pukul 15.00 – 17.00 WIB bertempat di RAAL Griya Asih Lawang.
+• Peserta didik diharapkan hadir 15 menit lebih awal (14.45 WIB) untuk salam santun dan presensi.
+• Apabila peserta didik berhalangan hadir karena sakit atau ada keperluan keluarga, orang tua/wali diharapkan menyampaikan pemberitahuan kepada pengurus atau pengajar.
+
+3. Lingkungan Belajar yang Aman & Santun
+Kami mewujudkan ruang belajar yang ramah anak, inklusif, dan saling mendukung. Setiap peserta didik, relawan, dan wali wajib menjaga sikap saling menghormati:
+• Dilarang keras melakukan perundungan (bullying), kekerasan fisik, perkataan kasar, maupun diskriminasi.
+• Menjaga kebersihan dan merawat fasilitas belajar bersama di lingkungan RAAL Griya Asih.
+
+4. Kemitraan Orang Tua & Pengajar Relawan
+Kegiatan ini didukung oleh para pengajar relawan yang melayani dengan ketulusan hati. Kami mengajak orang tua dan wali untuk senantiasa mendampingi dan memberi dorongan semangat belajar kepada anak di rumah.
+
+5. Saluran Komunikasi Resmi
+Seluruh informasi pendaftaran, perubahan jadwal, dan komunikasi darurat hanya disampaikan melalui narahubung resmi pengurus via WhatsApp (+62 812-3235-318 / +62 813-3298-7491).`,
 } as const;
 

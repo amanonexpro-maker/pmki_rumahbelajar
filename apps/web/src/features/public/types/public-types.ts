@@ -56,6 +56,7 @@ export interface PublicCoordinatorContactDTO {
 
 export interface PublicGalleryItemDTO {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   category: MediaCategoryCode;
@@ -82,6 +83,46 @@ export interface PublicNewsItemDTO {
   eventDate: string | null;
   eventLocation: string | null;
 }
+
+/**
+ * Dual-Mode Public Content Contract (FASE 14 Hotfix Lanjutan):
+ * Menyajikan ArticleContent (Warta/Berita) atau GalleryAlbumContent (Dokumentasi Foto).
+ */
+export interface ArticleContent {
+  type: "article";
+  title: string;
+  slug: string;
+  date: string;
+  publishedDateFormatted: string;
+  author: string;
+  categoryLabel: string;
+  excerpt: string;
+  bodyHtml: string;
+  content: string;
+  coverImage?: string;
+  coverSignedUrl?: string;
+  eventDate?: string | null;
+  eventLocation?: string | null;
+}
+
+export interface GalleryPhoto {
+  url: string;
+  caption: string;
+}
+
+export interface GalleryAlbumContent {
+  type: "gallery_album";
+  title: string;
+  slug: string;
+  date: string;
+  description: string;
+  author: string;
+  categoryLabel: string;
+  coverImage?: string;
+  photos: GalleryPhoto[];
+}
+
+export type PublicContent = ArticleContent | GalleryAlbumContent;
 
 export interface PublicPortalDataDTO {
   serviceUnitName: string;

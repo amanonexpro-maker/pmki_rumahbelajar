@@ -260,5 +260,28 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       expect(source).not.toMatch(/\bfont-display\b/);
     }
   });
+
+  it("resolves dual-mode content for both articles and gallery albums in getPublicArticleDetail", async () => {
+    const { getPublicArticleDetail } = await import("./index");
+
+    // 1. Article type
+    const article = await getPublicArticleDetail("tahun-ajaran-2026-2027-buka-kelas-smp-8");
+    expect(article).not.toBeNull();
+    expect(article?.type).toBe("article");
+    if (article?.type === "article") {
+      expect(article.title).toContain("SMP Kelas 8");
+      expect(article.content).toContain("Griya Asih");
+    }
+
+    // 2. Gallery Album type
+    const album = await getPublicArticleDetail("suasana-belajar-sabtu-griya-asih");
+    expect(album).not.toBeNull();
+    expect(album?.type).toBe("gallery_album");
+    if (album?.type === "gallery_album") {
+      expect(album.title).toBe("Suasana Belajar Sabtu Griya Asih");
+      expect(album.photos.length).toBeGreaterThan(1);
+      expect(album.photos[0].url).toContain("/images/gallery/");
+    }
+  });
 });
 

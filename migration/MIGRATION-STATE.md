@@ -57,6 +57,7 @@
 | 14-Step10 | Audit Akhir Holistik Fase 14 (Steps 1–9) | `DONE` | Fase 14 COMPLETE — All Steps Passed Audit Ready For Production Deployment Pending Final Sign-off. (1) Anti-Hardcode: 100% config/service, eliminasi total jam 17.15 ke HOURS.window di seluruh DOM & metadata, TD-ADDR lunas, field yatim bersih; (2) Ikonografi: 100% konsisten via ICON_MAP; (3) Mobile-first: 375px baseline, safe-area padding utuh, CLS 0; (4) Aksesibilitas: WCAG AA, focus-ring, aria labels, reduced motion; (5) Build gates: Typecheck 0 error, Vitest 13/13 PASS, Next.js 16 build 24/24 rute valid. |
 | HOTFIX-POST-DEPLOY | Perbaikan Routing Berita & Tema Lightbox | `DONE` | HOTFIX-POST-DEPLOY: Fixed 404 on News tab due to middleware/stub conflict; Refactored Gallery Lightbox to Light Theme per Design System §9. |
 | HOTFIX-NEWS-CONTENT | Rute Detail Konten Berita /kabar/[slug] & 404 Fallback | `DONE` | HOTFIX-NEWS-CONTENT: Resolved 404 on article clicks by creating `/kabar/[slug]` detail page with full editorial layout, breadcrumbs, WhatsApp share, and privacy notes; Added `getPublishedPublicationBySlug` service & canonical authentic publications fallback in `public-portal-service`; Added `/news/:slug+` 308 permanent redirect; Added warm, human custom `not-found.tsx`. |
+| HOTFIX-GALLERY-V2 | Halaman Detail Galeri Dual-Mode & Enhanced Lightbox | `DONE` | HOTFIX-GALLERY-V2: Implemented Dual-Mode Detail Page (/kabar/[slug]) supporting Articles & Albums; Built Enhanced Light Theme Swipe Lightbox; Enforced Server-Side Consent Gating for All Gallery Media. |
 
 ---
 

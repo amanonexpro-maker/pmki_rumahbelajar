@@ -4,7 +4,6 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
-import { KabarAlbumLightbox, type LightboxAlbum } from "./kabar-album-lightbox";
 import { KabarEmptyState } from "./kabar-empty-state";
 import type {
   PublicGalleryItemDTO,
@@ -32,13 +31,13 @@ export interface HybridNewsFeedItem {
 
 export interface HybridGalleryFeedItem {
   id: string;
+  slug: string;
   type: "galeri";
   title: string;
   categoryLabel: string;
   dateFormatted: string;
   coverUrl: string;
   description: string;
-  album: LightboxAlbum;
 }
 
 export type HybridFeedItem = HybridNewsFeedItem | HybridGalleryFeedItem;
@@ -65,8 +64,6 @@ export function KabarFeedView({
 }: KabarFeedViewProps) {
   const [activeTab, setActiveTab] = React.useState<KabarTabFilter>(initialTab);
   const [displayLimit, setDisplayLimit] = React.useState(INITIAL_DISPLAY_LIMIT);
-  const [selectedAlbum, setSelectedAlbum] = React.useState<LightboxAlbum | null>(null);
-  const [isLightboxOpen, setIsLightboxOpen] = React.useState<boolean>(false);
 
   // Transformasi data real ke model feed hybrid
   const allHybridItems = React.useMemo<HybridFeedItem[]>(() => {
@@ -81,26 +78,25 @@ export function KabarFeedView({
       coverUrl: post.coverSignedUrl,
     }));
 
-    const formattedGallery: HybridGalleryFeedItem[] = galleryItems.map((item) => ({
-      id: `gallery-${item.id}`,
-      type: "galeri",
-      title: item.title,
-      categoryLabel: item.categoryLabel,
-      dateFormatted: item.capturedDate,
-      coverUrl: item.signedReadUrl,
-      description: item.description,
-      album: {
+    const formattedGallery: HybridGalleryFeedItem[] = galleryItems.map((item) => {
+      const generatedSlug = item.slug || item.title
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+
+      return {
+        id: `gallery-${item.id}`,
+        slug: generatedSlug.length > 3 ? generatedSlug : `galeri-${item.id}`,
+        type: "galeri",
         title: item.title,
-        date: item.capturedDate,
-        count: 1,
-        photos: [
-          {
-            url: item.signedReadUrl,
-            caption: item.description,
-          },
-        ],
-      },
-    }));
+        categoryLabel: item.categoryLabel,
+        dateFormatted: item.capturedDate,
+        coverUrl: item.signedReadUrl,
+        description: item.description,
+      };
+    });
 
     // Gabung secara interleave / urut
     const combined: HybridFeedItem[] = [];
@@ -125,15 +121,6 @@ export function KabarFeedView({
 
   const visibleItems = filteredItems.slice(0, displayLimit);
   const hasMore = filteredItems.length > displayLimit;
-
-  const handleOpenAlbum = (album: LightboxAlbum) => {
-    setSelectedAlbum(album);
-    setIsLightboxOpen(true);
-  };
-
-  const handleCloseLightbox = () => {
-    setIsLightboxOpen(false);
-  };
 
   return (
     <div className="space-y-6">
@@ -230,16 +217,19 @@ export function KabarFeedView({
                 );
               }
 
-              // Kartu Galeri Dokumentasi (Membuka Lightbox)
+              // Kartu Galeri Dokumentasi (Mengarahkan ke Halaman Album Detail)
               return (
                 <article
                   key={item.id}
-                  className="group flex flex-col justify-between rounded-card bg-surface border border-border hover:border-primary/40 transition-colors overflow-hidden h-full shadow-xs cursor-pointer"
-                  onClick={() => handleOpenAlbum(item.album)}
+                  className="group flex flex-col justify-between rounded-card bg-surface border border-border hover:border-primary/40 transition-colors overflow-hidden h-full shadow-xs"
                 >
                   <div>
                     {/* Cover Galeri */}
-                    <div className="relative aspect-video w-full overflow-hidden bg-surface-subtle border-b border-border-subtle">
+                    <Link
+                      href={`/kabar/${item.slug}`}
+                      className="block relative aspect-video w-full overflow-hidden bg-surface-subtle border-b border-border-subtle focus-ring"
+                      aria-label={`Buka album dokumentasi: ${item.title}`}
+                    >
                       <Image
                         src={item.coverUrl}
                         alt={`${item.title} (Galeri)`}
@@ -251,7 +241,7 @@ export function KabarFeedView({
                       <span className="absolute top-2.5 left-2.5 rounded-pill px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-success-soft text-success shadow-xs">
                         Galeri
                       </span>
-                    </div>
+                    </Link>
 
                     {/* Content Body */}
                     <div className="p-4 sm:p-5 space-y-2">
@@ -262,7 +252,12 @@ export function KabarFeedView({
                       </div>
 
                       <h3 className="font-sans font-bold text-sm sm:text-base text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                        {item.title}
+                        <Link
+                          href={`/kabar/${item.slug}`}
+                          className="hover:underline focus-ring rounded-xs"
+                        >
+                          {item.title}
+                        </Link>
                       </h3>
 
                       <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
@@ -272,13 +267,13 @@ export function KabarFeedView({
                   </div>
 
                   <div className="p-4 sm:p-5 pt-0">
-                    <button
-                      type="button"
-                      className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary group-hover:underline focus-ring rounded-control"
+                    <Link
+                      href={`/kabar/${item.slug}`}
+                      className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-primary hover:underline focus-ring rounded-control"
                     >
-                      <span>Lihat foto dokumentasi</span>
+                      <span>Lihat album dokumentasi</span>
                       <span aria-hidden="true">→</span>
-                    </button>
+                    </Link>
                   </div>
                 </article>
               );
@@ -299,14 +294,6 @@ export function KabarFeedView({
           )}
         </div>
       )}
-
-      {/* Lightbox Album Modal */}
-      <KabarAlbumLightbox
-        key={selectedAlbum?.title}
-        open={isLightboxOpen}
-        onClose={handleCloseLightbox}
-        album={selectedAlbum}
-      />
     </div>
   );
 }

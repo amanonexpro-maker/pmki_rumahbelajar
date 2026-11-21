@@ -13,6 +13,10 @@ import {
   type PublicationDTO,
 } from "@/features/publishing";
 import type {
+  ArticleContent,
+  GalleryAlbumContent,
+  GalleryPhoto,
+  PublicContent,
   PublicCoordinatorContactDTO,
   PublicGalleryItemDTO,
   PublicGradeTargetDTO,
@@ -288,6 +292,15 @@ function formatIndonesianDate(isoDate: string | null): string {
   });
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
 /**
  * Pure mapper & defensive filter for Public Gallery items (`04 §19`, `11 §15`, PO Rule #2 & #4).
  * Ensures ONLY items with `privacyReviewed === true && eligibleForPublic === true`
@@ -303,21 +316,25 @@ export function filterAndMapPublicGalleryItems(
         asset.eligibleForPublic === true &&
         Boolean(asset.signedReadUrl)
     )
-    .map((asset) => ({
-      id: asset.id,
-      title: asset.title,
-      description:
-        asset.description ??
-        "Dokumentasi kegiatan belajar bersama di Rumah Belajar Griya Asih Lawang.",
-      category: asset.category,
-      categoryLabel:
-        MEDIA_CATEGORY_LABELS[asset.category] ?? "Kegiatan belajar",
-      capturedDate: asset.capturedDate ?? "2026",
-      signedReadUrl: asset.signedReadUrl ?? "/images/gallery/griya_asih_4.jpg",
-      signedUrlTtlSeconds: asset.signedUrlTtlSeconds ?? 3600,
-      privacyReviewed: true,
-      eligibleForPublic: true,
-    }));
+    .map((asset) => {
+      const generatedSlug = slugify(asset.title);
+      return {
+        id: asset.id,
+        slug: generatedSlug.length > 3 ? generatedSlug : `galeri-${asset.id}`,
+        title: asset.title,
+        description:
+          asset.description ??
+          "Dokumentasi kegiatan belajar bersama di Rumah Belajar Griya Asih Lawang.",
+        category: asset.category,
+        categoryLabel:
+          MEDIA_CATEGORY_LABELS[asset.category] ?? "Kegiatan belajar",
+        capturedDate: asset.capturedDate ?? "2026",
+        signedReadUrl: asset.signedReadUrl ?? "/images/gallery/griya_asih_4.jpg",
+        signedUrlTtlSeconds: asset.signedUrlTtlSeconds ?? 3600,
+        privacyReviewed: true,
+        eligibleForPublic: true,
+      };
+    });
 }
 
 /**
@@ -435,27 +452,199 @@ Pembinaan ini diberikan secara intensif setiap hari Sabtu bersama pengajar relaw
   },
 ];
 
+export const CANONICAL_AUTHENTIC_ALBUMS: GalleryAlbumContent[] = [
+  {
+    type: "gallery_album",
+    title: "Suasana Belajar Sabtu Griya Asih",
+    slug: "suasana-belajar-sabtu-griya-asih",
+    date: "24 Oktober 2026",
+    categoryLabel: "DOKUMENTASI KEGIATAN",
+    author: "Tim Pelayanan Griya Asih",
+    description:
+      "Dokumentasi kebersamaan dan keceriaan peserta didik bersama para pengajar relawan saat sesi bimbingan belajar Matematika Ceria, Literasi Membaca, dan Bahasa Inggris di RAAL Griya Asih Lawang.",
+    coverImage: "/images/gallery/griya_asih_8.jpg",
+    photos: [
+      {
+        url: "/images/gallery/griya_asih_8.jpg",
+        caption: "Kelompok belajar peserta didik jenjang SMP Kelas 7 & 8 bersama pengajar relawan matematika.",
+      },
+      {
+        url: "/images/gallery/griya_asih_7.jpg",
+        caption: "Pojok baca dan pendampingan literasi membaca intensif 1 jam bagi peserta didik TK dan SD.",
+      },
+      {
+        url: "/images/gallery/griya_asih_4.jpg",
+        caption: "Sesi bimbingan belajar Matematika Ceria dengan penalaran soal cerita terpadu.",
+      },
+      {
+        url: "/images/gallery/griya_asih_9.jpg",
+        caption: "Foto bersama seluruh peserta didik dan pengajar relawan dengan seragam Rumah Belajar Griya Asih di halaman RAAL.",
+      },
+      {
+        url: "/images/gallery/griya_asih_10.jpg",
+        caption: "Sesi pembiasaan salam santun, pendidikan karakter, dan budi pekerti.",
+      },
+      {
+        url: "/images/gallery/griya_asih_11.jpg",
+        caption: "Suasana ruang belajar yang nyaman, terbuka, dan penuh kasih didampingi para pengajar.",
+      },
+    ],
+  },
+  {
+    type: "gallery_album",
+    title: "Momen Ujian Akhir Semester & Evaluasi Belajar",
+    slug: "momen-ujian-akhir-semester",
+    date: "14 November 2026",
+    categoryLabel: "DOKUMENTASI KEGIATAN",
+    author: "Tim Pelayanan Griya Asih",
+    description:
+      "Potret antusiasme dan kesungguhan anak-anak dalam mengikuti latihan pemantapan evaluasi belajar semester ganjil tahun ajaran 2026/2027.",
+    coverImage: "/images/gallery/griya_asih_1.jpg",
+    photos: [
+      {
+        url: "/images/gallery/griya_asih_1.jpg",
+        caption: "Latihan pemantapan materi matematika dasar dan penalaran logika berhitung.",
+      },
+      {
+        url: "/images/gallery/griya_asih_2.jpg",
+        caption: "Pendampingan privat bagi peserta didik jenjang sekolah dasar yang memerlukan bimbingan tambahan.",
+      },
+      {
+        url: "/images/gallery/griya_asih_3.jpg",
+        caption: "Diskusi kelompok bimbingan belajar Bahasa Inggris praktis dan percakapan kontekstual.",
+      },
+      {
+        url: "/images/gallery/griya_asih_5.jpg",
+        caption: "Suasana tenang saat evaluasi mandiri kelancaran membaca peserta didik.",
+      },
+      {
+        url: "/images/gallery/griya_asih_6.jpg",
+        caption: "Apresiasi atas ketekunan dan kemajuan belajar peserta didik di akhir sesi.",
+      },
+    ],
+  },
+];
+
 /**
- * Public Article Detail Resolver (`11 §17`).
- * First queries database for live published article by slug.
- * Gracefully falls back to authentic canonical publication if database has not yet been seeded.
+ * Public Dual-Mode Detail Resolver (`11 §17`, FASE 14 Hotfix Lanjutan).
+ * Mendeteksi contentType:
+ * - 'article': Publikasi warta/berita (Header -> Paragraf -> Share).
+ * - 'gallery_album': Dokumentasi album foto (Header Narasi -> Grid Foto Responsif -> Share).
+ * Menerapkan SQL WHERE clause consent gate ketat pada level server query untuk semua media asset.
  */
 export async function getPublicArticleDetail(
   slug: string
-): Promise<PublicNewsItemDTO | null> {
+): Promise<PublicContent | null> {
+  // 1. Cek apakah cocok dengan Canonical Fallback Albums
+  const canonicalAlbum = CANONICAL_AUTHENTIC_ALBUMS.find((a) => a.slug === slug);
+  if (canonicalAlbum) {
+    return canonicalAlbum;
+  }
+
+  // 2. Query database publikasi
   try {
     const rawPost = await getPublishedPublicationBySlug(slug).catch(() => null);
     if (rawPost) {
+      const isGalleryCategory =
+        rawPost.category.toUpperCase() === "GALERI" ||
+        rawPost.category.toUpperCase() === "DOKUMENTASI";
+
+      if (isGalleryCategory) {
+        // Query media assets dengan SQL Consent Gate ketat
+        const eligibleMedia = await listPublicGalleryMedia(rawPost.serviceUnitId).catch(() => []);
+        const photos: GalleryPhoto[] = eligibleMedia
+          .filter((m) => m.privacyReviewed === true && m.eligibleForPublic === true && Boolean(m.signedReadUrl))
+          .map((m) => ({
+            url: m.signedReadUrl ?? "/images/gallery/griya_asih_4.jpg",
+            caption: m.description ?? m.title,
+          }));
+
+        return {
+          type: "gallery_album",
+          title: rawPost.title,
+          slug: rawPost.slug,
+          date: formatIndonesianDate(rawPost.publishedAt),
+          description: rawPost.excerpt ?? rawPost.content,
+          author: "Tim Pelayanan Griya Asih",
+          categoryLabel: PUBLICATION_CATEGORY_LABELS[rawPost.category] ?? "Dokumentasi Kegiatan",
+          coverImage: rawPost.coverSignedUrl ?? photos[0]?.url,
+          photos: photos.length > 0 ? photos : (CANONICAL_AUTHENTIC_ALBUMS[0]?.photos ?? []),
+        };
+      }
+
+      // Tipe 'article'
       const [mapped] = filterAndMapPublicNewsItems([rawPost]);
-      if (mapped) return mapped;
+      if (mapped) {
+        return {
+          type: "article",
+          title: mapped.title,
+          slug: mapped.slug,
+          date: mapped.publishedDateFormatted,
+          publishedDateFormatted: mapped.publishedDateFormatted,
+          author: mapped.authorLabel,
+          categoryLabel: mapped.categoryLabel,
+          excerpt: mapped.excerpt,
+          bodyHtml: mapped.content,
+          content: mapped.content,
+          coverImage: mapped.coverSignedUrl,
+          coverSignedUrl: mapped.coverSignedUrl,
+          eventDate: mapped.eventDate,
+          eventLocation: mapped.eventLocation,
+        };
+      }
     }
   } catch (err) {
     console.error(`[getPublicArticleDetail] DB query error for slug "${slug}":`, err);
   }
 
-  // Graceful fallback to authentic canonical publication if DB is empty or transiently unavailable
-  const fallback = CANONICAL_AUTHENTIC_PUBLICATIONS.find((p) => p.slug === slug);
-  return fallback ?? null;
+  // 3. Graceful fallback ke authentic canonical publication (artikel berita)
+  const rawFallback = CANONICAL_AUTHENTIC_PUBLICATIONS.find((p) => p.slug === slug);
+  if (rawFallback) {
+    const fallbackArticle: ArticleContent = {
+      type: "article",
+      title: rawFallback.title,
+      slug: rawFallback.slug,
+      date: rawFallback.publishedDateFormatted,
+      publishedDateFormatted: rawFallback.publishedDateFormatted,
+      author: rawFallback.authorLabel,
+      categoryLabel: rawFallback.categoryLabel,
+      excerpt: rawFallback.excerpt,
+      bodyHtml: rawFallback.content,
+      content: rawFallback.content,
+      coverImage: rawFallback.coverSignedUrl,
+      coverSignedUrl: rawFallback.coverSignedUrl,
+      eventDate: rawFallback.eventDate,
+      eventLocation: rawFallback.eventLocation,
+    };
+    return fallbackArticle;
+  }
+
+  // 4. Cek fallback per-media gallery item jika slug cocok
+  const fallbackGalleryPhotos: GalleryPhoto[] = [
+    ...CANONICAL_AUTHENTIC_ALBUMS[0].photos,
+    ...CANONICAL_AUTHENTIC_ALBUMS[1].photos,
+  ];
+  const matchedPhoto = fallbackGalleryPhotos.find(
+    (p) => slugify(p.caption).includes(slug) || slug.includes(slugify(p.caption).slice(0, 15))
+  );
+  if (matchedPhoto) {
+    return {
+      type: "gallery_album",
+      title: matchedPhoto.caption.slice(0, 60),
+      slug,
+      date: "2026",
+      description: matchedPhoto.caption,
+      author: "Tim Pelayanan Griya Asih",
+      categoryLabel: "DOKUMENTASI KEGIATAN",
+      coverImage: matchedPhoto.url,
+      photos: [
+        matchedPhoto,
+        ...fallbackGalleryPhotos.filter((p) => p.url !== matchedPhoto.url),
+      ],
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -490,7 +679,24 @@ export async function getPublicPortalData(): Promise<PublicPortalDataDTO> {
     console.error("[getPublicPortalData] Fallback triggered due to transient database error:", err);
   }
 
-  const galleryItems = filterAndMapPublicGalleryItems(rawGallery);
+  const mappedGallery = filterAndMapPublicGalleryItems(rawGallery);
+  const galleryItems =
+    mappedGallery.length > 0
+      ? mappedGallery
+      : CANONICAL_AUTHENTIC_ALBUMS.map((album, idx) => ({
+          id: `canonical-album-${idx + 1}`,
+          slug: album.slug,
+          title: album.title,
+          description: album.description,
+          category: "KEGIATAN" as const,
+          categoryLabel: "Kegiatan belajar",
+          capturedDate: album.date,
+          signedReadUrl: album.photos[0]?.url ?? "/images/gallery/griya_asih_4.jpg",
+          signedUrlTtlSeconds: 3600,
+          privacyReviewed: true as const,
+          eligibleForPublic: true as const,
+        }));
+
   const mappedNews = filterAndMapPublicNewsItems(rawPublications);
   const newsItems =
     mappedNews.length > 0 ? mappedNews : CANONICAL_AUTHENTIC_PUBLICATIONS;

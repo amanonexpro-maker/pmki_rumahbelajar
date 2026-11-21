@@ -3,9 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { ArrowLeft, Calendar, MapPin, Share2, User } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Share2, ShieldCheck, User } from "lucide-react";
 import { ICON_MAP } from "@/config/icons";
-import { getPublicArticleDetail, PublicNavbar } from "@/features/public";
+import {
+  GalleryAlbumGrid,
+  getPublicArticleDetail,
+  PublicNavbar,
+} from "@/features/public";
 
 export const instant = false;
 
@@ -17,54 +21,182 @@ export async function generateMetadata({
   params,
 }: PublicKabarDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const article = await getPublicArticleDetail(slug);
+  const content = await getPublicArticleDetail(slug);
 
-  if (!article) {
+  if (!content) {
     return {
       title: "Warta Tidak Ditemukan | Rumah Belajar Griya Asih Lawang",
       description: "Halaman warta atau publikasi kegiatan tidak ditemukan.",
     };
   }
 
+  const coverUrl =
+    content.type === "article"
+      ? content.coverSignedUrl || content.coverImage
+      : content.coverImage || content.photos[0]?.url;
+
+  const description =
+    content.type === "article" ? content.excerpt : content.description;
+
   return {
-    title: `${article.title} | Kabar Griya Asih`,
-    description: article.excerpt,
+    title: `${content.title} | Kabar Griya Asih`,
+    description,
     openGraph: {
-      title: article.title,
-      description: article.excerpt,
-      images: [
-        {
-          url: article.coverSignedUrl,
-          alt: article.title,
-        },
-      ],
+      title: content.title,
+      description,
+      images: coverUrl
+        ? [
+            {
+              url: coverUrl,
+              alt: content.title,
+            },
+          ]
+        : undefined,
     },
   };
 }
 
 /**
- * PublicKabarDetailPage (Detail Warta & Konten Berita).
- * Menampilkan konten lengkap artikel berita / publikasi komunitas Rumah Belajar Griya Asih Lawang.
- * - Membaca data publikasi riil dari database atau data kanonik autentik.
- * - Sesuai Design Identity §7 (Narrative Flow), §9 (Visual Restraint), UI-UX §15, §30.
- * - Mematuhi prinsip perlindungan privasi anak dan microcopy warm & human.
+ * PublicKabarDetailPage (Dual-Mode Content Renderer: Berita & Galeri Album).
+ * Mendeteksi contentType dari PublicContent:
+ * 1. 'article': Merender layout warta berita (Breadcrumb -> Header -> Cover -> Paragraf -> Share).
+ * 2. 'gallery_album': Merender layout galeri dokumentasi (Breadcrumb -> Header Narasi -> Grid Foto Responsif -> Enhanced Lightbox -> Share).
+ * Sesuai Design Identity §7 (Narrative Flow), §9 (Visual Restraint), UI-UX §15, §30.
  */
 export default async function PublicKabarDetailPage({
   params,
 }: PublicKabarDetailPageProps) {
   await connection();
   const { slug } = await params;
-  const article = await getPublicArticleDetail(slug);
+  const content = await getPublicArticleDetail(slug);
 
-  if (!article) {
+  if (!content) {
     notFound();
   }
 
-  const shareText = `${article.title}\n\n${article.excerpt}\n\nBaca selengkapnya di Kabar Rumah Belajar Griya Asih:`;
+  const canonicalUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://pmki-rumahbelajar.vercel.app"}/kabar/${content.slug}`;
+
+  // ==========================================
+  // MODE 1: DOKUMENTASI GALERI (gallery_album)
+  // ==========================================
+  if (content.type === "gallery_album") {
+    const shareMessage = `📸 Dokumentasi Kegiatan: "${content.title}"\n\nHari ini anak-anak Griya Asih belajar dengan semangat! Senang melihat perkembangan mereka.\n\nTanggal: ${content.date}\n\nLihat momen lengkapnya di sini:\n${canonicalUrl}\n\n#GriyaAsih #HappyLearning`;
+    const waShareUrl = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
+        <PublicNavbar activeSection="kabar" />
+
+        <main className="flex-1 py-8 sm:py-12">
+          <article className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+            {/* 1. Breadcrumb & Back Navigation */}
+            <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Link
+                href="/"
+                className="hover:text-primary transition-colors focus-ring rounded-xs"
+              >
+                Beranda
+              </Link>
+              <span aria-hidden="true">/</span>
+              <Link
+                href="/kabar?tab=galeri"
+                className="hover:text-primary transition-colors focus-ring rounded-xs"
+              >
+                Kabar Griya Asih
+              </Link>
+              <span aria-hidden="true">/</span>
+              <span className="text-secondary-foreground font-medium truncate max-w-[180px] sm:max-w-xs">
+                Dokumentasi Kegiatan
+              </span>
+            </nav>
+
+            <div>
+              <Link
+                href="/kabar?tab=galeri"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline focus-ring rounded-control"
+              >
+                <ArrowLeft aria-hidden="true" className="w-4 h-4 shrink-0" />
+                <span>Kembali ke Kabar Griya Asih</span>
+              </Link>
+            </div>
+
+            {/* 2. Header Album & Narasi */}
+            <header className="space-y-4 text-left">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="rounded-pill px-3 py-1 text-xs font-semibold uppercase tracking-wider bg-success-soft text-success shadow-xs">
+                  {content.categoryLabel || "DOKUMENTASI KEGIATAN"}
+                </span>
+                <span className="text-xs text-muted-foreground flex items-center gap-1 font-mono tabular-nums">
+                  <Calendar aria-hidden="true" className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span>{content.date}</span>
+                </span>
+              </div>
+
+              <h1 className="font-sans text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground leading-snug">
+                {content.title}
+              </h1>
+
+              <div className="flex items-center gap-2 text-xs text-secondary-foreground pt-1">
+                <User aria-hidden="true" className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <span>
+                  Dokumentasi oleh: <strong className="font-semibold text-foreground">{content.author}</strong>
+                </span>
+              </div>
+
+              {/* Narasi Deskriptif Intro */}
+              <p className="text-sm sm:text-base leading-relaxed text-secondary-foreground pt-2 max-w-3xl">
+                {content.description}
+              </p>
+            </header>
+
+            {/* 3. Grid Foto Responsif (Click opens Enhanced Lightbox) */}
+            <section aria-labelledby="album-grid-heading" className="pt-2">
+              <h2 id="album-grid-heading" className="sr-only">
+                Koleksi Foto {content.title}
+              </h2>
+              <GalleryAlbumGrid photos={content.photos} albumTitle={content.title} />
+            </section>
+
+            {/* 4. Privacy Notice */}
+            <div className="p-3.5 rounded-card bg-surface-subtle border border-border text-[11px] text-muted-foreground leading-relaxed flex items-center gap-2">
+              <ShieldCheck aria-hidden="true" className="w-4 h-4 text-primary shrink-0" />
+              <span>
+                Seluruh foto dokumentasi kegiatan ini telah mendapatkan persetujuan wali peserta didik dan melalui tinjauan privasi pengurus Rumah Belajar Griya Asih Lawang.
+              </span>
+            </div>
+
+            {/* 5. Action Footer */}
+            <footer className="pt-4 pb-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-border">
+              <a
+                href={waShareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-primary text-primary-foreground font-medium text-xs px-5 py-2.5 shadow-xs hover:bg-primary-hover focus-ring transition-colors"
+              >
+                <Share2 aria-hidden="true" className="w-4 h-4 shrink-0" />
+                <span>Bagikan Album Ini ke Grup Keluarga 📲</span>
+              </a>
+
+              <Link
+                href="/kontak"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-surface border border-border text-foreground hover:bg-surface-subtle font-medium text-xs px-5 py-2.5 focus-ring transition-colors"
+              >
+                <span>Ada pertanyaan seputar kegiatan ini? Hubungi kami</span>
+              </Link>
+            </footer>
+          </article>
+        </main>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // MODE 2: WARTA BERITA (article)
+  // ==========================================
+  const shareText = `${content.title}\n\n${content.excerpt}\n\nBaca selengkapnya di Kabar Rumah Belajar Griya Asih:\n${canonicalUrl}`;
   const waShareUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
-  // Parse body paragraphs
-  const paragraphs = article.content
+  const paragraphs = content.content
     .split(/\n\n+/)
     .map((p) => p.trim())
     .filter(Boolean);
@@ -94,7 +226,7 @@ export default async function PublicKabarDetailPage({
             </Link>
             <span aria-hidden="true">/</span>
             <span className="text-secondary-foreground font-medium truncate max-w-[180px] sm:max-w-xs">
-              {article.categoryLabel}
+              {content.categoryLabel}
             </span>
           </nav>
 
@@ -112,38 +244,38 @@ export default async function PublicKabarDetailPage({
           <header className="space-y-4 text-left">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="rounded-pill px-3 py-1 text-xs font-semibold uppercase tracking-wider bg-info-soft text-info shadow-xs">
-                {article.categoryLabel}
+                {content.categoryLabel}
               </span>
               <span className="text-xs text-muted-foreground flex items-center gap-1 font-mono tabular-nums">
                 <Calendar aria-hidden="true" className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span>{article.publishedDateFormatted}</span>
+                <span>{content.publishedDateFormatted || content.date}</span>
               </span>
             </div>
 
             <h1 className="font-sans text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground leading-snug">
-              {article.title}
+              {content.title}
             </h1>
 
             <div className="flex items-center gap-2 text-xs text-secondary-foreground pt-1">
               <User aria-hidden="true" className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
               <span>
-                Ditulis oleh: <strong className="font-semibold text-foreground">{article.authorLabel}</strong>
+                Ditulis oleh: <strong className="font-semibold text-foreground">{content.author}</strong>
               </span>
             </div>
 
             {/* Event Specific Block if applicable */}
-            {(article.eventDate || article.eventLocation) && (
+            {(content.eventDate || content.eventLocation) && (
               <div className="p-3.5 rounded-card bg-surface-subtle border border-border space-y-1.5 text-xs">
-                {article.eventDate && (
+                {content.eventDate && (
                   <p className="flex items-center gap-2 text-foreground font-medium">
                     <Calendar aria-hidden="true" className="w-4 h-4 text-primary shrink-0" />
-                    <span>Jadwal agenda: <strong className="font-bold">{article.eventDate}</strong></span>
+                    <span>Jadwal agenda: <strong className="font-bold">{content.eventDate}</strong></span>
                   </p>
                 )}
-                {article.eventLocation && (
+                {content.eventLocation && (
                   <p className="flex items-center gap-2 text-secondary-foreground">
                     <MapPinIcon aria-hidden="true" className="w-4 h-4 text-primary shrink-0" />
-                    <span>Lokasi kegiatan: {article.eventLocation}</span>
+                    <span>Lokasi kegiatan: {content.eventLocation}</span>
                   </p>
                 )}
               </div>
@@ -151,12 +283,12 @@ export default async function PublicKabarDetailPage({
           </header>
 
           {/* 3. Cover Media with Privacy Protection note */}
-          {article.coverSignedUrl && (
+          {(content.coverSignedUrl || content.coverImage) && (
             <figure className="space-y-2">
               <div className="relative aspect-video w-full rounded-card overflow-hidden bg-surface-subtle border border-border shadow-xs">
                 <Image
-                  src={article.coverSignedUrl}
-                  alt={article.title}
+                  src={content.coverSignedUrl || content.coverImage || "/images/gallery/griya_asih_4.jpg"}
+                  alt={content.title}
                   fill
                   priority
                   sizes="(max-width: 1024px) 100vw, 896px"

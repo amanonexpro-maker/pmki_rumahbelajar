@@ -5,6 +5,7 @@
 export const DOMAIN_NAME = "public" as const;
 
 export {
+  CANONICAL_AUTHENTIC_ALBUMS,
   CANONICAL_AUTHENTIC_PUBLICATIONS,
   CANONICAL_PUBLIC_COPY,
   filterAndMapPublicGalleryItems,
@@ -31,6 +32,10 @@ export {
 } from "./validators/public-validator";
 
 export type {
+  ArticleContent,
+  GalleryAlbumContent,
+  GalleryPhoto,
+  PublicContent,
   PublicCoordinatorContactDTO,
   PublicGalleryItemDTO,
   PublicGradeTargetDTO,
@@ -52,6 +57,8 @@ export { PublicCuratedHome } from "./components/public-curated-home";
 export { KabarFeedView, type KabarTabFilter } from "./components/kabar-feed-view";
 export { KabarEmptyState } from "./components/kabar-empty-state";
 export { KabarAlbumLightbox } from "./components/kabar-album-lightbox";
+export { EnhancedPhotoLightbox } from "./components/enhanced-photo-lightbox";
+export { GalleryAlbumGrid } from "./components/gallery-album-grid";
 export { PrivacyPolicyModal } from "./components/privacy-policy-modal";
 export { ProgramDetailAccordion } from "./components/program-detail-accordion";
 export { VolunteerGrid } from "./components/volunteer-grid";

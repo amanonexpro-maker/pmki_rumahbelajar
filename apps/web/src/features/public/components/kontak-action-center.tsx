@@ -378,7 +378,7 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
                     {isCopied ? (
                       <>
                         <CentangIcon aria-hidden="true" className="w-3.5 h-3.5" />
-                        <span>Tersalin ✓</span>
+                        <span>Tersalin</span>
                       </>
                     ) : (
                       <>

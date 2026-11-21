@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ICON_MAP } from "@/config/icons";
-import { ADDRESS, CONTACTS, HOURS } from "@/config/site";
+import { ADDRESS, CONTACTS, HOURS, MAPS_LOCATION } from "@/config/site";
 import { cn } from "@/lib/cn";
 import {
   publicStudentRegistrationSchema,
@@ -81,12 +81,11 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
     }
   };
 
-  // Copy full canonical address to clipboard
-  const handleCopyAddress = async () => {
-    const formattedAddress = `${ADDRESS.street}, ${ADDRESS.rtRw}, ${ADDRESS.desa}, Kecamatan ${ADDRESS.kecamatan}, Kabupaten ${ADDRESS.kabupaten}, ${ADDRESS.provinsi} ${ADDRESS.postalCode}`;
+  // Copy official Google Maps Short URL to clipboard
+  const handleCopyLocation = async () => {
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(formattedAddress);
+        await navigator.clipboard.writeText(MAPS_LOCATION.shortUrl);
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
       }
@@ -193,10 +192,7 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
   const LokasiIcon = ICON_MAP.lokasi;
   const DonasiIcon = ICON_MAP.donasi;
   const InfoIcon = ICON_MAP.info;
-
-  const encodedMapLocation = encodeURIComponent(
-    `${ADDRESS.street}, ${ADDRESS.rtRw}, ${ADDRESS.desa}, ${ADDRESS.kecamatan}, Lawang`
-  );
+  const TautanLuarIcon = ICON_MAP.tautanLuar;
 
   return (
     <div className="space-y-8">
@@ -370,8 +366,8 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
 
                   <button
                     type="button"
-                    onClick={handleCopyAddress}
-                    aria-label="Salin alamat lengkap ke papan klip"
+                    onClick={handleCopyLocation}
+                    aria-label="Salin tautan Google Maps ke papan klip"
                     className={cn(
                       "inline-flex items-center gap-1.5 px-3 py-2 min-h-11 rounded-control text-xs font-medium border transition-colors focus-ring shrink-0 cursor-pointer",
                       isCopied
@@ -387,21 +383,35 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
                     ) : (
                       <>
                         <SalinIcon aria-hidden="true" className="w-3.5 h-3.5" />
-                        <span>Salin alamat</span>
+                        <span>Salin Lokasi</span>
                       </>
                     )}
                   </button>
                 </div>
 
-                {/* Google Maps Responsive Embed (Aspect 16:9) */}
-                <div className="relative w-full aspect-video rounded-control overflow-hidden border border-border bg-surface-subtle">
+                {/* Google Maps Responsive Embed (Aspect 16:9) with Direct Maps App Link */}
+                <div className="relative w-full aspect-video rounded-control overflow-hidden border border-border bg-surface-subtle group">
                   <iframe
-                    title="Peta Lokasi Rumah Belajar Griya Asih Lawang"
-                    src={`https://maps.google.com/maps?q=${encodedMapLocation}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
+                    title='Peta Lokasi Rumah Asuh Anak & Lansia (RAAL) "GRIYA ASIH"'
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                      `${MAPS_LOCATION.coordinates.lat},${MAPS_LOCATION.coordinates.lng}`
+                    )}&t=&z=17&ie=UTF8&iwloc=&output=embed`}
                     className="w-full h-full border-0"
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                   />
+
+                  {/* Direct Maps Link Overlay */}
+                  <a
+                    href={MAPS_LOCATION.shortUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-control bg-surface/95 hover:bg-surface text-foreground border border-border shadow-xs text-[11px] font-semibold backdrop-blur-xs transition-colors focus-ring"
+                    aria-label="Buka lokasi di Google Maps"
+                  >
+                    <span>Buka di Maps</span>
+                    <TautanLuarIcon aria-hidden="true" className="w-3.5 h-3.5 text-primary" />
+                  </a>
                 </div>
               </div>
             </div>

@@ -133,6 +133,22 @@ export const CONTACTS: readonly PublicContactPerson[] = [
 export const MAP_QUERY = "RAAL+Griya+Asih+Lawang"; // repo/KB (flag upgrade Step 8)
 
 /**
+ * Lokasi & Tautan Google Maps Resmi (PO-CONFIRMED 2026-11-22)
+ * Nama Tempat: Rumah Asuh Anak & Lansia (RAAL) "GRIYA ASIH"
+ * Tautan Resmi (Short URL): https://maps.app.goo.gl/z6uDaRTFBYW463Sv5
+ * Koordinat Presisi: -7.839429, 112.7008636
+ */
+export const MAPS_LOCATION = {
+  placeName: 'Rumah Asuh Anak & Lansia (RAAL) "GRIYA ASIH"',
+  shortUrl: "https://maps.app.goo.gl/z6uDaRTFBYW463Sv5",
+  coordinates: {
+    lat: -7.839429,
+    lng: 112.7008636,
+  },
+  embedQuery: "-7.839429,112.7008636",
+} as const;
+
+/**
  * Tautan Media Sosial Resmi
  */
 export const SOCIAL_LINKS: readonly PublicSocialLink[] = []; // MISSING — PO TO SUPPLY

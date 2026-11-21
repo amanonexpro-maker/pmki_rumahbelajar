@@ -70,6 +70,7 @@
 | HOTFIX-DATE-FORMAT | Sinkronisasi Format Tanggal Berita & Galeri ke Standard Indonesia | `DONE` | HOTFIX-DATE-FORMAT: Unified Indonesian date formatting across News and Gallery feeds to eliminate ISO/raw date leakage in public UI. |
 | ITERASI-BERANDA-V2 | Enhanced Hero Impact & Trust Cards | `DONE` | ITERASI-BERANDA-V2: Enhanced hero impact, replaced generic info icon with brand mark, upgraded quick facts to trust cards for better conversion. |
 | HOTFIX-NEWS-SEED-CLEANUP | Sanitized News Seeds & Event Date Formatting | `DONE` | HOTFIX-NEWS-SEED-CLEANUP: Sanitized canonical news seeds to remove legacy '17.15' time references; Applied Indonesian date formatting to event metadata blocks in article detail view. |
+| HOTFIX-BERANDA-V4 | Implemented Compact Grid 2x2 with Horizontal Layout | `DONE` | HOTFIX-BERANDA-V4: Implemented Compact Grid 2x2 with Horizontal Layout; Enforced Smart Truncation Strategy for Time/Cost values; Validated ICON_MAP keys to prevent build failures. |
 
 ---
 

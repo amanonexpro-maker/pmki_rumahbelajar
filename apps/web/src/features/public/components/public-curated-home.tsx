@@ -2,6 +2,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ICON_MAP } from "@/config/icons";
+import { HOURS, UNIT } from "@/config/site";
 import { formatToIndonesianStandard } from "@/utils/date-formatter";
 import type { PublicPortalDataDTO } from "../types/public-types";
 
@@ -48,7 +49,7 @@ function PMKIMarkIcon({
  * Server Component yang merender alur naratif 6 section berurutan:
  * 1. Hero: Emosi & Identitas (Editorial Newsreader serif, subjudul hangat, tanpa tombol CTA).
  * 2. Siapa Kami: Narasi misi kanonikal repo (id="siapa-kami" deep link contract).
- * 3. Quick Facts: Grid responsif 4 trust cards sinyal kepercayaan (Jenjang, Biaya, Waktu, Lokasi).
+ * 3. Quick Facts: Grid 2x2 horizontal padat dengan smart truncation (Jenjang, Biaya, Waktu, Lokasi).
  * 4. Sorotan Kabar: Bukti sosial dinamis (artikel dominan + album pendamping / fallback).
  * 5. Intip Program: Eksplorasi kurikulum 3 program utama dengan ikon semantik.
  * 6. Ajakan Bergabung: Jembatan konversi akhir (CTA primer ke /kontak?tab=siswa, secondary ke /kontak).
@@ -58,30 +59,30 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
   const latestAlbum = data.galleryItems?.[0];
   const topPrograms = data.programs.slice(0, 3);
 
-  const trustCards = [
+  const quickFactsData = [
     {
-      id: "jenjang",
-      icon: ICON_MAP.peserta,
       label: "JENJANG",
-      value: data.metrics?.educationLevelsValue ?? "TK – SMP Kelas 8",
+      iconKey: "peserta",
+      fullValue: data?.metrics?.educationLevelsValue || "TK hingga SMP Kelas 8",
+      shortValue: "TK – SMP 8",
     },
     {
-      id: "biaya",
-      icon: ICON_MAP.donasi,
       label: "BIAYA",
-      value: "GRATIS / BEBAS BIAYA",
+      iconKey: "biaya",
+      fullValue: "GRATIS / BEBAS BIAYA",
+      shortValue: "GRATIS",
     },
     {
-      id: "waktu",
-      icon: ICON_MAP.waktu,
       label: "WAKTU",
-      value: "SETIAP SABTU",
+      iconKey: "waktu",
+      fullValue: `${HOURS.day} • ${HOURS.window}`,
+      shortValue: "Sabtu 15-17",
     },
     {
-      id: "lokasi",
-      icon: ICON_MAP.lokasi,
       label: "LOKASI",
-      value: "LAWANG, MALANG",
+      iconKey: "lokasi",
+      fullValue: UNIT.location,
+      shortValue: UNIT.location,
     },
   ];
 
@@ -129,36 +130,41 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
         </p>
       </section>
 
-      {/* 3. QUICK FACTS STRIP MENJADI TRUST CARDS */}
+      {/* 3. QUICK FACTS STRIP (Compact Horizontal Grid 2x2) */}
       <section
         aria-label="Fakta praktis bimbingan belajar"
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
+        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6"
       >
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-          {trustCards.map((card) => {
-            const IconComponent = card.icon;
-            return (
-              <div
-                key={card.id}
-                className="flex flex-col items-center justify-center p-4 bg-surface border border-border-subtle rounded-card shadow-sm"
-              >
-                {/* Ikon Besar */}
-                <div className="mb-2 p-2 bg-primary/10 rounded-full">
-                  {IconComponent && (
-                    <IconComponent aria-hidden="true" className="w-6 h-6 text-primary shrink-0" />
-                  )}
-                </div>
-                {/* Label Kategori */}
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">
-                  {card.label}
+        <div className="grid grid-cols-2 gap-2 mt-6">
+          {quickFactsData.map((fact) => (
+            <div
+              key={fact.label}
+              className="flex items-center gap-2 p-2 bg-surface border border-border-subtle rounded-lg min-h-[48px]"
+              aria-label={`${fact.label}: ${fact.fullValue}`}
+            >
+              {/* A. IKON KECIL (VALIDASI KEY EKSPLISIT) */}
+              {(() => {
+                const IconComp = ICON_MAP[fact.iconKey];
+                if (!IconComp) return null;
+                return (
+                  <IconComp
+                    className="w-4 h-4 shrink-0 text-primary"
+                    aria-hidden="true"
+                  />
+                );
+              })()}
+
+              {/* B. TEKS STACKED MICRO (LABEL ATAS, NILAI BAWAH) */}
+              <div className="flex flex-col justify-center overflow-hidden w-full">
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground leading-none mb-0.5 truncate">
+                  {fact.label}
                 </span>
-                {/* Nilai Utama */}
-                <span className="text-sm sm:text-base font-bold text-foreground text-center">
-                  {card.value}
+                <span className="text-xs font-semibold text-foreground leading-tight whitespace-nowrap">
+                  {fact.shortValue}
                 </span>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </section>
 

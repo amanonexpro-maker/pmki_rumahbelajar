@@ -297,6 +297,15 @@ function slugify(text: string): string {
 }
 
 /**
+ * Defensive sanitizer for public text content (`config.HOURS.window` enforcement).
+ * Replaces any legacy drift "17.15" or "17:15" with official "17.00".
+ */
+export function sanitizePublicTextTimes(text: string | null | undefined): string {
+  if (!text) return "";
+  return text.replace(/17[.:]15/g, "17.00");
+}
+
+/**
  * Pure mapper & defensive filter for Public Gallery items (`04 §19`, `11 §15`, PO Rule #2 & #4).
  * Ensures ONLY items with `privacyReviewed === true && eligibleForPublic === true`
  * and a valid server-resolved signedReadUrl are exposed to the public experience.
@@ -347,15 +356,15 @@ export function filterAndMapPublicNewsItems(
       slug: post.slug,
       category: post.category,
       categoryLabel: PUBLICATION_CATEGORY_LABELS[post.category] ?? "Berita",
-      excerpt: post.excerpt ?? post.content.slice(0, 140) + "...",
-      content: post.content,
+      excerpt: sanitizePublicTextTimes(post.excerpt ?? post.content.slice(0, 140) + "..."),
+      content: sanitizePublicTextTimes(post.content),
       coverSignedUrl:
         post.coverSignedUrl ?? "/images/gallery/griya_asih_4.jpg",
       publishedAt: post.publishedAt,
       publishedDateFormatted: formatIndonesianDate(post.publishedAt),
       authorLabel: "Tim Pelayanan Griya Asih",
       eventDate: post.eventDate ? formatToIndonesianStandard(post.eventDate) : null,
-      eventLocation: post.eventLocation,
+      eventLocation: post.eventLocation ? sanitizePublicTextTimes(post.eventLocation) : null,
     }));
 }
 

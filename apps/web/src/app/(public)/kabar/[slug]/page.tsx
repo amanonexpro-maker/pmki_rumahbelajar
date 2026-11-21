@@ -237,7 +237,12 @@ export default async function PublicKabarDetailPage({
   // ==========================================
   // MODE 2: WARTA BERITA (article)
   // ==========================================
-  const paragraphs = content.content
+  const sanitizedContent = (content.content || "").replace(/17[.:]15/g, "17.00");
+  const eventLocation = content.eventLocation
+    ? content.eventLocation.replace(/17[.:]15/g, "17.00")
+    : null;
+
+  const paragraphs = sanitizedContent
     .split(/\n\n+/)
     .map((p) => p.trim())
     .filter(Boolean);
@@ -313,10 +318,10 @@ export default async function PublicKabarDetailPage({
                     <span>Jadwal agenda: <strong className="font-bold">{formatToIndonesianStandard(content.eventDate)}</strong></span>
                   </p>
                 )}
-                {content.eventLocation && (
+                {eventLocation && (
                   <p className="flex items-center gap-2 text-secondary-foreground">
                     <MapPinIcon aria-hidden="true" className="w-4 h-4 text-primary shrink-0" />
-                    <span>Lokasi kegiatan: {content.eventLocation}</span>
+                    <span>Lokasi kegiatan: {eventLocation}</span>
                   </p>
                 )}
               </div>

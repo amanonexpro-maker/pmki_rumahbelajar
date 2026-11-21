@@ -216,7 +216,7 @@ export default async function PublicKabarDetailPage({
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-primary text-primary-foreground font-medium text-xs px-5 py-2.5 shadow-xs hover:bg-primary-hover focus-ring transition-colors"
               >
                 <Share2 aria-hidden="true" className="w-4 h-4 shrink-0" />
-                <span>Bagikan Album Ini ke Grup Keluarga 📲</span>
+                <span>Bagikan Album Ini</span>
               </a>
 
               <Link

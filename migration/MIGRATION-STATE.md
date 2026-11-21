@@ -59,6 +59,7 @@
 | HOTFIX-NEWS-CONTENT | Rute Detail Konten Berita /kabar/[slug] & 404 Fallback | `DONE` | HOTFIX-NEWS-CONTENT: Resolved 404 on article clicks by creating `/kabar/[slug]` detail page with full editorial layout, breadcrumbs, WhatsApp share, and privacy notes; Added `getPublishedPublicationBySlug` service & canonical authentic publications fallback in `public-portal-service`; Added `/news/:slug+` 308 permanent redirect; Added warm, human custom `not-found.tsx`. |
 | HOTFIX-GALLERY-V2 | Halaman Detail Galeri Dual-Mode & Enhanced Lightbox | `DONE` | HOTFIX-GALLERY-V2: Implemented Dual-Mode Detail Page (/kabar/[slug]) supporting Articles & Albums; Built Enhanced Light Theme Swipe Lightbox; Enforced Server-Side Consent Gating for All Gallery Media. |
 | HOTFIX-DOMAIN-FINAL | Sinkronisasi Domain Eksternal & Standarisasi Share WA | `DONE` | HOTFIX-DOMAIN-FINAL: Synced all external URLs to pmkirumahbelajar-web.vercel.app; Standardized WA Share templates; Removed legacy domain hardcodes; Documented Vercel NEXT_PUBLIC_APP_URL requirement. |
+| HOTFIX-LABEL-SHARE | Penyederhanaan Label Tombol Share Galeri | `DONE` | HOTFIX-LABEL-SHARE: Simplified Gallery Share button label to 'Bagikan Album Ini' for better UX universality. |
 
 ---
 

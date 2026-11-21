@@ -70,3 +70,4 @@ export function formatToIndonesianStandard(
     return `${d.getDate()} ${INDONESIAN_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   }
 }
+

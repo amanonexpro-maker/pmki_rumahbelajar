@@ -2,7 +2,6 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ICON_MAP } from "@/config/icons";
-import { HOURS, UNIT } from "@/config/site";
 import { formatToIndonesianStandard } from "@/utils/date-formatter";
 import type { PublicPortalDataDTO } from "../types/public-types";
 
@@ -17,11 +16,39 @@ function getProgramIconKey(id: string): string {
 }
 
 /**
- * PublicCuratedHome (Fase 14 Step 5: Gateway Komunitas & Storytelling Flow).
+ * PMKIMarkIcon — Logo Mark Huruf 'P' + Daun Tunas & Titik Emas
+ * Diekstrak dari /pmki_app_icon.svg untuk representasi semantik brand PMKI.
+ */
+function PMKIMarkIcon({
+  className = "w-6 h-6 text-primary",
+  ...props
+}: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="260 230 520 560"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        fill="currentColor"
+        d="M 285 248 L 568 248 C 685 248, 766 324, 766 444 C 766 566, 682 642, 560 642 L 474 642 L 474 756 C 474 769, 463 780, 450 780 C 437 780, 426 769, 426 756 L 426 576 C 374 554, 344 504, 344 434 L 344 424 L 534 326 C 548 319, 564 320, 577 328 L 648 374 C 653 378, 656 384, 656 391 L 656 436 C 656 508, 608 552, 526 572 C 496 580, 476 604, 474 636 L 474 642 L 426 642 L 426 766 C 426 773, 420 779, 413 779 L 291 779 C 284 779, 278 773, 278 766 L 278 255 C 278 251, 281 248, 285 248 Z M 450 518 C 452 478, 434 452, 375 452 C 375 504, 405 536, 444 544 L 450 546 Z M 458 544 C 460 478, 496 436, 571 436 C 571 504, 530 548, 466 562 L 458 564 Z"
+      />
+      <circle cx="571" cy="395" r="25" fill="#f7c042" />
+    </svg>
+  );
+}
+
+/**
+ * PublicCuratedHome (Fase 14 Step 5: Gateway Komunitas & Storytelling Flow — Iterasi V2).
  * Server Component yang merender alur naratif 6 section berurutan:
  * 1. Hero: Emosi & Identitas (Editorial Newsreader serif, subjudul hangat, tanpa tombol CTA).
  * 2. Siapa Kami: Narasi misi kanonikal repo (id="siapa-kami" deep link contract).
- * 3. Quick Facts: Strip geser horizontal fakta praktis berakar config & service.
+ * 3. Quick Facts: Grid responsif 4 trust cards sinyal kepercayaan (Jenjang, Biaya, Waktu, Lokasi).
  * 4. Sorotan Kabar: Bukti sosial dinamis (artikel dominan + album pendamping / fallback).
  * 5. Intip Program: Eksplorasi kurikulum 3 program utama dengan ikon semantik.
  * 6. Ajakan Bergabung: Jembatan konversi akhir (CTA primer ke /kontak?tab=siswa, secondary ke /kontak).
@@ -31,31 +58,52 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
   const latestAlbum = data.galleryItems?.[0];
   const topPrograms = data.programs.slice(0, 3);
 
-  const PesertaIcon = ICON_MAP.peserta;
-  const BiayaIcon = ICON_MAP.biaya;
-  const WaktuIcon = ICON_MAP.waktu;
-  const LokasiIcon = ICON_MAP.lokasi;
-  const InfoIcon = ICON_MAP.info;
+  const trustCards = [
+    {
+      id: "jenjang",
+      icon: ICON_MAP.peserta,
+      label: "JENJANG",
+      value: data.metrics?.educationLevelsValue ?? "TK – SMP Kelas 8",
+    },
+    {
+      id: "biaya",
+      icon: ICON_MAP.donasi,
+      label: "BIAYA",
+      value: "GRATIS / BEBAS BIAYA",
+    },
+    {
+      id: "waktu",
+      icon: ICON_MAP.waktu,
+      label: "WAKTU",
+      value: "SETIAP SABTU",
+    },
+    {
+      id: "lokasi",
+      icon: ICON_MAP.lokasi,
+      label: "LOKASI",
+      value: "LAWANG, MALANG",
+    },
+  ];
 
   return (
-    <div className="space-y-12 sm:space-y-16 lg:space-y-20 pb-12 sm:pb-16">
+    <div className="pb-16 sm:pb-24">
       {/* 1. HERO SECTION (Emosi & Identitas) */}
       <section
         id="beranda"
         aria-labelledby="home-hero-headline"
-        className="pt-10 sm:pt-16 lg:pt-20 pb-6 sm:pb-8"
+        className="pt-10 sm:pt-16 lg:pt-20 pb-8 sm:pb-12"
       >
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4 text-left">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
           <h1
             id="home-hero-headline"
-            className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight leading-tight"
+            className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-foreground leading-tight tracking-tight"
           >
             {data.heroHeadline}
           </h1>
-          <p className="font-sans text-base sm:text-lg text-secondary-foreground font-medium leading-snug">
+          <p className="text-xl sm:text-2xl font-medium text-secondary-foreground mt-4 max-w-2xl leading-snug">
             {data.heroSubheadline}
           </p>
-          <p className="font-sans text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl">
+          <p className="text-base text-muted-foreground mt-3 max-w-xl leading-relaxed">
             Mendampingi setiap anak menemukan kegembiraan belajar dengan pendekatan Happy Learning.
           </p>
         </div>
@@ -65,10 +113,10 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       <section
         id="siapa-kami"
         aria-labelledby="siapa-kami-heading"
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3 text-left scroll-mt-20"
+        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-3 text-left scroll-mt-20"
       >
         <div className="flex items-center gap-2">
-          {InfoIcon && <InfoIcon aria-hidden="true" className="w-4 h-4 text-primary shrink-0" />}
+          <PMKIMarkIcon className="w-6 h-6 text-primary shrink-0" />
           <h2
             id="siapa-kami-heading"
             className="font-sans text-base sm:text-lg font-bold text-foreground tracking-tight"
@@ -81,42 +129,43 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
         </p>
       </section>
 
-      {/* 3. QUICK FACTS STRIP (Fakta Praktis) */}
+      {/* 3. QUICK FACTS STRIP MENJADI TRUST CARDS */}
       <section
         aria-label="Fakta praktis bimbingan belajar"
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"
+        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
-        <div className="flex items-center gap-2 overflow-x-auto snap-x whitespace-nowrap scrollbar-none py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-          {/* Jenjang */}
-          <div className="inline-flex shrink-0 snap-start items-center gap-1.5 px-3 py-1.5 rounded-pill bg-surface-subtle border border-border text-xs font-medium text-muted-foreground">
-            {PesertaIcon && <PesertaIcon aria-hidden="true" className="w-3.5 h-3.5 text-primary shrink-0" />}
-            <span className="text-foreground">{data.metrics?.educationLevelsValue ?? "TK – SMP Kelas 8"}</span>
-          </div>
-
-          {/* Biaya */}
-          <div className="inline-flex shrink-0 snap-start items-center gap-1.5 px-3 py-1.5 rounded-pill bg-surface-subtle border border-border text-xs font-medium text-muted-foreground">
-            {BiayaIcon && <BiayaIcon aria-hidden="true" className="w-3.5 h-3.5 text-primary shrink-0" />}
-            <span className="text-foreground">Bebas biaya</span>
-          </div>
-
-          {/* Waktu */}
-          <div className="inline-flex shrink-0 snap-start items-center gap-1.5 px-3 py-1.5 rounded-pill bg-surface-subtle border border-border text-xs font-medium text-muted-foreground">
-            {WaktuIcon && <WaktuIcon aria-hidden="true" className="w-3.5 h-3.5 text-primary shrink-0" />}
-            <span className="text-foreground">{HOURS.day} • {HOURS.window}</span>
-          </div>
-
-          {/* Lokasi */}
-          <div className="inline-flex shrink-0 snap-start items-center gap-1.5 px-3 py-1.5 rounded-pill bg-surface-subtle border border-border text-xs font-medium text-muted-foreground">
-            {LokasiIcon && <LokasiIcon aria-hidden="true" className="w-3.5 h-3.5 text-primary shrink-0" />}
-            <span className="text-foreground">{UNIT.location}</span>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+          {trustCards.map((card) => {
+            const IconComponent = card.icon;
+            return (
+              <div
+                key={card.id}
+                className="flex flex-col items-center justify-center p-4 bg-surface border border-border-subtle rounded-card shadow-sm"
+              >
+                {/* Ikon Besar */}
+                <div className="mb-2 p-2 bg-primary/10 rounded-full">
+                  {IconComponent && (
+                    <IconComponent aria-hidden="true" className="w-6 h-6 text-primary shrink-0" />
+                  )}
+                </div>
+                {/* Label Kategori */}
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">
+                  {card.label}
+                </span>
+                {/* Nilai Utama */}
+                <span className="text-sm sm:text-base font-bold text-foreground text-center">
+                  {card.value}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </section>
 
       {/* 4. SOROTAN KABAR TERKINI (Bukti Sosial Dinamis) */}
       <section
         aria-labelledby="sorotan-kabar-heading"
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4 text-left"
+        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-4 text-left"
       >
         <div className="flex items-center justify-between">
           <h2
@@ -216,7 +265,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       {/* 5. INTIP PROGRAM (Eksplorasi Kurikulum) */}
       <section
         aria-labelledby="intip-program-heading"
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4 text-left"
+        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-4 text-left"
       >
         <div className="flex items-center justify-between">
           <div>
@@ -275,7 +324,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       {/* 6. AJAKAN BERGABUNG (Final Conversion Bridge) */}
       <section
         aria-labelledby="cta-heading"
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 pt-4"
+        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 py-12 sm:py-16"
       >
         <div className="space-y-2 max-w-xl mx-auto">
           <h2

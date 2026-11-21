@@ -68,6 +68,7 @@
 | HOTFIX-SCHEDULE-SYNC | Sinkronisasi Waktu Akhir Alur Sesi Belajar | `DONE` | HOTFIX-SCHEDULE-SYNC: Corrected Saturday Session Flow end-time to match official HOURS.window (17.00); Eliminated 17.15 data drift. |
 | HOTFIX-FEEDBACK-CLEANUP | Pembersihan Feedback Ikon Centang Ganda Salin Lokasi | `DONE` | HOTFIX-FEEDBACK-CLEANUP: Removed redundant unicode checkmark from copy success message for cleaner UI. |
 | HOTFIX-DATE-FORMAT | Sinkronisasi Format Tanggal Berita & Galeri ke Standard Indonesia | `DONE` | HOTFIX-DATE-FORMAT: Unified Indonesian date formatting across News and Gallery feeds to eliminate ISO/raw date leakage in public UI. |
+| ITERASI-BERANDA-V2 | Enhanced Hero Impact & Trust Cards | `DONE` | ITERASI-BERANDA-V2: Enhanced hero impact, replaced generic info icon with brand mark, upgraded quick facts to trust cards for better conversion. |
 
 ---
 

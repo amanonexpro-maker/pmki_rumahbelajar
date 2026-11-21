@@ -2,15 +2,47 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Edge-safe Proxy (formerly Middleware, ADR-13 / D-28).
- * ONLY refreshes Supabase Auth session cookies and applies coarse route gating.
- * FORBIDDEN: importing Drizzle, postgres-js, or domain repositories here.
+ * Edge-safe Proxy (Next.js 16 Proxy Architecture, ADR-13 / D-28, 14-Step9).
+ * 1. Koeksistensi mutlak: rute /gallery & /news dilewatkan langsung ke engine 308 next.config.ts.
+ * 2. Splash Visibility: Membaca cookie pmki_splash_seen, set header x-pmki-splash & cookie 24 jam.
+ * 3. Supabase Auth: Refresh session cookies dan gate kasar rute /workspace.
+ * FORBIDDEN: importing Drizzle, postgres-js, atau domain repositories di sini.
  */
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // 1. Koeksistensi mutlak: biarkan redirects 308 di next.config.ts menangani rute legacy
+  if (pathname === "/gallery" || pathname === "/news") {
+    return NextResponse.next();
+  }
+
+  // 2. Splash Visibility Decision (Cookie-based server coordination)
+  const splashSeen = request.cookies.get("pmki_splash_seen");
+  const requestHeaders = new Headers(request.headers);
+
+  if (!splashSeen) {
+    requestHeaders.set("x-pmki-splash", "1");
+  } else {
+    requestHeaders.set("x-pmki-splash", "0");
+  }
+
   let response = NextResponse.next({
-    request,
+    request: {
+      headers: requestHeaders,
+    },
   });
 
+  if (!splashSeen) {
+    response.cookies.set("pmki_splash_seen", "1", {
+      maxAge: 86400, // 24 jam
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV !== "development",
+    });
+  }
+
+  // 3. Supabase Auth Session Refresh & Route Gating
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -28,8 +60,19 @@ export async function proxy(request: NextRequest) {
           request.cookies.set(name, value)
         );
         response = NextResponse.next({
-          request,
+          request: {
+            headers: requestHeaders,
+          },
         });
+        if (!splashSeen) {
+          response.cookies.set("pmki_splash_seen", "1", {
+            maxAge: 86400,
+            path: "/",
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV !== "development",
+          });
+        }
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options)
         );
@@ -42,7 +85,6 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
   const isWorkspaceRoute = pathname.startsWith("/workspace");
 
   if (isWorkspaceRoute && !user) {
@@ -60,7 +102,6 @@ export default proxy;
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
-

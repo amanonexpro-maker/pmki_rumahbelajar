@@ -5,9 +5,11 @@
 export const DOMAIN_NAME = "public" as const;
 
 export {
+  CANONICAL_AUTHENTIC_PUBLICATIONS,
   CANONICAL_PUBLIC_COPY,
   filterAndMapPublicGalleryItems,
   filterAndMapPublicNewsItems,
+  getPublicArticleDetail,
   getPublicPortalData,
   PUBLIC_COORDINATOR_CONTACTS,
   PUBLIC_GRADE_TARGETS,

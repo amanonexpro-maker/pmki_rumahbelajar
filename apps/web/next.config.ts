@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
         destination: "/kabar?tab=berita",
         permanent: true,
       },
+      {
+        source: "/news/:slug+",
+        destination: "/kabar/:slug+",
+        permanent: true,
+      },
     ];
   },
   images: {

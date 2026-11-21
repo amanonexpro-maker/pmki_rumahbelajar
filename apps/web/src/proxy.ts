@@ -19,6 +19,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
+  if (pathname.startsWith("/news/")) {
+    const slug = pathname.replace(/^\/news\//, "");
+    const url = request.nextUrl.clone();
+    url.pathname = `/kabar/${slug}`;
+    return NextResponse.redirect(url, 308);
+  }
+
   if (pathname === "/gallery" || pathname === "/gallery/") {
     const url = request.nextUrl.clone();
     url.pathname = "/kabar";

@@ -3,8 +3,11 @@ import {
   MEDIA_CATEGORY_LABELS,
   type MediaAssetDTO,
 } from "@/features/media";
-import { getDefaultPilotServiceUnit } from "@/features/organization";
 import {
+  getDefaultPilotServiceUnit,
+} from "@/features/organization";
+import {
+  getPublishedPublicationBySlug,
   listPublishedContent,
   PUBLICATION_CATEGORY_LABELS,
   type PublicationDTO,
@@ -344,6 +347,117 @@ export function filterAndMapPublicNewsItems(
     }));
 }
 
+export const CANONICAL_AUTHENTIC_PUBLICATIONS: PublicNewsItemDTO[] = [
+  {
+    id: "pub-smp-8",
+    title: "Tahun Ajaran 2026/2027: Griya Asih Buka Kelas Baru SMP Kelas 8",
+    slug: "tahun-ajaran-2026-2027-buka-kelas-smp-8",
+    category: "BERITA",
+    categoryLabel: "Berita",
+    excerpt:
+      "Merespons antusiasme dan permohonan orang tua wali peserta didik, Rumah Belajar Griya Asih Lawang resmi menambah jenjang kelas SMP Kelas 8.",
+    content: `Di tahun ajaran 2026/2027 ini, pengurus Rumah Belajar Griya Asih Lawang bersepakat untuk menambah 1 kelas baru yaitu SMP Kelas 8. Sebelumnya pelayanan mencakup jenjang TK sampai dengan SMP Kelas 7.
+
+Keputusan penting ini diambil berkaitan langsung dengan permintaan peserta didik dan orang tua wali agar dapat terus melanjutkan bimbingan belajar bersama para pengajar relawan di Griya Asih.
+
+"Kami melihat semangat belajar anak-anak luar biasa. Dengan ditambahkannya kelas 8, kami menyiapkan metode penalaran matematika yang lebih mendalam, Bahasa Inggris lanjutan dengan metode percakapan serta role-play, dan buku referensi khusus," tutur Ms. Evi selaku Koordinator Unit.
+
+Rumah Belajar Griya Asih kini didukung oleh 13 pengajar relawan berdedikasi yang berasal dari guru sekolah Katolik dan guru sekolah negeri di sekitar Lawang. Pembelajaran dilaksanakan setiap hari Sabtu pukul 15.00 s/d 17.15 WIB.`,
+    coverSignedUrl: "/images/gallery/griya_asih_8.jpg",
+    publishedAt: "2026-08-01T09:00:00.000Z",
+    publishedDateFormatted: "1 Agustus 2026",
+    authorLabel: "Tim Pelayanan Griya Asih",
+    eventDate: null,
+    eventLocation: null,
+  },
+  {
+    id: "pub-literasi-1-jam",
+    title: "Keberhasilan Kelas Membaca 1 Jam: Membuka Potensi Literasi Peserta Didik",
+    slug: "keberhasilan-kelas-khusus-membaca-1-jam",
+    category: "ARTIKEL",
+    categoryLabel: "Artikel",
+    excerpt:
+      "Tiga peserta didik kelas 2 yang sebelumnya belum lancar membaca kini berhasil membaca mandiri dengan percaya diri mengikuti pelajaran.",
+    content: `Bagi peserta didik yang belum lancar membaca, Rumah Belajar Griya Asih membuka kelas khusus di mana pengajar relawan memberikan bimbingan membaca intensif selama 1 jam. Sesi ini dirancang personal dan menyenangkan agar peserta didik menemukan kegembiraan belajar ("Happy Learning").
+
+Bukti nyata keberhasilan program ini tampak pada 3 peserta didik kelas 2 yang semula belum lancar membaca. Setelah rutin mengikuti sesi khusus membaca, saat ini mereka telah berhasil membaca dengan lancar sehingga di tahun ajaran 2026/2027 sudah dapat mengikuti kelas pembelajaran sesuai jenjangnya.
+
+Kami percaya bahwa setiap anak memiliki kesempatan untuk berkembang. Dengan pendampingan yang tulus dan penuh kasih, peserta didik dapat bertumbuh menjadi pribadi yang percaya diri dan penuh rasa ingin tahu.`,
+    coverSignedUrl: "/images/gallery/griya_asih_7.jpg",
+    publishedAt: "2026-09-15T10:00:00.000Z",
+    publishedDateFormatted: "15 September 2026",
+    authorLabel: "Tim Pelayanan Griya Asih",
+    eventDate: null,
+    eventLocation: null,
+  },
+  {
+    id: "pub-jadwal-ganjil",
+    title: "Jadwal Bimbingan Belajar Semester Ganjil 2026/2027",
+    slug: "jadwal-bimbingan-belajar-semester-ganjil",
+    category: "AGENDA",
+    categoryLabel: "Agenda",
+    excerpt:
+      "Bimbingan belajar rutin setiap hari Sabtu pukul 15.00 – 17.15 WIB bertempat di RAAL Griya Asih Lawang.",
+    content: `Diumumkan kepada seluruh orang tua dan wali peserta didik bahwa jadwal kegiatan bimbingan belajar Rumah Belajar Griya Asih berjalan rutin:
+
+- Hari: Setiap Hari Sabtu
+- Waktu: Pukul 15.00 s/d 17.15 WIB
+- Tempat: RAAL (Rumah Asuh Anak & Lansia) "Griya Asih" Lawang, Kab. Malang
+- Mata Pelajaran: Matematika Ceria, Bahasa Inggris Praktis, Pendidikan Karakter, dan Kelas Khusus Membaca (1 Jam).
+
+Peserta didik diharapkan hadir 15 menit sebelum jam belajar dimulai dengan membawa buku catatan dan alat tulis masing-masing. Rumah belajar yang terbuka bagi semua anak di wilayah Kalirejo, Lawang, dan sekitarnya tanpa memandang latar belakang suku maupun agama.`,
+    coverSignedUrl: "/images/gallery/griya_asih_4.jpg",
+    publishedAt: "2026-10-01T08:00:00.000Z",
+    publishedDateFormatted: "1 Oktober 2026",
+    eventDate: "2026-11-28",
+    eventLocation: 'RAAL "Griya Asih" Lawang (Setiap Sabtu, 15.00 – 17.15 WIB)',
+    authorLabel: "Tim Pelayanan Griya Asih",
+  },
+  {
+    id: "pub-ebta-kelas-6",
+    title: "Sosialisasi Persiapan Ujian Akhir Matematika SD Kelas 6",
+    slug: "sosialisasi-persiapan-ebta-sd-kelas-6",
+    category: "PENGUMUMAN",
+    categoryLabel: "Pengumuman",
+    excerpt:
+      "Pemantapan soal latihan matematika dan strategi pengerjaan soal cerita intensif bagi peserta didik kelas 6.",
+    content: `Menjelang persiapan ujian kelulusan sekolah dasar (EBTA/EBTANAS), Rumah Belajar Griya Asih Lawang menyelenggarakan pemantapan materi matematika khusus untuk peserta didik kelas 6.
+
+Pendampingan berfokus pada teknik pemecahan soal cerita matematika bertingkat, konsep pecahan, perkalian dan pembagian cepat, serta latihan ketelitian berhitung.
+
+Pembinaan ini diberikan secara intensif setiap hari Sabtu bersama pengajar relawan lulusan pendidikan matematika, agar peserta didik memiliki kesiapan mental dan akademis yang prima.`,
+    coverSignedUrl: "/images/gallery/griya_asih_1.jpg",
+    publishedAt: "2026-10-15T08:00:00.000Z",
+    publishedDateFormatted: "15 Oktober 2026",
+    authorLabel: "Tim Pelayanan Griya Asih",
+    eventDate: null,
+    eventLocation: null,
+  },
+];
+
+/**
+ * Public Article Detail Resolver (`11 §17`).
+ * First queries database for live published article by slug.
+ * Gracefully falls back to authentic canonical publication if database has not yet been seeded.
+ */
+export async function getPublicArticleDetail(
+  slug: string
+): Promise<PublicNewsItemDTO | null> {
+  try {
+    const rawPost = await getPublishedPublicationBySlug(slug).catch(() => null);
+    if (rawPost) {
+      const [mapped] = filterAndMapPublicNewsItems([rawPost]);
+      if (mapped) return mapped;
+    }
+  } catch (err) {
+    console.error(`[getPublicArticleDetail] DB query error for slug "${slug}":`, err);
+  }
+
+  // Graceful fallback to authentic canonical publication if DB is empty or transiently unavailable
+  const fallback = CANONICAL_AUTHENTIC_PUBLICATIONS.find((p) => p.slug === slug);
+  return fallback ?? null;
+}
+
 /**
  * Cross-Domain Public Portal Application Service (`11 §20–21`).
  * Fetches public data strictly through `organization`, `media`, and `publishing` Public APIs.
@@ -377,7 +491,9 @@ export async function getPublicPortalData(): Promise<PublicPortalDataDTO> {
   }
 
   const galleryItems = filterAndMapPublicGalleryItems(rawGallery);
-  const newsItems = filterAndMapPublicNewsItems(rawPublications);
+  const mappedNews = filterAndMapPublicNewsItems(rawPublications);
+  const newsItems =
+    mappedNews.length > 0 ? mappedNews : CANONICAL_AUTHENTIC_PUBLICATIONS;
 
   return {
     serviceUnitName: "Rumah Belajar Griya Asih Lawang",

@@ -429,3 +429,49 @@ export async function listPublishedPublicationsForPublic(
   return items;
 }
 
+/**
+ * Public News / Publication Single Item Query by Slug (`11 §17`).
+ * Strictly returns ONLY if `status === "PUBLISHED"` and resolves cover media
+ * through `MediaService.getSignedMediaReadUrl(..., { forPublicChannel: true })`.
+ */
+export async function getPublishedPublicationBySlug(
+  slug: string
+): Promise<PublicationDTO | null> {
+  const row = await findPublicationBySlug(slug);
+  if (!row || row.status !== "PUBLISHED") {
+    return null;
+  }
+
+  let coverSignedUrl: string | null = null;
+  if (row.coverMediaId) {
+    const signedRes = await getSignedMediaReadUrl(null, row.coverMediaId, {
+      forPublicChannel: true,
+    });
+    if (signedRes.success) {
+      coverSignedUrl = signedRes.data.signedUrl;
+    }
+  }
+
+  const cat = row.category as PublicationCategoryCode;
+  return {
+    id: row.id,
+    organizationId: row.organizationId,
+    serviceUnitId: row.serviceUnitId,
+    title: row.title,
+    slug: row.slug,
+    category: cat,
+    categoryLabel: PUBLICATION_CATEGORY_LABELS[cat] ?? cat,
+    excerpt: row.excerpt,
+    content: row.content,
+    coverMediaId: row.coverMediaId,
+    coverSignedUrl,
+    status: row.status as PublicationStatus,
+    publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
+    eventDate: row.eventDate,
+    eventLocation: row.eventLocation,
+    authorId: row.createdBy,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+

@@ -114,7 +114,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       <section
         id="siapa-kami"
         aria-labelledby="siapa-kami-heading"
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-3 text-left scroll-mt-20"
+        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-0 space-y-3 text-left scroll-mt-20"
       >
         <div className="flex items-center gap-2">
           <PMKIMarkIcon className="w-6 h-6 text-primary shrink-0" />
@@ -133,9 +133,9 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       {/* 3. QUICK FACTS STRIP (Compact Horizontal Grid 2x2) */}
       <section
         aria-label="Fakta praktis bimbingan belajar"
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6"
+        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6 sm:pb-8"
       >
-        <div className="grid grid-cols-2 gap-2 mt-6">
+        <div className="grid grid-cols-2 gap-2 mt-4 md:mt-5">
           {quickFactsData.map((fact) => (
             <div
               key={fact.label}

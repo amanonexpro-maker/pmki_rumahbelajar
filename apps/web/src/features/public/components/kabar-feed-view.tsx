@@ -4,6 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
+import { formatToIndonesianStandard } from "@/utils/date-formatter";
 import { KabarEmptyState } from "./kabar-empty-state";
 import type {
   PublicGalleryItemDTO,
@@ -73,7 +74,7 @@ export function KabarFeedView({
       title: post.title,
       slug: post.slug,
       categoryLabel: post.categoryLabel,
-      dateFormatted: post.publishedDateFormatted,
+      dateFormatted: formatToIndonesianStandard(post.publishedDateFormatted),
       excerpt: post.excerpt,
       coverUrl: post.coverSignedUrl,
     }));
@@ -92,7 +93,7 @@ export function KabarFeedView({
         type: "galeri",
         title: item.title,
         categoryLabel: item.categoryLabel,
-        dateFormatted: item.capturedDate,
+        dateFormatted: formatToIndonesianStandard(item.capturedDate),
         coverUrl: item.signedReadUrl,
         description: item.description,
       };

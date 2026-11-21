@@ -12,6 +12,7 @@ import {
   PUBLICATION_CATEGORY_LABELS,
   type PublicationDTO,
 } from "@/features/publishing";
+import { formatToIndonesianStandard } from "@/utils/date-formatter";
 import type {
   ArticleContent,
   GalleryAlbumContent,
@@ -283,13 +284,7 @@ export const PUBLIC_COORDINATOR_CONTACTS: PublicCoordinatorContactDTO[] = [
 
 function formatIndonesianDate(isoDate: string | null): string {
   if (!isoDate) return "Terbaru";
-  const parsed = new Date(isoDate);
-  if (Number.isNaN(parsed.getTime())) return isoDate;
-  return parsed.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return formatToIndonesianStandard(isoDate);
 }
 
 function slugify(text: string): string {
@@ -328,7 +323,7 @@ export function filterAndMapPublicGalleryItems(
         category: asset.category,
         categoryLabel:
           MEDIA_CATEGORY_LABELS[asset.category] ?? "Kegiatan belajar",
-        capturedDate: asset.capturedDate ?? "2026",
+        capturedDate: formatToIndonesianStandard(asset.capturedDate),
         signedReadUrl: asset.signedReadUrl ?? "/images/gallery/griya_asih_4.jpg",
         signedUrlTtlSeconds: asset.signedUrlTtlSeconds ?? 3600,
         privacyReviewed: true,

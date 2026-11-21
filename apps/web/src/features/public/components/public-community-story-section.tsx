@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { formatToIndonesianStandard } from "@/utils/date-formatter";
 import type {
   PublicGalleryItemDTO,
   PublicNewsItemDTO,
@@ -348,7 +349,7 @@ export function PublicCommunityStorySection({
                             {item.categoryLabel}
                           </span>
                           <span className="text-[11px] text-muted-foreground font-mono tabular-nums">
-                            {item.capturedDate}
+                            {formatToIndonesianStandard(item.capturedDate)}
                           </span>
                         </div>
 
@@ -386,7 +387,7 @@ export function PublicCommunityStorySection({
                   {activeMedia && (
                     <DialogDescription>
                       Kategori: {activeMedia.categoryLabel} · Tanggal:{" "}
-                      {activeMedia.capturedDate}
+                      {formatToIndonesianStandard(activeMedia.capturedDate)}
                     </DialogDescription>
                   )}
                 </DialogHeader>

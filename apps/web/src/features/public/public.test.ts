@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { formatToIndonesianStandard } from "@/utils/date-formatter";
 import type { MediaAssetDTO } from "@/features/media";
 import type { PublicationDTO } from "@/features/publishing";
 import {
@@ -131,6 +132,7 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
     const filtered = filterAndMapPublicGalleryItems(sampleMedia);
     expect(filtered).toHaveLength(1);
     expect(filtered[0]?.id).toBe("m-eligible");
+    expect(filtered[0]?.capturedDate).toBe("15 Agustus 2026");
   });
 
   it("defensively filters public news items: ONLY status === PUBLISHED pass", () => {
@@ -282,6 +284,17 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       expect(album.photos.length).toBeGreaterThan(1);
       expect(album.photos[0].url).toContain("/images/gallery/");
     }
+  });
+
+  it("formats dates to Indonesian standard D MMMM YYYY without timezone drifting", () => {
+    expect(formatToIndonesianStandard("2026-10-24")).toBe("24 Oktober 2026");
+    expect(formatToIndonesianStandard("2026-08-15")).toBe("15 Agustus 2026");
+    expect(formatToIndonesianStandard("2026-01-01")).toBe("1 Januari 2026");
+    expect(formatToIndonesianStandard("2026-12-31")).toBe("31 Desember 2026");
+    expect(formatToIndonesianStandard("24 Oktober 2026")).toBe("24 Oktober 2026");
+    expect(formatToIndonesianStandard("2026-10-24T12:00:00Z")).toBe("24 Oktober 2026");
+    expect(formatToIndonesianStandard(null)).toBe("Terbaru");
+    expect(formatToIndonesianStandard(undefined)).toBe("Terbaru");
   });
 });
 

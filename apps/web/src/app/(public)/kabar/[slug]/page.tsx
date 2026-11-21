@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { ArrowLeft, Calendar, MapPin, Share2, ShieldCheck, User } from "lucide-react";
 import { ICON_MAP } from "@/config/icons";
+import { formatToIndonesianStandard } from "@/utils/date-formatter";
 import {
   GalleryAlbumGrid,
   getPublicArticleDetail,
@@ -26,10 +27,11 @@ export function generateWaShareText(content: PublicContent, baseUrl: string): st
   const url = `${baseUrl}/kabar/${content.slug}`;
 
   if (content.type === "gallery_album") {
-    return `📸 Dokumentasi Kegiatan: "${content.title}"\n\nHari ini anak-anak Griya Asih belajar dengan semangat! Senang melihat perkembangan mereka.\n\nTanggal: ${content.date}\n\nLihat momen lengkapnya di sini:\n${url}\n\n#GriyaAsih #HappyLearning`;
+    const formattedDate = formatToIndonesianStandard(content.date);
+    return `📸 Dokumentasi Kegiatan: "${content.title}"\n\nHari ini anak-anak Griya Asih belajar dengan semangat! Senang melihat perkembangan mereka.\n\nTanggal: ${formattedDate}\n\nLihat momen lengkapnya di sini:\n${url}\n\n#GriyaAsih #HappyLearning`;
   }
 
-  const dateStr = content.publishedDateFormatted || content.date;
+  const dateStr = formatToIndonesianStandard(content.publishedDateFormatted || content.date);
   return `📰 Warta Griya Asih: "${content.title}"\n\n${content.excerpt}\n\nTanggal: ${dateStr}\n\nBaca warta selengkapnya di sini:\n${url}\n\n#GriyaAsih #KabarGriyaAsih #RumahBelajar`;
 }
 
@@ -170,7 +172,7 @@ export default async function PublicKabarDetailPage({
                 </span>
                 <span className="text-xs text-muted-foreground flex items-center gap-1 font-mono tabular-nums">
                   <Calendar aria-hidden="true" className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span>{content.date}</span>
+                  <span>{formatToIndonesianStandard(content.date)}</span>
                 </span>
               </div>
 
@@ -287,7 +289,7 @@ export default async function PublicKabarDetailPage({
               </span>
               <span className="text-xs text-muted-foreground flex items-center gap-1 font-mono tabular-nums">
                 <Calendar aria-hidden="true" className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span>{content.publishedDateFormatted || content.date}</span>
+                <span>{formatToIndonesianStandard(content.publishedDateFormatted || content.date)}</span>
               </span>
             </div>
 

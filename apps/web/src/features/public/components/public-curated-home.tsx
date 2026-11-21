@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ICON_MAP } from "@/config/icons";
 import { HOURS, UNIT } from "@/config/site";
+import { formatToIndonesianStandard } from "@/utils/date-formatter";
 import type { PublicPortalDataDTO } from "../types/public-types";
 
 export interface PublicCuratedHomeProps {
@@ -164,7 +165,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
                       </p>
                     </div>
                     <span className="text-[10px] text-muted-foreground">
-                      {latestArticle.publishedDateFormatted}
+                      {formatToIndonesianStandard(latestArticle.publishedDateFormatted)}
                     </span>
                   </div>
                 </Link>
@@ -192,7 +193,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
                       {latestAlbum.title}
                     </h3>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {latestAlbum.categoryLabel} • {latestAlbum.capturedDate}
+                      {latestAlbum.categoryLabel} • {formatToIndonesianStandard(latestAlbum.capturedDate)}
                     </p>
                   </div>
                 </Link>

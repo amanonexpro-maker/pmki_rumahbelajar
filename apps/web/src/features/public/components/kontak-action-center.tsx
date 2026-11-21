@@ -188,7 +188,6 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
   // Semantic Icon references from frozen registry
   const SalinIcon = ICON_MAP.salin;
   const CentangIcon = ICON_MAP.centang;
-  const TautanLuarIcon = ICON_MAP.tautanLuar;
   const KontakIcon = ICON_MAP.kontak;
   const WaktuIcon = ICON_MAP.waktu;
   const LokasiIcon = ICON_MAP.lokasi;
@@ -358,7 +357,7 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
                     <div className="flex items-center gap-2 text-primary">
                       <LokasiIcon aria-hidden="true" className="w-4 h-4 shrink-0" />
                       <h3 className="text-xs font-semibold uppercase tracking-wider">
-                        Alamat Kanonikal Belajar
+                        Alamat
                       </h3>
                     </div>
                     <p className="text-base font-bold text-foreground">
@@ -403,23 +402,6 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                   />
-                </div>
-
-                <div className="pt-1 flex items-center justify-between text-xs">
-                  <a
-                    href={`https://maps.google.com/?q=${encodeURIComponent(
-                      `${ADDRESS.street}, ${ADDRESS.rtRw}, ${ADDRESS.desa}, ${ADDRESS.kecamatan}, ${ADDRESS.kabupaten}`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-primary hover:underline focus-ring rounded-xs"
-                  >
-                    <span>Buka petunjuk arah di Google Maps</span>
-                    <TautanLuarIcon aria-hidden="true" className="w-3.5 h-3.5" />
-                  </a>
-                  <span className="text-muted-foreground text-[11px]">
-                    Kecamatan Lawang
-                  </span>
                 </div>
               </div>
             </div>

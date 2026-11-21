@@ -62,6 +62,7 @@
 | HOTFIX-LABEL-SHARE | Penyederhanaan Label Tombol Share Galeri | `DONE` | HOTFIX-LABEL-SHARE: Simplified Gallery Share button label to 'Bagikan Album Ini' for better UX universality. |
 | HOTFIX-USABILITY | Perluasan Area Clickable Kartu Berita & Galeri | `DONE` | HOTFIX-USABILITY: Expanded clickable area for News/Gallery cards to include Image and Title wrappers for better mobile touch experience. |
 | HOTFIX-LABEL-WA | Penyederhanaan Label Tombol Chat WhatsApp Kontak | `DONE` | HOTFIX-LABEL-WA: Simplified WhatsApp button labels to 'WhatsApp [Name]' removing redundant role descriptions for cleaner UI. |
+| HOTFIX-LABEL-ADDR | Penyederhanaan Kartu Alamat di Tab Info & Lokasi | `DONE` | HOTFIX-LABEL-ADDR: Simplified Address heading to 'Alamat'; Removed redundant 'Get Directions' button relying on map interaction. |
 
 ---
 

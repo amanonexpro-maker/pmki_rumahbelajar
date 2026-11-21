@@ -160,7 +160,7 @@ export const LEGAL: PublicLegalInformation = {
   privacySummary: `Kebijakan Privasi Rumah Belajar Griya Asih
 Pembaruan Terakhir: November 2026
 
-Rumah Belajar Griya Asih (di bawah naungan Yayasan Pelayanan Masyarakat Kota & Industri / PMKI) berkomitmen penuh untuk melindungi privasi, martabat, dan rasa aman seluruh peserta didik serta keluarga.
+Rumah Belajar Griya Asih (PMKI Mupel Jawa Timur) berkomitmen penuh untuk melindungi privasi, martabat, dan rasa aman seluruh peserta didik serta keluarga.
 
 1. Prinsip Perlindungan Data Anak
 Data peserta didik bersifat privat secara bawaan (private by default). Kami menerapkan pengumpulan data seminimal mungkin (minimum disclosure) yang hanya relevan untuk kebutuhan bimbingan belajar dan pendampingan karakter.

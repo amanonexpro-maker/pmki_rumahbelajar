@@ -23,8 +23,9 @@ export interface KabarAlbumLightboxProps {
 }
 
 /**
- * KabarAlbumLightbox (Fase 14 Step 7, UI-UX §15, §30).
- * Modal imersif fullscreen di mobile (<md) & dialog terpusat di desktop (>=md).
+ * KabarAlbumLightbox (Fase 14 Step 7 & Hotfix, UI-UX §15, §30, 03 §9).
+ * Modal imersif dengan tema Light/Warm & Human:
+ * - Menggunakan token --background/--surface agar selaras dengan identitas visual publik.
  * - Menghormati privasi anak: hanya menampilkan media yang telah terverifikasi consent di level server.
  * - Navigasi keyboard (ArrowLeft/ArrowRight/Escape), swipe/button prev-next, dan indikator posisi X/N.
  * - Tombol share WhatsApp keluarga, caption per foto, focus trap, dan body scroll lock.
@@ -143,29 +144,29 @@ export function KabarAlbumLightbox({
       role="dialog"
       aria-modal="true"
       aria-labelledby="lightbox-album-title"
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-md p-2 sm:p-4 lg:p-6 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/80 p-2 sm:p-4 lg:p-6 animate-in fade-in duration-200"
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-4xl max-h-[92vh] flex flex-col justify-between rounded-card bg-neutral-950/80 border border-neutral-800 text-white overflow-hidden shadow-2xl"
+        className="relative w-full max-w-4xl max-h-[92vh] flex flex-col justify-between rounded-card bg-surface border border-border text-foreground overflow-hidden shadow-overlay"
       >
-        {/* Top Control Bar */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-neutral-800 bg-neutral-950/60 shrink-0">
+        {/* Top Control Bar (Clean & Warm Light Theme) */}
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border bg-surface-subtle shrink-0">
           <div className="min-w-0 pr-3">
             <h2
               id="lightbox-album-title"
-              className="text-xs sm:text-sm font-bold text-neutral-100 truncate"
+              className="text-xs sm:text-sm font-bold text-foreground truncate"
             >
               {album.title}
             </h2>
-            <p className="text-[11px] text-neutral-400 mt-0.5">{album.date}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{album.date}</p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             {/* Position Indicator X/N */}
             <span
               aria-live="polite"
-              className="text-xs font-mono font-semibold px-2.5 py-1 rounded-pill bg-neutral-800 text-neutral-300"
+              className="text-xs font-mono font-semibold px-2.5 py-1 rounded-pill bg-surface border border-border text-muted-foreground"
             >
               {currentIndex + 1} / {totalPhotos}
             </span>
@@ -175,7 +176,7 @@ export function KabarAlbumLightbox({
               type="button"
               onClick={onClose}
               aria-label="Tutup"
-              className="min-w-11 min-h-11 rounded-full flex items-center justify-center text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors focus-ring"
+              className="min-w-11 min-h-11 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-surface-subtle transition-colors focus-ring cursor-pointer"
             >
               {CloseIcon && <CloseIcon aria-hidden="true" className="w-5 h-5" />}
             </button>
@@ -183,7 +184,7 @@ export function KabarAlbumLightbox({
         </div>
 
         {/* Center Image Display with Prev/Next Controls */}
-        <div className="relative flex-1 min-h-[45vh] sm:min-h-[55vh] max-h-[65vh] flex items-center justify-center bg-black/40 overflow-hidden">
+        <div className="relative flex-1 min-h-[45vh] sm:min-h-[55vh] max-h-[65vh] flex items-center justify-center bg-surface-subtle border-y border-border-subtle overflow-hidden">
           {currentPhoto?.url && (
             <div className="relative w-full h-full aspect-video sm:aspect-auto flex items-center justify-center">
               <Image
@@ -204,7 +205,7 @@ export function KabarAlbumLightbox({
                 type="button"
                 onClick={handlePrev}
                 aria-label="Foto sebelumnya"
-                className="absolute left-2 top-1/2 -translate-y-1/2 min-w-11 min-h-11 rounded-full bg-neutral-900/70 hover:bg-neutral-900 text-white flex items-center justify-center transition-colors focus-ring border border-neutral-700"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 min-w-11 min-h-11 rounded-full bg-surface/90 hover:bg-surface text-secondary-foreground hover:text-primary flex items-center justify-center transition-colors focus-ring border border-border shadow-xs cursor-pointer"
               >
                 <svg
                   className="w-5 h-5"
@@ -224,7 +225,7 @@ export function KabarAlbumLightbox({
                 type="button"
                 onClick={handleNext}
                 aria-label="Foto berikutnya"
-                className="absolute right-2 top-1/2 -translate-y-1/2 min-w-11 min-h-11 rounded-full bg-neutral-900/70 hover:bg-neutral-900 text-white flex items-center justify-center transition-colors focus-ring border border-neutral-700"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 min-w-11 min-h-11 rounded-full bg-surface/90 hover:bg-surface text-secondary-foreground hover:text-primary flex items-center justify-center transition-colors focus-ring border border-border shadow-xs cursor-pointer"
               >
                 <svg
                   className="w-5 h-5"
@@ -244,8 +245,8 @@ export function KabarAlbumLightbox({
         </div>
 
         {/* Bottom Bar: Caption & Share Button */}
-        <div className="p-3 sm:p-4 border-t border-neutral-800 bg-neutral-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-          <p className="text-xs sm:text-sm text-neutral-300 italic line-clamp-2 leading-relaxed">
+        <div className="p-3 sm:p-4 border-t border-border bg-surface-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+          <p className="text-xs sm:text-sm text-secondary-foreground italic line-clamp-2 leading-relaxed">
             {currentPhoto?.caption || album.title}
           </p>
 
@@ -253,7 +254,7 @@ export function KabarAlbumLightbox({
             href={waShareUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 rounded-control bg-success hover:bg-success/90 text-white font-semibold text-xs transition-colors focus-ring self-start sm:self-auto shrink-0 shadow-xs"
+            className="inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 rounded-control bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-xs transition-colors focus-ring self-start sm:self-auto shrink-0 shadow-xs"
           >
             <span>Bagikan ke WhatsApp</span>
             <span aria-hidden="true">→</span>

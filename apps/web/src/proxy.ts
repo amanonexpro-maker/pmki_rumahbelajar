@@ -2,25 +2,36 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Edge-safe Proxy (Next.js 16 Proxy Architecture, ADR-13 / D-28, 14-Step9).
- * 1. Koeksistensi mutlak: rute /gallery & /news dilewatkan langsung ke engine 308 next.config.ts.
- * 2. Splash Visibility: Membaca cookie pmki_splash_seen, set header x-pmki-splash & cookie 24 jam.
- * 3. Supabase Auth: Refresh session cookies dan gate kasar rute /workspace.
+ * Edge-safe Proxy (Next.js 16 Proxy Architecture, ADR-13 / D-28, 14-Step9 & Hotfix).
+ * 1. Explicit 308 Permanent Redirects: /news & /gallery dialihkan ke /kabar?tab=...
+ * 2. Splash Visibility: HANYA dievaluasi pada root '/', tidak mengganggu rute publik lain.
+ * 3. Supabase Auth: HANYA dievaluasi dan di-refresh pada rute /workspace.
  * FORBIDDEN: importing Drizzle, postgres-js, atau domain repositories di sini.
  */
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // 1. Koeksistensi mutlak: biarkan redirects 308 di next.config.ts menangani rute legacy
-  if (pathname === "/gallery" || pathname === "/news") {
-    return NextResponse.next();
+  // 1. Explicit 308 Permanent Redirects for legacy routes
+  if (pathname === "/news" || pathname === "/news/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/kabar";
+    url.search = "?tab=berita";
+    return NextResponse.redirect(url, 308);
   }
 
-  // 2. Splash Visibility Decision (Cookie-based server coordination)
+  if (pathname === "/gallery" || pathname === "/gallery/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/kabar";
+    url.search = "?tab=galeri";
+    return NextResponse.redirect(url, 308);
+  }
+
+  // 2. Splash Visibility Decision (Hanya pada root '/')
+  const isRootRoute = pathname === "/";
   const splashSeen = request.cookies.get("pmki_splash_seen");
   const requestHeaders = new Headers(request.headers);
 
-  if (!splashSeen) {
+  if (isRootRoute && !splashSeen) {
     requestHeaders.set("x-pmki-splash", "1");
   } else {
     requestHeaders.set("x-pmki-splash", "0");
@@ -32,7 +43,7 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  if (!splashSeen) {
+  if (isRootRoute && !splashSeen) {
     response.cookies.set("pmki_splash_seen", "1", {
       maxAge: 86400, // 24 jam
       path: "/",
@@ -42,7 +53,12 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // 3. Supabase Auth Session Refresh & Route Gating
+  // 3. Supabase Auth Session Refresh & Route Gating (HANYA untuk /workspace routes)
+  const isWorkspaceRoute = pathname.startsWith("/workspace");
+  if (!isWorkspaceRoute) {
+    return response;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -64,15 +80,6 @@ export async function proxy(request: NextRequest) {
             headers: requestHeaders,
           },
         });
-        if (!splashSeen) {
-          response.cookies.set("pmki_splash_seen", "1", {
-            maxAge: 86400,
-            path: "/",
-            httpOnly: true,
-            sameSite: "lax",
-            secure: process.env.NODE_ENV !== "development",
-          });
-        }
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options)
         );
@@ -80,14 +87,11 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // Always call getUser() (never getSession()) to verify & refresh auth state
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isWorkspaceRoute = pathname.startsWith("/workspace");
-
-  if (isWorkspaceRoute && !user) {
+  if (!user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/auth/login";
     loginUrl.searchParams.set("next", pathname);

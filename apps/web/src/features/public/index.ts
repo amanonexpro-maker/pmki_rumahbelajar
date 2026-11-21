@@ -20,8 +20,12 @@ export {
   PUBLIC_GALLERY_FILTER_VALUES,
   publicContactInquirySchema,
   publicGalleryFilterSchema,
+  publicStudentRegistrationSchema,
+  publicVolunteerRegistrationSchema,
   type PublicContactInquiryInput,
   type PublicGalleryFilterCode,
+  type PublicStudentRegistrationInput,
+  type PublicVolunteerRegistrationInput,
 } from "./validators/public-validator";
 
 export type {
@@ -49,3 +53,7 @@ export { KabarAlbumLightbox } from "./components/kabar-album-lightbox";
 export { PrivacyPolicyModal } from "./components/privacy-policy-modal";
 export { ProgramDetailAccordion } from "./components/program-detail-accordion";
 export { VolunteerGrid } from "./components/volunteer-grid";
+export {
+  KontakActionCenter,
+  type KontakTabId,
+} from "./components/kontak-action-center";

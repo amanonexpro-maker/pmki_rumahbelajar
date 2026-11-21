@@ -114,6 +114,9 @@ Mengikuti parity **UI-2** prototipe dengan navigasi App Router (`next/link`, `us
 | `public` | `PrivacyPolicyModal` | `src/features/public/components/privacy-policy-modal.tsx` | Modal / bottom-sheet informasi hukum & privasi (Fase 14 Step 4: accessible vanilla dialog, focus trap, ESC close, scroll lock, graceful message saat legal undefined) | `AKTIF` |
 | `public` | `ProgramDetailAccordion` | `src/features/public/components/program-detail-accordion.tsx` | Accordion vertikal kurikulum interaktif (Fase 14 Step 6: 4 program kanonikal lengkap, 3 poin Matematika Ceria match KB, default expanded program 1, accessible reduced-motion) | `AKTIF` |
 | `public` | `VolunteerGrid` | `src/features/public/components/volunteer-grid.tsx` | Grid avatar 13 pengajar relawan (Fase 14 Step 6: lingkaran inisial elegan, alt deskriptif nama & peran, responsive 2/3/4/6 kolom) | `AKTIF` |
+| `public` | `KontakActionCenter` | `src/features/public/components/kontak-action-center.tsx` | Pusat interaksi layanan publik terpadu (Fase 14 Step 8: Segmented control 4-tab [Info & Lokasi, Daftar Siswa, Jadi Relawan, Donasi], pelunasan TD-ADDR via `config.ADDRESS`, maps responsif, kontak WhatsApp `config.CONTACTS`, hours `config.HOURS`, audit-verified missing placeholders QRIS/rekening, zero toast/alert) | `AKTIF` |
+| `layout` | `AppSplashScreen` | `src/components/layout/app-splash-screen.tsx` | Splash screen kedap-flash (Fase 14 Step 9: Cookie+Middleware SSR visibility, reduced-motion first-paint respect, Mark SVG dashoffset draw-in + gold dot spring pop, HTML wordmark/subline/tagline crisp accessible, auto-dismiss max(1800ms, load ready min 1200ms) cap 3000ms, localStorage TTL 24 jam repeat skip) | `AKTIF` |
+| `layout` | `SplashScreenGate` | `src/components/layout/splash-screen-gate.tsx` | Server wrapper dengan Suspense boundary untuk evaluasi header `x-pmki-splash` tanpa membatalkan PPR prerender rute statis | `AKTIF` |
 
 
 

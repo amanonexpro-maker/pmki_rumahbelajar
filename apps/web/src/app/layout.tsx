@@ -6,6 +6,7 @@ import {
 } from "next/font/google";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { PwaRegister } from "@/components/layout/pwa-register";
+import { SplashScreenGate } from "@/components/layout/splash-screen-gate";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ConnectivityProvider } from "@/hooks/use-connectivity";
 import "./globals.css";
@@ -93,12 +94,20 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${newsreader.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('reduce-motion-active');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body
         suppressHydrationWarning
         className="min-h-full bg-background text-foreground font-sans flex flex-col"
       >
         <ThemeProvider>
           <ConnectivityProvider>
+            <SplashScreenGate />
             <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
             <PwaRegister />
           </ConnectivityProvider>

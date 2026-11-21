@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { ADDRESS } from "@/config/site";
 import type {
   PublicGradeTargetDTO,
   PublicProgramItemDTO,
@@ -35,7 +36,7 @@ export interface PublicProgramsSectionProps {
  * UI-12 Programs & Saturday Schedule Section (`03 §15`, `UI-UX §18`, `10 §5`, `10 §5A`).
  * - Visual Rhythm: Programs `64px` (`py-12 lg:py-16` / `--space-16`).
  * - Canonical terminology: `Peserta Didik`, `Pengajar Relawan`, `Kelas`.
- * - Saturday 15.00–17.15 WIB schedule at RAAL Griya Asih Lawang.
+ * - Saturday schedule at RAAL Griya Asih Lawang.
  */
 export function PublicProgramsSection({
   programs,
@@ -43,7 +44,6 @@ export function PublicProgramsSection({
   scheduleSlots,
   scheduleDay,
   scheduleHours,
-  locationFull,
 }: PublicProgramsSectionProps) {
   const [activeTab, setActiveTab] = React.useState<"PROGRAM" | "JENJANG">(
     "PROGRAM"
@@ -314,7 +314,7 @@ export function PublicProgramsSection({
         </div>
       </section>
 
-      {/* Section B: Saturday Schedule 15.00 - 17.15 WIB at RAAL Lawang (64px rhythm) */}
+      {/* Section B: Saturday Schedule at RAAL Lawang */}
       <section
         id="jadwal"
         aria-labelledby="schedule-section-heading"
@@ -385,8 +385,7 @@ export function PublicProgramsSection({
                       Asih&rdquo;
                     </p>
                     <p className="type-caption text-secondary-foreground mt-0.5 leading-relaxed">
-                      {locationFull} (akses mudah dari Kelurahan Kalirejo &amp;
-                      Kelurahan Lawang).
+                      {ADDRESS.street}, {ADDRESS.rtRw}, {ADDRESS.desa}, Kecamatan {ADDRESS.kecamatan}.
                     </p>
                   </div>
                 </div>

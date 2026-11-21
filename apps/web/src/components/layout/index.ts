@@ -8,3 +8,5 @@ export * from "./workspace-header";
 
 export * from "./public-bottom-nav";
 export * from "./theme-lock";
+export * from "./app-splash-screen";
+export * from "./splash-screen-gate";

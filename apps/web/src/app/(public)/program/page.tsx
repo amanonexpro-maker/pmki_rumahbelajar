@@ -15,7 +15,7 @@ export const instant = false;
 export const metadata: Metadata = {
   title: "Program & Jadwal Belajar | Rumah Belajar Griya Asih Lawang",
   description:
-    "Kurikulum Happy Learning (Matematika Ceria, Bahasa Inggris Praktis, Pendidikan Karakter, Kelas Khusus Membaca 1 Jam) dan jadwal belajar Sabtu 15.00–17.15 WIB di RAAL Griya Asih Lawang.",
+    `Kurikulum Happy Learning (Matematika Ceria, Bahasa Inggris Praktis, Pendidikan Karakter, Kelas Khusus Membaca 1 Jam) dan jadwal belajar Sabtu ${HOURS.window} di RAAL Griya Asih Lawang.`,
 };
 
 /**
@@ -66,7 +66,7 @@ export default async function PublicProgramPage() {
               Pendampingan belajar yang hangat untuk jenjang TK hingga SMP Kelas 8.
             </h1>
             <p className="font-sans text-xs sm:text-sm text-secondary-foreground leading-relaxed max-w-3xl">
-              Setiap anak memiliki kesempatan untuk berkembang. Seluruh sesi bimbingan belajar dilaksanakan setiap hari Sabtu pukul 15.00 – 17.15 WIB di RAAL Griya Asih Lawang bersama 13 pengajar relawan.
+              Setiap anak memiliki kesempatan untuk berkembang. Seluruh sesi bimbingan belajar dilaksanakan {HOURS.day.toLowerCase()} pukul {HOURS.window} di RAAL Griya Asih Lawang bersama 13 pengajar relawan.
             </p>
             <p className="font-sans text-xs text-muted-foreground leading-relaxed pt-1">
               Mendampingi setiap anak menemukan kegembiraan belajar dengan pendekatan Happy Learning yang menyenangkan, terarah, dan bermakna.

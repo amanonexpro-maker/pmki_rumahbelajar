@@ -24,8 +24,11 @@ import {
   BookOpen,
   BookText,
   Calculator,
+  Check,
   Clock,
+  Copy,
   createLucideIcon,
+  ExternalLink,
   HeartHandshake,
   HelpCircle,
   Home,
@@ -91,5 +94,8 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   facebook: Facebook,
   youtube: Youtube,
   tutup: X,
+  centang: Check,
+  salin: Copy,
+  tautanLuar: ExternalLink,
 } as const;
 

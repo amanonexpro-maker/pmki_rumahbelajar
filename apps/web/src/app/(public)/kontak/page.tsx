@@ -1,208 +1,159 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
+import { UNIT } from "@/config/site";
 import {
-  Calendar,
-  Clock,
-  ExternalLink,
-  MapPin,
-  MessageCircle,
-  Phone,
-  ShieldCheck,
-} from "lucide-react";
-import {
-  getPublicPortalData,
-  PublicContactForm,
+  KontakActionCenter,
+  type KontakTabId,
   PublicNavbar,
 } from "@/features/public";
 
 export const instant = false;
 
 export const metadata: Metadata = {
-  title: "Kontak & Lokasi | Rumah Belajar Griya Asih Lawang",
-  description:
-    "Informasi kontak pengurus, alamat sekretariat RAAL Griya Asih Lawang, jadwal bimbingan belajar Sabtu 15.00–17.15 WIB, dan jalur komunikasi resmi melalui WhatsApp.",
+  title: `Kontak & Layanan Komunitas | ${UNIT.name} ${UNIT.location}`,
+  description: `Informasi narahubung resmi, alamat fisik belajar, pendaftaran peserta didik baru, relawan pengajar, serta dukungan bagi anak-anak di ${UNIT.name} ${UNIT.location}.`,
 };
 
-export default async function PublicContactPage() {
+interface PublicContactPageProps {
+  searchParams?: Promise<{ tab?: string }>;
+}
+
+/**
+ * PublicContactPage (Fase 14 Step 8: Action Center Multi-Tujuan & Pelunasan TD-ADDR).
+ * Server Component yang menyajikan:
+ * 1. Header Editorial: Judul sans-serif, subjudul komunitas, tanpa tombol CTA di header.
+ * 2. KontakActionCenter: Segmented control 4-tab (Info & Lokasi, Daftar Siswa, Jadi Relawan, Donasi).
+ * 3. Teaser Penutup: Cross-link ke Program, Galeri Dokumentasi, dan Warta Kabar.
+ * 4. Pelunasan TD-ADDR: Bebas dari hardcode alamat dan bebas dari field yatim locationFull/subDistrictsLabel.
+ */
+export default async function PublicContactPage({
+  searchParams,
+}: PublicContactPageProps) {
   await connection();
-  const data = await getPublicPortalData();
+
+  const resolvedParams = searchParams ? await searchParams : undefined;
+  const initialTab: KontakTabId =
+    resolvedParams?.tab === "siswa"
+      ? "siswa"
+      : resolvedParams?.tab === "relawan"
+        ? "relawan"
+        : resolvedParams?.tab === "donasi"
+          ? "donasi"
+          : "info";
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       <PublicNavbar activeSection="kontak" />
 
-      <main className="flex-1 py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          {/* Page Header */}
-          <div className="max-w-3xl space-y-3">
+      <main className="flex-1 py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-14">
+          {/* 1. Header Editorial (Pusat Pelayanan Komunitas, Tanpa CTA Button) */}
+          <div className="space-y-2 max-w-2xl text-left">
             <p className="type-eyebrow text-primary uppercase tracking-wider">
-              Kontak &amp; Pelayanan
+              Pusat Pelayanan &amp; Komunitas
             </p>
-            <h1 className="type-display text-foreground tracking-tight">
-              Hubungi kami
+            <h1 className="font-sans text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
+              Kontak &amp; Layanan Komunitas
             </h1>
-            <p className="type-body text-secondary-foreground">
-              Kami siap membantu Anda mendaftar atau menjawab pertanyaan seputar
-              kegiatan bimbingan belajar di {data.serviceUnitName}.
+            <p className="font-sans text-xs sm:text-sm text-secondary-foreground leading-relaxed">
+              Informasi narahubung resmi, alamat fisik belajar, pendaftaran peserta didik baru, relawan pengajar, serta dukungan bimbingan belajar gratis di {UNIT.name} {UNIT.location}.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left Column: Direct WhatsApp Quick Actions & Verified Operational Location */}
-            <div className="lg:col-span-6 space-y-6">
-              {/* WhatsApp Quick Action Cards (Touch Target >= 44px) */}
-              <div className="space-y-4">
-                <h2 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Jalur komunikasi langsung (WhatsApp)
-                </h2>
+          {/* 2. Interactive Segmented Action Center Leaf */}
+          <KontakActionCenter initialTab={initialTab} />
 
-                {/* Ms. Evi Card */}
-                <div className="p-5 rounded-card bg-surface border border-border shadow-xs space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <p className="text-xs text-muted-foreground font-medium">
-                        Koordinator pelayanan bimbingan belajar &amp; pendaftaran
-                      </p>
-                      <h3 className="text-base font-bold text-foreground">
-                        Ms. Evi
-                      </h3>
-                      <p className="text-xs text-secondary-foreground font-mono">
-                        +62 812-323-5318
-                      </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-pill bg-primary-soft text-primary flex items-center justify-center shrink-0">
-                      <Phone aria-hidden="true" className="w-5 h-5" />
-                    </div>
-                  </div>
-
-                  <a
-                    href="https://wa.me/628123235318"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex min-h-12 items-center justify-center gap-2.5 px-5 py-3 rounded-control bg-primary hover:bg-primary-hover text-primary-foreground font-semibold text-sm transition-colors shadow-xs active:scale-[0.985] focus-ring"
-                  >
-                    <MessageCircle aria-hidden="true" className="w-4 h-4" />
-                    <span>Chat WhatsApp Ms. Evi (Pengurus)</span>
-                  </a>
-                </div>
-
-                {/* Ms. Lilian Card */}
-                <div className="p-5 rounded-card bg-surface border border-border shadow-xs space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <p className="text-xs text-muted-foreground font-medium">
-                        Pengurus, humas, dan konfirmasi kegiatan belajar
-                      </p>
-                      <h3 className="text-base font-bold text-foreground">
-                        Ms. Lilian
-                      </h3>
-                      <p className="text-xs text-secondary-foreground font-mono">
-                        +62 813-3298-7491
-                      </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-pill bg-primary-soft text-primary flex items-center justify-center shrink-0">
-                      <Phone aria-hidden="true" className="w-5 h-5" />
-                    </div>
-                  </div>
-
-                  <a
-                    href="https://wa.me/6281332987491"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex min-h-12 items-center justify-center gap-2.5 px-5 py-3 rounded-control bg-surface hover:bg-surface-subtle text-foreground border border-border font-semibold text-sm transition-colors shadow-xs active:scale-[0.985] focus-ring"
-                  >
-                    <MessageCircle aria-hidden="true" className="w-4 h-4 text-primary" />
-                    <span>Chat WhatsApp Ms. Lilian (Publikasi)</span>
-                  </a>
-                </div>
-              </div>
-
-              {/* Location & Saturday Schedule Card */}
-              <div className="p-5 rounded-card bg-surface-subtle border border-border space-y-4">
-                <h2 className="text-sm font-semibold tracking-wide text-foreground uppercase">
-                  Jadwal &amp; alamat belajar
-                </h2>
-
-                <div className="space-y-3 text-xs sm:text-sm text-secondary-foreground">
-                  <div className="flex items-start gap-3">
-                    <Calendar aria-hidden="true" className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        {data.scheduleDay}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Sesi tatap muka bersama pengajar relawan
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Clock aria-hidden="true" className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        Pukul {data.scheduleHours}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Waktu Indonesia Barat (WIB)
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <MapPin aria-hidden="true" className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    {/* TD-ADDR: literal stopgap keselamatan komunitas (PO-confirmed 2026-11-21) -> dilunasi di Step 2 via config/site.ts */}
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        Jl. Ngamarto Selatan, RT.06/RW.02
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Desa Ngamarto, Lawang, Malang, Jawa Timur 65211
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <a
-                    href="https://maps.google.com/?q=RAAL+Griya+Asih+Lawang"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-10 items-center gap-1.5 text-xs font-semibold text-primary hover:underline focus-ring rounded-xs"
-                  >
-                    <span>Buka petunjuk arah di Google Maps</span>
-                    <ExternalLink aria-hidden="true" className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
-
-              {/* Privacy Assurance Note */}
-              <div className="flex items-center gap-2 p-3.5 rounded-control bg-surface border border-border-subtle text-xs text-secondary-foreground">
-                <ShieldCheck aria-hidden="true" className="w-4 h-4 text-primary shrink-0" />
-                <span>
-                  Komunikasi Anda dilindungi privasi sesuai komitmen perlindungan data peserta didik dan keluarga PMKI.
-                </span>
-              </div>
+          {/* 3. Teaser Penutup (Cross-link Editorial ke Program & Kabar) */}
+          <section
+            aria-labelledby="kontak-teaser-heading"
+            className="pt-8 border-t border-border space-y-6"
+          >
+            <div className="space-y-1">
+              <h2
+                id="kontak-teaser-heading"
+                className="text-sm font-semibold tracking-wide text-foreground uppercase"
+              >
+                Jelajahi lebih lanjut
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Kenali lebih dalam kurikulum bimbingan belajar dan dokumentasi hangat kegiatan kami.
+              </p>
             </div>
 
-            {/* Right Column: Interactive Form Message Composer */}
-            <div className="lg:col-span-6">
-              <div className="p-6 sm:p-8 rounded-card bg-surface border border-border shadow-xs space-y-4">
-                <div className="space-y-1">
-                  <h2 className="text-base sm:text-lg font-bold text-foreground">
-                    Kirim pesan atau konfirmasi cepat
-                  </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Teaser 1: Program Detail */}
+              <div className="p-5 rounded-card bg-surface border border-border shadow-xs flex flex-col justify-between space-y-4">
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-primary uppercase tracking-wider">
+                    Kurikulum &amp; Jadwal
+                  </p>
+                  <h3 className="text-base font-bold text-foreground">
+                    Program Bimbingan Belajar
+                  </h3>
                   <p className="text-xs text-secondary-foreground leading-relaxed">
-                    Tuliskan nama dan pesan Anda. Formulir ini akan membantu Anda membuka WhatsApp dengan pesan yang sudah terstruktur.
+                    Pelajari 4 program bimbingan belajar, metode penalaran matematika, literasi membaca, dan profil 13 pengajar relawan.
                   </p>
                 </div>
+                <div>
+                  <Link
+                    href="/program"
+                    className="inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline focus-ring rounded-xs"
+                  >
+                    <span>Lihat detail program &rarr;</span>
+                  </Link>
+                </div>
+              </div>
 
-                <PublicContactForm />
+              {/* Teaser 2: Galeri Dokumentasi */}
+              <div className="p-5 rounded-card bg-surface border border-border shadow-xs flex flex-col justify-between space-y-4">
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-primary uppercase tracking-wider">
+                    Dokumentasi Foto
+                  </p>
+                  <h3 className="text-base font-bold text-foreground">
+                    Galeri Griya Asih
+                  </h3>
+                  <p className="text-xs text-secondary-foreground leading-relaxed">
+                    Lihat foto-foto hangat keceriaan dan interaksi anak-anak saat belajar bersama di Griya Asih Lawang.
+                  </p>
+                </div>
+                <div>
+                  <Link
+                    href="/kabar?tab=galeri"
+                    className="inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline focus-ring rounded-xs"
+                  >
+                    <span>Lihat galeri kegiatan &rarr;</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Teaser 3: Warta Kabar Komunitas */}
+              <div className="p-5 rounded-card bg-surface border border-border shadow-xs flex flex-col justify-between space-y-4">
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-primary uppercase tracking-wider">
+                    Warta Komunitas
+                  </p>
+                  <h3 className="text-base font-bold text-foreground">
+                    Kabar &amp; Cerita Terbaru
+                  </h3>
+                  <p className="text-xs text-secondary-foreground leading-relaxed">
+                    Baca warta kemajuan belajar anak, kisah inspiratif, serta agenda refleksi pengajar relawan.
+                  </p>
+                </div>
+                <div>
+                  <Link
+                    href="/kabar?tab=berita"
+                    className="inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline focus-ring rounded-xs"
+                  >
+                    <span>Baca kabar terbaru &rarr;</span>
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </main>
     </div>
   );
 }
-

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { HOURS } from "@/config/site";
 import {
   getPublicPortalData,
   PublicCuratedHome,
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   title:
     "Rumah Belajar Griya Asih Lawang — Ayo Belajar dan Tumbuh Bersama | PMKI",
   description:
-    "Rumah belajar yang terbuka bagi semua di Lawang, Kabupaten Malang. Bimbingan belajar Matematika, Bahasa Inggris, Pendidikan Karakter, dan Literasi Membaca 1 Jam setiap Sabtu pukul 15.00–17.15 WIB bersama 13 pengajar relawan.",
+    `Rumah belajar yang terbuka bagi semua di Lawang, Kabupaten Malang. Bimbingan belajar Matematika, Bahasa Inggris, Pendidikan Karakter, dan Literasi Membaca 1 Jam setiap Sabtu pukul ${HOURS.window} bersama 13 pengajar relawan.`,
   openGraph: {
     title: "Rumah Belajar Griya Asih Lawang — Platform Pelayanan Terpadu PMKI",
     description:

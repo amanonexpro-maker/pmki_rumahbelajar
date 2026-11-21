@@ -78,6 +78,7 @@ export const UNIT = {
 export const BRAND = {
   taglineSplash: ORG.taglineSplash, // PO-CONFIRMED 2026-11-21
   taglineFooter: UNIT.taglineFooter, // PO-CONFIRMED 2026-11-21
+  subline: "Platform Pelayanan Terpadu", // PO-CONFIRMED 2026-11-21 (NEW FIELD)
 } as const;
 
 /**

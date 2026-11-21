@@ -69,10 +69,10 @@ export function LoginForm({ redirectTo = "/workspace" }: LoginFormProps) {
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
             <picture className="flex items-center justify-center">
-              <source srcSet="/pmki_logo.svg" type="image/svg+xml" />
+              <source srcSet="/pmki_app_icon.svg" type="image/svg+xml" />
               <img
-                src="/pmki_logo.png"
-                alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
+                src="/pmki_app_icon.png"
+                alt="App Icon PMKI - Rumah Belajar Griya Asih Lawang"
                 width={36}
                 height={36}
                 className="w-8 h-8 object-contain"

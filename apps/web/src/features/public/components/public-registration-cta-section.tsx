@@ -6,6 +6,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { PublicRegistrationWizard } from "@/features/students";
+import { ADDRESS } from "@/config/site";
 import { cn } from "@/lib/cn";
 import type { PublicCoordinatorContactDTO } from "../types/public-types";
 import { PublicContactForm } from "./public-contact-form";
@@ -27,7 +28,6 @@ export interface PublicRegistrationCtaSectionProps {
  */
 export function PublicRegistrationCtaSection({
   ctaHeadline,
-  locationFull,
   coordinators,
   embedRegistrationWizard = true,
 }: PublicRegistrationCtaSectionProps) {
@@ -186,7 +186,9 @@ export function PublicRegistrationCtaSection({
                     <p className="font-semibold text-foreground">
                       Alamat sekretariat &amp; lokasi belajar:
                     </p>
-                    <p className="text-secondary-foreground">{locationFull}.</p>
+                    <p className="text-secondary-foreground">
+                      {ADDRESS.street}, {ADDRESS.rtRw}, {ADDRESS.desa}, Kecamatan {ADDRESS.kecamatan}, Kabupaten {ADDRESS.kabupaten}.
+                    </p>
                     <p className="text-primary font-medium pt-0.5">
                       Pelayanan Terpadu PMKI Mupel Jawa Timur
                     </p>

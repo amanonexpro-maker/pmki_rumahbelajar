@@ -1,4 +1,5 @@
 import { CheckCircle, Compass, Heart, Target } from "lucide-react";
+import { ADDRESS } from "@/config/site";
 import type { PublicPortalDataDTO } from "../types/public-types";
 
 export interface PublicMissionSectionProps {
@@ -130,7 +131,7 @@ export function PublicMissionSection({ data }: PublicMissionSectionProps) {
               />
               <span>
                 Terbuka bagi seluruh peserta didik di lingkungan{" "}
-                {data.subDistrictsLabel}.
+                {ADDRESS.desa}, Kecamatan {ADDRESS.kecamatan}.
               </span>
             </div>
           </div>

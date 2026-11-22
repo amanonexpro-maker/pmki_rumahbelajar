@@ -2,33 +2,22 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  AlertTriangle,
-  CalendarCheck,
-  CheckCheck,
-  CloudOff,
-  History,
-  RefreshCw,
-} from "lucide-react";
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
   DetailTabs,
   FeedbackBanner,
   PageHeader,
-  SessionProgress,
   type DetailTabItem,
 } from "@/components/patterns";
 import { Badge, Button, Icon, Input, Textarea } from "@/components/ui";
+import { ICON_MAP } from "@/config/icons";
 import type { ClassSummaryDTO } from "@/features/academic";
 import { useConnectivity } from "@/hooks/use-connectivity";
 import { useDraftRecovery } from "@/hooks/use-draft-recovery";
 import { useOfflineQueue } from "@/hooks/use-offline-queue";
+import { cn } from "@/lib/cn";
 import { OFFLINE_MESSAGES, SUCCESS_MESSAGES } from "@/lib/messages";
-import {
-  ATTENDANCE_STATUS_META,
-  type AttendanceStatus,
-  type SyncStatus,
-} from "@/lib/status";
+import type { AttendanceStatus, SyncStatus } from "@/lib/status";
 import { recordAttendanceSessionAction } from "../actions/attendance-actions";
 import type {
   AttendanceRecordItemDTO,
@@ -36,11 +25,42 @@ import type {
   AttendanceSessionHistoryItemDTO,
 } from "../types/attendance-types";
 
-const STATUS_BUTTON_ORDER: AttendanceStatus[] = [
-  "PRESENT",
-  "PERMITTED",
-  "SICK",
-  "ABSENT",
+interface StatusOption {
+  code: AttendanceStatus;
+  label: string;
+  pillTone: string;
+  selectedStyles: string;
+}
+
+const ATTENDANCE_OPTIONS: StatusOption[] = [
+  {
+    code: "PRESENT",
+    label: "Hadir",
+    pillTone: "bg-success-soft text-success border-success/30",
+    selectedStyles:
+      "bg-success-soft text-success border-success/50 font-semibold shadow-xs ring-1 ring-success/30",
+  },
+  {
+    code: "SICK",
+    label: "Sakit",
+    pillTone: "bg-warning-soft text-warning-foreground border-warning/30",
+    selectedStyles:
+      "bg-warning-soft text-warning-foreground border-warning/50 font-semibold shadow-xs ring-1 ring-warning/30",
+  },
+  {
+    code: "PERMITTED",
+    label: "Izin",
+    pillTone: "bg-info-soft text-info border-info/30",
+    selectedStyles:
+      "bg-info-soft text-info border-info/50 font-semibold shadow-xs ring-1 ring-info/30",
+  },
+  {
+    code: "ABSENT",
+    label: "Alpa",
+    pillTone: "bg-danger-soft text-danger border-danger/30",
+    selectedStyles:
+      "bg-danger-soft text-danger border-danger/50 font-semibold shadow-xs ring-1 ring-danger/30",
+  },
 ];
 
 interface AttendanceDraftData {
@@ -80,6 +100,7 @@ export function AttendanceWorkspaceClient({
 
   const [activeTab, setActiveTab] = React.useState(initialTab);
   const [submitting, setSubmitting] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
   const [syncBadgeState, setSyncBadgeState] = React.useState<SyncStatus | null>(
     sessionView?.sessionId ? "SYNCED" : null
   );
@@ -205,6 +226,7 @@ export function AttendanceWorkspaceClient({
     e.preventDefault();
     if (!canRecord || !sessionView || submitting) return;
 
+    // Collect all entries across the entire class roster
     const entriesPayload = sessionView.roster.map((item) => ({
       studentId: item.studentId,
       status: draft.entries[item.studentId]?.status ?? item.status,
@@ -278,6 +300,7 @@ export function AttendanceWorkspaceClient({
     }
   }
 
+  // Full roster with current draft status applied
   const rosterItems: AttendanceRecordItemDTO[] = React.useMemo(() => {
     if (!sessionView) return [];
     return sessionView.roster.map((item) => ({
@@ -287,6 +310,7 @@ export function AttendanceWorkspaceClient({
     }));
   }, [draft.entries, sessionView]);
 
+  // Realtime counts calculated across ALL class students (not filtered subset)
   const counts = React.useMemo(() => {
     const total = rosterItems.length;
     const presentCount = rosterItems.filter(
@@ -306,6 +330,20 @@ export function AttendanceWorkspaceClient({
       absentCount,
     };
   }, [rosterItems]);
+
+  // Instant client-side memoized filter for search query
+  const filteredRosterItems = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return rosterItems;
+    return rosterItems.filter(
+      (item) =>
+        item.studentFullName.toLowerCase().includes(q) ||
+        (item.studentNickname &&
+          item.studentNickname.toLowerCase().includes(q)) ||
+        (item.registrationNumber &&
+          item.registrationNumber.toLowerCase().includes(q))
+    );
+  }, [rosterItems, searchQuery]);
 
   const tabs: DetailTabItem[] = [
     { id: "session", label: "Sesi presensi" },
@@ -333,7 +371,7 @@ export function AttendanceWorkspaceClient({
               variant="secondary"
               size="sm"
               onClick={() => void flushQueue()}
-              leftIcon={<Icon icon={RefreshCw} size="xs" />}
+              leftIcon={<Icon icon={ICON_MAP.refresh} size="xs" />}
             >
               Sinkronkan antrean ({pendingCount})
             </Button>
@@ -380,19 +418,6 @@ export function AttendanceWorkspaceClient({
             />
           </div>
         </div>
-
-        {activeTab === "session" &&
-          canRecord &&
-          rosterItems.length > 0 && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleMarkAllPresent}
-              leftIcon={<Icon icon={CheckCheck} size="sm" />}
-            >
-              Tandai semua hadir
-            </Button>
-          )}
       </div>
 
       <DetailTabs
@@ -411,7 +436,7 @@ export function AttendanceWorkspaceClient({
           className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-warning/30 bg-warning-soft px-4 py-2.5 text-xs text-foreground"
         >
           <div className="flex items-center gap-2">
-            <Icon icon={CloudOff} size="xs" className="text-warning" />
+            <Icon icon={ICON_MAP.cloudOff} size="xs" className="text-warning" />
             <span>
               Draft presensi lokal dipulihkan dari perangkat ini (Disimpan
               lokal · Belum tersinkronisasi).
@@ -434,7 +459,7 @@ export function AttendanceWorkspaceClient({
           className="flex items-start gap-3 rounded-control border border-warning/40 bg-warning-soft p-4 text-xs text-foreground"
         >
           <Icon
-            icon={AlertTriangle}
+            icon={ICON_MAP.alertTriangle}
             size="sm"
             className="text-warning shrink-0 mt-0.5"
           />
@@ -463,94 +488,179 @@ export function AttendanceWorkspaceClient({
         <>
           {!sessionView || rosterItems.length === 0 ? (
             <EmptyState
-              icon={CalendarCheck}
+              icon={ICON_MAP.calendarCheck}
               title="Belum ada peserta didik aktif di kelas ini."
               description="Tempatkan peserta didik yang telah terverifikasi ke kelas ini terlebih dahulu sebelum mencatat presensi."
             />
           ) : (
             <form onSubmit={handleSaveSession} className="space-y-5">
-              <SessionProgress
-                total={counts.total}
-                recorded={counts.recorded}
-                presentCount={counts.presentCount}
-                permittedCount={counts.permittedCount}
-                sickCount={counts.sickCount}
-                absentCount={counts.absentCount}
-              />
+              {/* Quick Batch Toolbar - Sticky on Scroll */}
+              <div className="sticky top-0 z-20 -mx-4 px-4 sm:mx-0 sm:px-0 py-3 bg-background/95 backdrop-blur-sm border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {/* Large Primary Action Button */}
+                <button
+                  type="button"
+                  disabled={!canRecord || rosterItems.length === 0}
+                  onClick={handleMarkAllPresent}
+                  className="min-h-12 w-full sm:w-auto px-5 bg-primary text-primary-foreground rounded-control shadow-xs hover:bg-primary-hover active:bg-primary-active transition-colors duration-200 flex items-center justify-center font-medium text-sm focus-ring disabled:opacity-50 disabled:pointer-events-none shrink-0"
+                >
+                  <ICON_MAP.checkCircle
+                    className="w-4 h-4 mr-2 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span>Tandai Semua Hadir</span>
+                </button>
 
-              {/* One-Handed Mobile-First Roster List (375px ready, touch >= 44px) */}
-              <ul
-                role="list"
-                aria-label="Daftar presensi peserta didik"
-                className="rounded-card border border-border bg-surface divide-y divide-border-subtle"
-              >
-                {rosterItems.map((item) => (
-                  <li key={item.studentId} className="p-4 space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-base leading-snug">
-                          {item.studentFullName}
-                          {item.studentNickname && (
-                            <span className="font-normal text-muted-foreground text-sm ml-1.5">
-                              ({item.studentNickname})
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-xs text-secondary-foreground mt-0.5">
-                          {item.educationLevelLabel}
-                        </p>
+                {/* Realtime Recapitulation Pills */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div role="status" aria-live="polite" className="sr-only">
+                    {`Rekapitulasi presensi: ${counts.presentCount} hadir, ${counts.sickCount} sakit, ${counts.permittedCount} izin, ${counts.absentCount} alpa dari total ${counts.total} peserta didik.`}
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-success-soft text-success border border-success/30">
+                    Hadir:{" "}
+                    <strong className="tabular-nums font-semibold">
+                      {counts.presentCount}
+                    </strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-warning-soft text-warning-foreground border border-warning/30">
+                    Sakit:{" "}
+                    <strong className="tabular-nums font-semibold">
+                      {counts.sickCount}
+                    </strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-info-soft text-info border border-info/30">
+                    Izin:{" "}
+                    <strong className="tabular-nums font-semibold">
+                      {counts.permittedCount}
+                    </strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-danger-soft text-danger border border-danger/30">
+                    Alpa:{" "}
+                    <strong className="tabular-nums font-semibold">
+                      {counts.absentCount}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* Instant Client-Side Filter */}
+              <div className="relative">
+                <ICON_MAP.search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                  aria-hidden="true"
+                />
+                <Input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari nama peserta didik..."
+                  className="pl-9 h-11 w-full"
+                  aria-label="Cari nama peserta didik"
+                />
+              </div>
+
+              {/* Roster Cards or Empty Search Result */}
+              {filteredRosterItems.length === 0 ? (
+                <div className="rounded-card border border-border bg-surface p-8 text-center space-y-2">
+                  <p className="font-medium text-foreground text-sm">
+                    Tidak ada peserta didik yang cocok dengan "{searchQuery}"
+                  </p>
+                  <p className="text-xs text-secondary-foreground">
+                    Periksa ejaan nama atau bersihkan kotak pencarian untuk melihat
+                    seluruh daftar kelas.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSearchQuery("")}
+                    className="mt-2"
+                  >
+                    Reset pencarian
+                  </Button>
+                </div>
+              ) : (
+                <ul
+                  role="list"
+                  aria-label="Daftar presensi peserta didik"
+                  className="rounded-card border border-border bg-surface divide-y divide-border-subtle overflow-hidden"
+                >
+                  {filteredRosterItems.map((item) => (
+                    <li key={item.studentId} className="p-4 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground text-base leading-snug">
+                            {item.studentFullName}
+                            {item.studentNickname && (
+                              <span className="font-normal text-muted-foreground text-sm ml-1.5">
+                                ({item.studentNickname})
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-secondary-foreground mt-0.5">
+                            {item.educationLevelLabel}
+                            {item.registrationNumber && (
+                              <span>
+                                {" "}
+                                · No: {item.registrationNumber}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+
+                        {/* Segmented Control 4 Options (Hadir, Sakit, Izin, Alpa) with min-h-11 (44px) touch target */}
+                        <div
+                          role="group"
+                          aria-label={`Status kehadiran ${item.studentFullName}`}
+                          className="grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2"
+                        >
+                          {ATTENDANCE_OPTIONS.map((opt) => {
+                            const isSelected = item.status === opt.code;
+                            return (
+                              <button
+                                key={opt.code}
+                                type="button"
+                                disabled={!canRecord}
+                                aria-pressed={isSelected}
+                                onClick={() =>
+                                  handleStudentStatusChange(
+                                    item.studentId,
+                                    opt.code
+                                  )
+                                }
+                                className={cn(
+                                  "min-h-11 px-3 sm:px-4 rounded-control text-xs font-medium transition-colors duration-200 border flex items-center justify-center focus-ring",
+                                  isSelected
+                                    ? opt.selectedStyles
+                                    : "border-border bg-surface text-secondary-foreground hover:bg-surface-subtle hover:text-foreground"
+                                )}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
-                      {/* 4 Canonical Status Buttons: Hadir, Izin, Sakit, Tidak hadir (NEVER Alpa) */}
-                      <div
-                        role="group"
-                        aria-label={`Status kehadiran ${item.studentFullName}`}
-                        className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2"
-                      >
-                        {STATUS_BUTTON_ORDER.map((stCode) => {
-                          const meta = ATTENDANCE_STATUS_META[stCode];
-                          const isSelected = item.status === stCode;
-                          return (
-                            <Button
-                              key={stCode}
-                              type="button"
-                              size="sm"
-                              disabled={!canRecord}
-                              aria-pressed={isSelected}
-                              variant={isSelected ? "primary" : "secondary"}
-                              onClick={() =>
-                                handleStudentStatusChange(
-                                  item.studentId,
-                                  stCode
-                                )
-                              }
-                              className="min-h-11 sm:min-h-9 justify-center"
-                            >
-                              {meta.label}
-                            </Button>
-                          );
-                        })}
+                      <div className="pt-1">
+                        <Input
+                          aria-label={`Catatan kehadiran ${item.studentFullName}`}
+                          placeholder="Catatan singkat (mis. izin sakit demam, perlu tindak lanjut)..."
+                          value={item.note ?? ""}
+                          disabled={!canRecord}
+                          onChange={(e) =>
+                            handleStudentNoteChange(
+                              item.studentId,
+                              e.target.value
+                            )
+                          }
+                        />
                       </div>
-                    </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-                    <div className="pt-1">
-                      <Input
-                        aria-label={`Catatan kehadiran ${item.studentFullName}`}
-                        placeholder="Catatan singkat (mis. izin acara keluarga, perlu tindak lanjut)..."
-                        value={item.note ?? ""}
-                        disabled={!canRecord}
-                        onChange={(e) =>
-                          handleStudentNoteChange(
-                            item.studentId,
-                            e.target.value
-                          )
-                        }
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-
+              {/* Class General Notes */}
               <div className="rounded-card border border-border bg-surface p-4 space-y-3">
                 <label
                   htmlFor="session-general-notes"
@@ -576,6 +686,7 @@ export function AttendanceWorkspaceClient({
                 />
               </div>
 
+              {/* Action Bar Footer */}
               {canRecord && (
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                   <div className="flex items-center gap-2 text-xs text-secondary-foreground">
@@ -593,9 +704,9 @@ export function AttendanceWorkspaceClient({
                     type="submit"
                     variant="primary"
                     disabled={submitting}
-                    leftIcon={<Icon icon={CalendarCheck} size="sm" />}
+                    leftIcon={<Icon icon={ICON_MAP.calendarCheck} size="sm" />}
                   >
-                    {submitting ? "Menyimpan..." : "Catat presensi"}
+                    {submitting ? "Menyimpan presensi..." : "Simpan presensi"}
                   </Button>
                 </div>
               )}
@@ -608,7 +719,7 @@ export function AttendanceWorkspaceClient({
         <div className="space-y-4">
           {historyItems.length === 0 ? (
             <EmptyState
-              icon={History}
+              icon={ICON_MAP.history}
               title="Belum ada riwayat sesi presensi."
               description="Sesi presensi yang telah dicatat akan muncul di daftar riwayat ini."
             />
@@ -657,7 +768,7 @@ export function AttendanceWorkspaceClient({
                       </strong>
                     </span>
                     <span>
-                      Tidak hadir:{" "}
+                      Alpa:{" "}
                       <strong className="text-danger-foreground">
                         {hist.absentCount}
                       </strong>
@@ -687,4 +798,3 @@ export function AttendanceWorkspaceClient({
     </div>
   );
 }
-

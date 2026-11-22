@@ -76,6 +76,7 @@
 | HOTFIX-SHARE-URL-FIX | Perbaikan Duplikasi Path Tautan Share WhatsApp Berita & Galeri | `DONE` | HOTFIX-SHARE-URL-FIX: Corrected duplicated '/kabar/' segment in WhatsApp Share links for both News and Gallery details; Ensured single-source canonical URL construction. |
 | HOTFIX-FEED-DEDUP | Eliminasi Duplikasi Konten Visual di Section Kabar Terbaru Beranda | `DONE` | HOTFIX-FEED-DEDUP: Implemented smart deduplication logic for Home Feed to prevent duplicate visual entries across News and Gallery types. |
 | HOTFIX-GALLERY-META | Penggantian Label 'Terbaru' dengan Tanggal Absolut Indonesia di Kartu Galeri | `DONE` | HOTFIX-GALLERY-META: Replaced ambiguous 'Terbaru' label with absolute Indonesian dates in Gallery cards; Enforced consistent date formatting across News and Gallery feeds. |
+| PHASE-15-STEP2-PRIORITY1 | Workspace Presensi High-Density Input Mode | `DONE` | PHASE-15-STEP2-PRIORITY1: Implemented High-Density Attendance Input Mode with Quick-Batch Toolbar and Instant Client-Side Filtering based on verified backend capabilities. Enforced ICON_MAP & Semantic Token compliance. |
 
 ---
 

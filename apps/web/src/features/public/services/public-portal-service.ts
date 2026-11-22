@@ -736,3 +736,11 @@ export async function getPublicPortalData(): Promise<PublicPortalDataDTO> {
     newsItems,
   };
 }
+
+export {
+  deduplicateFeedItems,
+  deduplicateHomeFeed,
+  getImageFingerprint,
+  type DeduplicatedHomeFeedResult,
+  type DeduplicatedSecondaryFeedItem,
+} from "../utils/feed-deduplicator";

@@ -20,6 +20,14 @@ export {
 } from "./services/public-portal-service";
 
 export {
+  deduplicateFeedItems,
+  deduplicateHomeFeed,
+  getImageFingerprint,
+  type DeduplicatedHomeFeedResult,
+  type DeduplicatedSecondaryFeedItem,
+} from "./utils/feed-deduplicator";
+
+export {
   PUBLIC_GALLERY_FILTER_VALUES,
   publicContactInquirySchema,
   publicGalleryFilterSchema,

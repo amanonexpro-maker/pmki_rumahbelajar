@@ -7,8 +7,11 @@ import type { MediaAssetDTO } from "@/features/media";
 import type { PublicationDTO } from "@/features/publishing";
 import {
   CANONICAL_PUBLIC_COPY,
+  deduplicateFeedItems,
+  deduplicateHomeFeed,
   filterAndMapPublicGalleryItems,
   filterAndMapPublicNewsItems,
+  getImageFingerprint,
   PUBLIC_PROGRAMS_LIST,
   PUBLIC_SCHEDULE_SLOTS,
   PUBLIC_VOLUNTEER_TEACHERS,
@@ -332,6 +335,98 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
     expect(albumWaText).toContain("https://pmkirumahbelajar-web.vercel.app/kabar/suasana-belajar-sabtu-griya-asih");
     expect(albumWaText).not.toContain("/kabar/suasana-belajar-sabtu-griya-asih/kabar/");
     expect(albumWaText.match(/\/kabar\//g)?.length).toBe(1);
+  });
+
+  it("extracts clean image fingerprint stripping query tokens and local paths", () => {
+    expect(getImageFingerprint("/images/gallery/griya_asih_8.jpg")).toBe("griya_asih_8.jpg");
+    expect(
+      getImageFingerprint(
+        "https://abc.supabase.co/storage/v1/object/sign/media/griya_asih_8.jpg?token=eyJhbGciOi"
+      )
+    ).toBe("griya_asih_8.jpg");
+    expect(getImageFingerprint("")).toBe("");
+    expect(getImageFingerprint(null)).toBe("");
+  });
+
+  it("intelligently deduplicates home feed so news and gallery never share the same image", () => {
+    const mockNews: any[] = [
+      {
+        id: "news-1",
+        title: "Tahun Ajaran 2026/2027",
+        slug: "tahun-ajaran-2026-2027",
+        categoryLabel: "Berita",
+        coverSignedUrl: "https://storage/griya_asih_8.jpg?token=123",
+        excerpt: "Buka kelas baru SMP 8",
+        publishedDateFormatted: "1 Agustus 2026",
+      },
+      {
+        id: "news-2",
+        title: "Kelas Khusus Membaca",
+        slug: "kelas-khusus-membaca",
+        categoryLabel: "Berita",
+        coverSignedUrl: "/images/gallery/griya_asih_7.jpg",
+        excerpt: "Pojok baca intensif",
+        publishedDateFormatted: "10 Agustus 2026",
+      },
+    ];
+
+    const mockGallery: any[] = [
+      {
+        id: "gal-1",
+        title: "Suasana Belajar",
+        slug: "suasana-belajar",
+        categoryLabel: "Kegiatan",
+        // Identical cover image as news-1!
+        signedReadUrl: "/images/gallery/griya_asih_8.jpg",
+        capturedDate: "24 Oktober 2026",
+      },
+      {
+        id: "gal-2",
+        title: "Ujian Akhir Semester",
+        slug: "ujian-akhir-semester",
+        categoryLabel: "Kegiatan",
+        // Distinct cover image!
+        signedReadUrl: "https://storage/griya_asih_1.jpg?token=456",
+        capturedDate: "14 November 2026",
+      },
+    ];
+
+    const result = deduplicateHomeFeed(mockNews, mockGallery);
+
+    // Primary slot prioritizes the news article
+    expect(result.primaryArticle?.id).toBe("news-1");
+    // Flags that gallery album with same photo exists
+    expect(result.hasMatchedGalleryPhotos).toBe(true);
+
+    // Secondary slot skips gal-1 (same image as news-1) and picks gal-2 (distinct image)
+    expect(result.secondaryItem?.type).toBe("gallery");
+    if (result.secondaryItem?.type === "gallery") {
+      expect(result.secondaryItem.item.id).toBe("gal-2");
+      expect(result.secondaryItem.item.title).toBe("Ujian Akhir Semester");
+    }
+
+    // Verify both items have completely distinct images
+    const primaryImg = getImageFingerprint(result.primaryArticle?.coverSignedUrl);
+    const secondaryImg = getImageFingerprint(
+      result.secondaryItem?.type === "gallery"
+        ? result.secondaryItem.item.signedReadUrl
+        : result.secondaryItem?.item.coverSignedUrl
+    );
+    expect(primaryImg).toBe("griya_asih_8.jpg");
+    expect(secondaryImg).toBe("griya_asih_1.jpg");
+    expect(primaryImg).not.toBe(secondaryImg);
+  });
+
+  it("deduplicates mixed feed items prioritizing articles over duplicate gallery items", () => {
+    const mixed = [
+      { id: "1", type: "berita", coverUrl: "/images/gallery/griya_asih_8.jpg" },
+      { id: "2", type: "galeri", coverUrl: "/images/gallery/griya_asih_8.jpg" }, // Duplicate image, should be filtered out
+      { id: "3", type: "galeri", coverUrl: "/images/gallery/griya_asih_1.jpg" },
+    ];
+
+    const deduped = deduplicateFeedItems(mixed);
+    expect(deduped).toHaveLength(2);
+    expect(deduped.map((d) => d.id)).toEqual(["1", "3"]);
   });
 });
 

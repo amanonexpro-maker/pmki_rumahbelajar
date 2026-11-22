@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { formatToIndonesianStandard } from "@/utils/date-formatter";
+import { deduplicateFeedItems } from "../utils/feed-deduplicator";
 import { KabarEmptyState } from "./kabar-empty-state";
 import type {
   PublicGalleryItemDTO,
@@ -109,7 +110,7 @@ export function KabarFeedView({
     return combined;
   }, [newsItems, galleryItems]);
 
-  // Filter berdasarkan activeTab
+  // Filter berdasarkan activeTab (dengan deduplikasi cerdas pada tab 'semua')
   const filteredItems = React.useMemo(() => {
     if (activeTab === "berita") {
       return allHybridItems.filter((item) => item.type === "berita");
@@ -117,7 +118,7 @@ export function KabarFeedView({
     if (activeTab === "galeri") {
       return allHybridItems.filter((item) => item.type === "galeri");
     }
-    return allHybridItems;
+    return deduplicateFeedItems(allHybridItems);
   }, [allHybridItems, activeTab]);
 
   const visibleItems = filteredItems.slice(0, displayLimit);

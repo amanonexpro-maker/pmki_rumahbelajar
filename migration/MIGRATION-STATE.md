@@ -74,6 +74,7 @@
 | HOTFIX-GALLERY-CANVAS | Standardized Lightbox Image Container to 4:5 Aspect Ratio | `DONE` | HOTFIX-GALLERY-CANVAS: Standardized Lightbox image containers to fixed 4:5 aspect ratio with object-contain to eliminate layout jumping during swipe navigation. |
 | HOTFIX-SPACING-V6 | Calibrated Proximity between Mission and Quick Facts | `DONE` | HOTFIX-SPACING-V6: Calibrated vertical proximity between Mission Statement and Quick Facts to mt-4/md-5; Eliminated double-spacing artifacts for cohesive narrative flow. |
 | HOTFIX-SHARE-URL-FIX | Perbaikan Duplikasi Path Tautan Share WhatsApp Berita & Galeri | `DONE` | HOTFIX-SHARE-URL-FIX: Corrected duplicated '/kabar/' segment in WhatsApp Share links for both News and Gallery details; Ensured single-source canonical URL construction. |
+| HOTFIX-FEED-DEDUP | Eliminasi Duplikasi Konten Visual di Section Kabar Terbaru Beranda | `DONE` | HOTFIX-FEED-DEDUP: Implemented smart deduplication logic for Home Feed to prevent duplicate visual entries across News and Gallery types. |
 
 ---
 

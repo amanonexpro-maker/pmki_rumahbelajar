@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ICON_MAP } from "@/config/icons";
 import { HOURS, UNIT } from "@/config/site";
 import { formatToIndonesianStandard } from "@/utils/date-formatter";
+import { deduplicateHomeFeed } from "../utils/feed-deduplicator";
 import type { PublicPortalDataDTO } from "../types/public-types";
 
 export interface PublicCuratedHomeProps {
@@ -55,8 +56,10 @@ function PMKIMarkIcon({
  * 6. Ajakan Bergabung: Jembatan konversi akhir (CTA primer ke /kontak?tab=siswa, secondary ke /kontak).
  */
 export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
-  const latestArticle = data.newsItems?.[0];
-  const latestAlbum = data.galleryItems?.[0];
+  const { primaryArticle, secondaryItem, hasMatchedGalleryPhotos } = deduplicateHomeFeed(
+    data.newsItems,
+    data.galleryItems
+  );
   const topPrograms = data.programs.slice(0, 3);
 
   const quickFactsData = [
@@ -189,19 +192,19 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
           </Link>
         </div>
 
-        {latestArticle || latestAlbum ? (
+        {primaryArticle || secondaryItem ? (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            {/* Kolom Kiri (Dominan): Artikel Terbaru */}
-            {latestArticle ? (
-              <div className={latestAlbum ? "md:col-span-7" : "md:col-span-12"}>
+            {/* Kolom Kiri (Dominan): Artikel Berita Utama */}
+            {primaryArticle ? (
+              <div className={secondaryItem ? "md:col-span-7" : "md:col-span-12"}>
                 <Link
-                  href={`/kabar/${latestArticle.slug}`}
+                  href={`/kabar/${primaryArticle.slug}`}
                   className="group flex gap-3 p-3.5 rounded-card bg-surface border border-border hover:border-primary/40 transition-colors h-full"
                 >
                   <div className="relative w-20 h-20 shrink-0 rounded-card overflow-hidden bg-surface-subtle border border-border-subtle">
                     <Image
-                      src={latestArticle.coverSignedUrl}
-                      alt={latestArticle.title}
+                      src={primaryArticle.coverSignedUrl}
+                      alt={primaryArticle.title}
                       fill
                       sizes="80px"
                       className="object-cover group-hover:scale-105 transition-transform duration-200"
@@ -209,49 +212,81 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
                   </div>
                   <div className="flex flex-col justify-between min-w-0 flex-1 space-y-1">
                     <div>
-                      <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
-                        {latestArticle.categoryLabel}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">
+                          {primaryArticle.categoryLabel}
+                        </span>
+                        {hasMatchedGalleryPhotos && (
+                          <span className="rounded-pill px-1.5 py-0.5 text-[9px] font-medium bg-primary-soft text-primary">
+                            +Galeri Foto
+                          </span>
+                        )}
+                      </div>
                       <h3 className="font-sans font-bold text-sm text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                        {latestArticle.title}
+                        {primaryArticle.title}
                       </h3>
                       <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                        {latestArticle.excerpt}
+                        {primaryArticle.excerpt}
                       </p>
                     </div>
                     <span className="text-[10px] text-muted-foreground">
-                      {formatToIndonesianStandard(latestArticle.publishedDateFormatted)}
+                      {formatToIndonesianStandard(primaryArticle.publishedDateFormatted)}
                     </span>
                   </div>
                 </Link>
               </div>
             ) : null}
 
-            {/* Kolom Kanan (Pendamping): Album Galeri */}
-            {latestAlbum ? (
-              <div className={latestArticle ? "md:col-span-5" : "md:col-span-12"}>
-                <Link
-                  href={latestAlbum.slug ? `/kabar/${latestAlbum.slug}` : "/kabar?tab=galeri"}
-                  className="group flex flex-col justify-between p-3.5 rounded-card bg-surface border border-border hover:border-primary/40 transition-colors h-full space-y-2.5"
-                >
-                  <div className="relative aspect-video w-full rounded-card overflow-hidden bg-surface-subtle border border-border-subtle">
-                    <Image
-                      src={latestAlbum.signedReadUrl}
-                      alt={latestAlbum.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 300px"
-                      className="object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-sans font-semibold text-xs text-foreground truncate group-hover:text-primary transition-colors">
-                      {latestAlbum.title}
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {latestAlbum.categoryLabel} • {formatToIndonesianStandard(latestAlbum.capturedDate)}
-                    </p>
-                  </div>
-                </Link>
+            {/* Kolom Kanan (Pendamping Unik): Album Galeri atau Berita Pendamping (Bebas Duplikasi Visual) */}
+            {secondaryItem ? (
+              <div className={primaryArticle ? "md:col-span-5" : "md:col-span-12"}>
+                {secondaryItem.type === "gallery" ? (
+                  <Link
+                    href={secondaryItem.item.slug ? `/kabar/${secondaryItem.item.slug}` : "/kabar?tab=galeri"}
+                    className="group flex flex-col justify-between p-3.5 rounded-card bg-surface border border-border hover:border-primary/40 transition-colors h-full space-y-2.5"
+                  >
+                    <div className="relative aspect-video w-full rounded-card overflow-hidden bg-surface-subtle border border-border-subtle">
+                      <Image
+                        src={secondaryItem.item.signedReadUrl}
+                        alt={secondaryItem.item.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 300px"
+                        className="object-cover group-hover:scale-105 transition-transform duration-200"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-sans font-semibold text-xs text-foreground truncate group-hover:text-primary transition-colors">
+                        {secondaryItem.item.title}
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {secondaryItem.item.categoryLabel} • {formatToIndonesianStandard(secondaryItem.item.capturedDate)}
+                      </p>
+                    </div>
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/kabar/${secondaryItem.item.slug}`}
+                    className="group flex flex-col justify-between p-3.5 rounded-card bg-surface border border-border hover:border-primary/40 transition-colors h-full space-y-2.5"
+                  >
+                    <div className="relative aspect-video w-full rounded-card overflow-hidden bg-surface-subtle border border-border-subtle">
+                      <Image
+                        src={secondaryItem.item.coverSignedUrl}
+                        alt={secondaryItem.item.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 300px"
+                        className="object-cover group-hover:scale-105 transition-transform duration-200"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-sans font-semibold text-xs text-foreground truncate group-hover:text-primary transition-colors">
+                        {secondaryItem.item.title}
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {secondaryItem.item.categoryLabel} • {formatToIndonesianStandard(secondaryItem.item.publishedDateFormatted)}
+                      </p>
+                    </div>
+                  </Link>
+                )}
               </div>
             ) : null}
           </div>

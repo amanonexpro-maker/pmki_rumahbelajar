@@ -92,6 +92,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   kabar: Newspaper,
   kontak: PhoneCall,
   portal: Lock,
+  lock: Lock,
   peserta: Users,
   biaya: HeartHandshake,
   waktu: Clock,

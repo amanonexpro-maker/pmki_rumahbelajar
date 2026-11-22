@@ -2,13 +2,6 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  CheckCircle2,
-  Image as ImageIcon,
-  Lock,
-  Plus,
-  ShieldCheck,
-} from "lucide-react";
 import { EmptyState } from "@/components/compositions";
 import {
   PageHeader,
@@ -29,7 +22,9 @@ import {
   Input,
   Textarea,
 } from "@/components/ui";
+import { ICON_MAP } from "@/config/icons";
 import { useConnectivity } from "@/hooks/use-connectivity";
+import { cn } from "@/lib/cn";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
 import { checkTierCOnlineAvailability } from "@/lib/offline";
 import {
@@ -80,11 +75,27 @@ export function MediaWorkspaceClient({
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [uploadPending, setUploadPending] = React.useState(false);
 
+  // Review & Serial Workflow State
   const [reviewingAsset, setReviewingAsset] =
     React.useState<MediaAssetDTO | null>(null);
   const [reviewEligible, setReviewEligible] = React.useState(true);
   const [reviewNotes, setReviewNotes] = React.useState("");
   const [reviewPending, setReviewPending] = React.useState(false);
+
+  // Serial keyboard navigation focus
+  const [focusedAssetId, setFocusedAssetId] = React.useState<string | null>(
+    null
+  );
+
+  // Optimistic review state
+  const [localReviews, setLocalReviews] = React.useState<
+    Record<string, { privacyReviewed: boolean; eligibleForPublic: boolean }>
+  >({});
+
+  // Inline error state per media card (no screen-blocking global toast)
+  const [inlineErrors, setInlineErrors] = React.useState<
+    Record<string, string>
+  >({});
 
   const [feedback, setFeedback] = React.useState<{
     tone: "success" | "danger" | "warning";
@@ -111,6 +122,226 @@ export function MediaWorkspaceClient({
     }, 300);
     return () => window.clearTimeout(t);
   }, [initialSearch, searchInput, updateUrl]);
+
+  // Merge optimistic local review statuses with assets
+  const effectiveAssets = React.useMemo(() => {
+    return assets.map((a) => {
+      const local = localReviews[a.id];
+      if (local) {
+        return {
+          ...a,
+          privacyReviewed: local.privacyReviewed,
+          eligibleForPublic: local.eligibleForPublic,
+        };
+      }
+      return a;
+    });
+  }, [assets, localReviews]);
+
+  // Sisa Ditinjau calculation
+  const unreviewedCount = React.useMemo(() => {
+    return effectiveAssets.filter((a) => !a.privacyReviewed).length;
+  }, [effectiveAssets]);
+
+  const eligibleCount = React.useMemo(() => {
+    return effectiveAssets.filter(
+      (a) => a.privacyReviewed && a.eligibleForPublic
+    ).length;
+  }, [effectiveAssets]);
+
+  // Actionable unreviewed assets (excluding SoD-locked self-uploads)
+  const actionableUnreviewed = React.useMemo(() => {
+    return effectiveAssets.filter(
+      (a) => !a.privacyReviewed && a.uploadedBy !== currentUserId
+    );
+  }, [effectiveAssets, currentUserId]);
+
+  // Serial Quick Approve single item with auto-advance
+  const handleQuickApprove = React.useCallback(
+    async (asset: MediaAssetDTO) => {
+      if (asset.uploadedBy === currentUserId || !canReview || reviewPending) {
+        return;
+      }
+
+      const tierCheck = checkTierCOnlineAvailability(
+        "Tata Kelola & Persetujuan Laporan",
+        connectivityStatus !== "OFFLINE"
+      );
+      if (!tierCheck.allowed) {
+        setInlineErrors((prev) => ({ ...prev, [asset.id]: tierCheck.message }));
+        return;
+      }
+
+      // Optimistic update
+      setLocalReviews((prev) => ({
+        ...prev,
+        [asset.id]: { privacyReviewed: true, eligibleForPublic: true },
+      }));
+      setInlineErrors((prev) => {
+        const next = { ...prev };
+        delete next[asset.id];
+        return next;
+      });
+
+      // Advance focus to next eligible item
+      const nextCandidates = effectiveAssets.filter(
+        (a) =>
+          a.id !== asset.id &&
+          !a.privacyReviewed &&
+          a.uploadedBy !== currentUserId
+      );
+
+      if (nextCandidates.length > 0) {
+        const nextTarget = nextCandidates[0];
+        setFocusedAssetId(nextTarget.id);
+        const el = document.getElementById(`media-card-${nextTarget.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          el.focus();
+        }
+      }
+
+      setReviewPending(true);
+      try {
+        const res = await reviewMediaAssetPrivacyAction({
+          mediaId: asset.id,
+          eligibleForPublic: true,
+          reviewNotes: "Disetujui via tinjauan serial cepat",
+        });
+
+        if (!res.success) {
+          // Revert optimistic update
+          setLocalReviews((prev) => {
+            const next = { ...prev };
+            delete next[asset.id];
+            return next;
+          });
+          setInlineErrors((prev) => ({
+            ...prev,
+            [asset.id]: res.error.message,
+          }));
+          return;
+        }
+
+        router.refresh();
+      } catch {
+        // Revert optimistic update on network timeout
+        setLocalReviews((prev) => {
+          const next = { ...prev };
+          delete next[asset.id];
+          return next;
+        });
+        setInlineErrors((prev) => ({
+          ...prev,
+          [asset.id]: "Gagal menyimpan karena gangguan koneksi.",
+        }));
+      } finally {
+        setReviewPending(false);
+      }
+    },
+    [
+      canReview,
+      connectivityStatus,
+      currentUserId,
+      effectiveAssets,
+      reviewPending,
+      router,
+    ]
+  );
+
+  // Global Keyboard Shortcuts for High-Efficiency Serial Review
+  React.useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.key === "Escape") {
+        if (reviewingAsset) {
+          setReviewingAsset(null);
+          e.preventDefault();
+        } else if (uploadOpen) {
+          setUploadOpen(false);
+          e.preventDefault();
+        } else if (focusedAssetId) {
+          setFocusedAssetId(null);
+        }
+        return;
+      }
+
+      if (e.key === "ArrowRight") {
+        if (actionableUnreviewed.length === 0) return;
+        const currentIdx = actionableUnreviewed.findIndex(
+          (a) => a.id === focusedAssetId
+        );
+        const nextIdx = (currentIdx + 1) % actionableUnreviewed.length;
+        const nextItem = actionableUnreviewed[nextIdx];
+        setFocusedAssetId(nextItem.id);
+        const el = document.getElementById(`media-card-${nextItem.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          el.focus();
+        }
+        e.preventDefault();
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        if (actionableUnreviewed.length === 0) return;
+        const currentIdx = actionableUnreviewed.findIndex(
+          (a) => a.id === focusedAssetId
+        );
+        const prevIdx =
+          (currentIdx - 1 + actionableUnreviewed.length) %
+          actionableUnreviewed.length;
+        const prevItem = actionableUnreviewed[prevIdx];
+        setFocusedAssetId(prevItem.id);
+        const el = document.getElementById(`media-card-${prevItem.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          el.focus();
+        }
+        e.preventDefault();
+        return;
+      }
+
+      if (
+        (e.key === "Enter" || e.key === " ") &&
+        !reviewingAsset &&
+        !uploadOpen &&
+        focusedAssetId
+      ) {
+        const targetAsset = effectiveAssets.find(
+          (a) => a.id === focusedAssetId
+        );
+        if (
+          targetAsset &&
+          !targetAsset.privacyReviewed &&
+          targetAsset.uploadedBy !== currentUserId
+        ) {
+          e.preventDefault();
+          void handleQuickApprove(targetAsset);
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    actionableUnreviewed,
+    currentUserId,
+    effectiveAssets,
+    focusedAssetId,
+    handleQuickApprove,
+    reviewingAsset,
+    uploadOpen,
+  ]);
 
   async function handleThreeStepUpload(e: React.FormEvent) {
     e.preventDefault();
@@ -231,11 +462,6 @@ export function MediaWorkspaceClient({
     }
   }
 
-  const eligibleCount = assets.filter(
-    (a) => a.privacyReviewed && a.eligibleForPublic
-  ).length;
-  const unreviewedCount = assets.filter((a) => !a.privacyReviewed).length;
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -247,7 +473,7 @@ export function MediaWorkspaceClient({
               type="button"
               variant="primary"
               onClick={() => setUploadOpen(true)}
-              leftIcon={<Icon icon={Plus} size="sm" />}
+              leftIcon={<Icon icon={ICON_MAP.plus} size="sm" />}
             >
               Unggah dokumentasi
             </Button>
@@ -260,7 +486,7 @@ export function MediaWorkspaceClient({
           {
             id: "total",
             label: "Total dokumentasi",
-            value: `${assets.length} berkas`,
+            value: `${effectiveAssets.length} berkas`,
           },
           {
             id: "unreviewed",
@@ -274,6 +500,27 @@ export function MediaWorkspaceClient({
           },
         ]}
       />
+
+      {/* Sticky Progress & Serial Navigation Toolbar */}
+      <div className="sticky top-0 z-10 -mx-4 px-4 sm:mx-0 sm:px-0 py-2.5 bg-background/95 backdrop-blur-sm border-b border-border flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-foreground">
+            Sisa Ditinjau:
+          </span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-warning-soft text-warning-foreground border border-warning/30 tabular-nums">
+            {unreviewedCount} berkas
+          </span>
+          <span className="text-xs text-muted-foreground hidden md:inline ml-2">
+            Shortcut: <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded text-[10px] font-mono">Tab / Panah</kbd> untuk pilih, <kbd className="px-1.5 py-0.5 bg-surface border border-border rounded text-[10px] font-mono">Enter / Space</kbd> untuk setujui cepat.
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-secondary-foreground font-mono">
+            Pemisahan Tugas (SoD) Aktif
+          </span>
+        </div>
+      </div>
 
       {feedback && (
         <div
@@ -333,9 +580,9 @@ export function MediaWorkspaceClient({
         }
       />
 
-      {assets.length === 0 ? (
+      {effectiveAssets.length === 0 ? (
         <EmptyState
-          icon={ImageIcon}
+          icon={ICON_MAP.image}
           title="Belum ada dokumentasi."
           description="Unggah dokumentasi kegiatan belajar untuk ditinjau kelayakan privasinya."
           action={
@@ -352,73 +599,172 @@ export function MediaWorkspaceClient({
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {assets.map((asset) => {
+          {effectiveAssets.map((asset) => {
             const isOwnUpload = asset.uploadedBy === currentUserId;
+            const isFocused = focusedAssetId === asset.id;
+            const cardError = inlineErrors[asset.id];
+
             return (
               <article
+                id={`media-card-${asset.id}`}
+                tabIndex={0}
+                onFocus={() => setFocusedAssetId(asset.id)}
                 key={asset.id}
-                className="rounded-card border border-border bg-surface p-5 space-y-4 flex flex-col justify-between"
+                className={cn(
+                  "rounded-card border p-4 sm:p-5 space-y-4 flex flex-col justify-between transition-colors duration-200 outline-hidden focus-ring",
+                  isOwnUpload
+                    ? "border-border/70 bg-surface-subtle/80 opacity-80"
+                    : "border-border bg-surface",
+                  isFocused && !isOwnUpload && "ring-2 ring-primary border-primary"
+                )}
               >
-                <div className="space-y-2.5">
+                <div className="space-y-3">
+                  {/* Card Header Badges */}
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Badge variant="neutral" size="sm">
                       {asset.categoryLabel}
                     </Badge>
-                    {!asset.privacyReviewed ? (
+
+                    {isOwnUpload ? (
+                      <Badge
+                        variant="neutral"
+                        size="sm"
+                        className="inline-flex items-center gap-1 bg-surface border border-border text-muted-foreground"
+                      >
+                        <ICON_MAP.lock
+                          className="w-3 h-3 text-muted-foreground shrink-0"
+                          aria-hidden="true"
+                        />
+                        <span>Menunggu peninjau lain (SoD)</span>
+                      </Badge>
+                    ) : !asset.privacyReviewed ? (
                       <Badge variant="warning" size="sm">
                         Menunggu tinjauan privasi
                       </Badge>
                     ) : asset.eligibleForPublic ? (
                       <Badge variant="success" size="sm">
-                        <Icon icon={CheckCircle2} size="xs" />
+                        <Icon icon={ICON_MAP.checkCircle} size="xs" />
                         <span>Layak tayang di publik</span>
                       </Badge>
                     ) : (
                       <Badge variant="info" size="sm">
-                        <Icon icon={Lock} size="xs" />
+                        <Icon icon={ICON_MAP.lock} size="xs" />
                         <span>Hanya arsip internal</span>
                       </Badge>
                     )}
                   </div>
 
-                  <h2 className="text-base font-semibold text-foreground">
-                    {asset.title}
-                  </h2>
-                  {asset.description && (
-                    <p className="text-xs text-secondary-foreground leading-relaxed">
-                      {asset.description}
-                    </p>
-                  )}
+                  {/* 4:5 Aspect Ratio Thumbnail */}
+                  <div className="relative w-full aspect-[4/5] sm:aspect-[16/10] bg-surface-subtle rounded-control overflow-hidden border border-border flex items-center justify-center">
+                    {asset.signedReadUrl ? (
+                      <img
+                        src={asset.signedReadUrl}
+                        alt={asset.title}
+                        className={cn(
+                          "w-full h-full object-cover transition-transform duration-200",
+                          isOwnUpload && "grayscale-[35%]"
+                        )}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <ICON_MAP.image
+                        className="w-10 h-10 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                    )}
+
+                    {/* SoD Lock Visual Overlay */}
+                    {isOwnUpload && (
+                      <div className="absolute inset-0 bg-background/40 backdrop-blur-xs flex items-center justify-center p-3 text-center">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface/95 border border-border shadow-xs text-xs font-semibold text-secondary-foreground">
+                          <ICON_MAP.lock
+                            className="w-3.5 h-3.5 text-muted-foreground shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span>Terkunci: Pemilik Unggahan (SoD)</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground">
+                      {asset.title}
+                    </h2>
+                    {asset.description && (
+                      <p className="text-xs text-secondary-foreground leading-relaxed mt-1">
+                        {asset.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
+                {/* Inline Error and Retry Logic */}
+                {cardError && (
+                  <div
+                    role="alert"
+                    className="rounded-control border border-danger/30 bg-danger-soft p-2.5 text-xs text-danger flex items-center justify-between gap-2"
+                  >
+                    <span>{cardError}</span>
+                    <button
+                      type="button"
+                      onClick={() => void handleQuickApprove(asset)}
+                      className="font-semibold underline hover:text-danger/80 transition-colors duration-200 shrink-0"
+                    >
+                      Coba lagi
+                    </button>
+                  </div>
+                )}
+
+                {/* Card Action Footer */}
                 <div className="pt-3 border-t border-border-subtle flex flex-wrap items-center justify-between gap-2 text-xs">
                   <span className="text-muted-foreground font-mono">
-                    Bucket privat · TTL URL {asset.signedUrlTtlSeconds ?? 3600}d
+                    Bucket privat · TTL {asset.signedUrlTtlSeconds ?? 3600}d
                   </span>
 
                   {canReview && (
-                    <div>
+                    <div className="flex items-center gap-2">
                       {isOwnUpload ? (
                         <span
-                          className="text-muted-foreground italic"
-                          title="Pemisahan tugas: pengunggah tidak dapat meninjau dokumentasinya sendiri"
+                          className="text-xs text-muted-foreground italic text-right"
+                          title="Pemisahan tugas: Anda tidak dapat menyetujui unggahan Anda sendiri demi integritas data."
                         >
-                          Menunggu peninjau lain (SoD)
+                          Anda adalah pengunggah (SoD)
                         </span>
                       ) : (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => {
-                            setReviewingAsset(asset);
-                            setReviewEligible(true);
-                            setReviewNotes("");
-                          }}
-                          leftIcon={<Icon icon={ShieldCheck} size="xs" />}
-                        >
-                          Tinjau dokumentasi
-                        </Button>
+                        <>
+                          {!asset.privacyReviewed && (
+                            <Button
+                              type="button"
+                              variant="primary"
+                              size="sm"
+                              disabled={reviewPending}
+                              onClick={() => void handleQuickApprove(asset)}
+                              leftIcon={
+                                <Icon icon={ICON_MAP.checkCircle} size="xs" />
+                              }
+                            >
+                              Setujui publik
+                            </Button>
+                          )}
+
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            disabled={reviewPending}
+                            onClick={() => {
+                              setReviewingAsset(asset);
+                              setReviewEligible(true);
+                              setReviewNotes("");
+                            }}
+                            leftIcon={
+                              <Icon icon={ICON_MAP.shieldCheck} size="xs" />
+                            }
+                          >
+                            Tinjau detail
+                          </Button>
+                        </>
                       )}
                     </div>
                   )}
@@ -628,4 +974,3 @@ export function MediaWorkspaceClient({
     </div>
   );
 }
-

@@ -78,6 +78,7 @@
 | HOTFIX-GALLERY-META | Penggantian Label 'Terbaru' dengan Tanggal Absolut Indonesia di Kartu Galeri | `DONE` | HOTFIX-GALLERY-META: Replaced ambiguous 'Terbaru' label with absolute Indonesian dates in Gallery cards; Enforced consistent date formatting across News and Gallery feeds. |
 | PHASE-15-STEP2-PRIORITY1 | Workspace Presensi High-Density Input Mode | `DONE` | PHASE-15-STEP2-PRIORITY1: Implemented High-Density Attendance Input Mode with Quick-Batch Toolbar and Instant Client-Side Filtering based on verified backend capabilities. Enforced ICON_MAP & Semantic Token compliance. |
 | PHASE-15-STEP2-PRIORITY2 | Optimasi Publikasi Konten & Local Draft Recovery | `DONE` | PHASE-15-STEP2-PRIORITY2: Implemented Safe Local Draft Recovery with Structured Storage Keys & Reset Controls; Enhanced Visual Media Picker Grid based on Verified Backend Capabilities. Enforced ICON_MAP & Semantic Token compliance. |
+| PHASE-15-STEP2-PRIORITY3 | Optimasi Review Media & Feedback SoD | `DONE` | PHASE-15-STEP2-PRIORITY3: Optimized Serial Media Review Workflow with Keyboard Shortcuts and Explicit Separation-of-Duties Feedback; Enforced Inline Error Handling without Fake Bulk Actions. |
 
 ---
 

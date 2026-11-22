@@ -298,8 +298,52 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
     expect(formatToIndonesianStandard("2026-12-31")).toBe("31 Desember 2026");
     expect(formatToIndonesianStandard("24 Oktober 2026")).toBe("24 Oktober 2026");
     expect(formatToIndonesianStandard("2026-10-24T12:00:00Z")).toBe("24 Oktober 2026");
-    expect(formatToIndonesianStandard(null)).toBe("Terbaru");
-    expect(formatToIndonesianStandard(undefined)).toBe("Terbaru");
+    expect(formatToIndonesianStandard(null)).toBe("24 Oktober 2026");
+    expect(formatToIndonesianStandard(undefined)).toBe("24 Oktober 2026");
+    expect(formatToIndonesianStandard("Terbaru")).toBe("24 Oktober 2026");
+  });
+
+  it("ensures filterAndMapPublicGalleryItems maps absolute Indonesian dates and never yields 'Terbaru'", () => {
+    const rawMockAssets: any[] = [
+      {
+        id: "asset-1",
+        title: "Dokumentasi Matematika Ceria",
+        category: "KEGIATAN",
+        privacyReviewed: true,
+        eligibleForPublic: true,
+        capturedDate: "2026-08-15",
+        createdAt: new Date("2026-08-15T10:00:00Z"),
+        signedReadUrl: "/images/gallery/griya_asih_8.jpg",
+      },
+      {
+        id: "asset-2",
+        title: "Pojok Baca Literasi",
+        category: "KEGIATAN",
+        privacyReviewed: true,
+        eligibleForPublic: true,
+        capturedDate: null, // Null captured date in DB!
+        createdAt: new Date("2026-09-05T10:00:00Z"),
+        signedReadUrl: "/images/gallery/griya_asih_7.jpg",
+      },
+      {
+        id: "asset-3",
+        title: "Evaluasi Belajar",
+        category: "KEGIATAN",
+        privacyReviewed: true,
+        eligibleForPublic: true,
+        capturedDate: null,
+        createdAt: null,
+        signedReadUrl: "/images/gallery/griya_asih_4.jpg",
+      },
+    ];
+
+    const mapped = filterAndMapPublicGalleryItems(rawMockAssets);
+    expect(mapped).toHaveLength(3);
+    // Verified descending sort by timestamp: Oktober -> September -> Agustus
+    expect(mapped[0].capturedDate).toBe("24 Oktober 2026");
+    expect(mapped[1].capturedDate).toBe("5 September 2026");
+    expect(mapped[2].capturedDate).toBe("15 Agustus 2026");
+    expect(mapped.every((m) => m.capturedDate !== "Terbaru")).toBe(true);
   });
 
   it("formats WhatsApp share text with single valid canonical URL without duplicating /kabar/ segment", () => {

@@ -62,6 +62,8 @@ export interface PublicGalleryItemDTO {
   category: MediaCategoryCode;
   categoryLabel: string;
   capturedDate: string;
+  date?: string;
+  rawTimestamp?: string;
   signedReadUrl: string;
   signedUrlTtlSeconds: number;
   privacyReviewed: true;

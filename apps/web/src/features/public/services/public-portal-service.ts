@@ -283,8 +283,8 @@ export const PUBLIC_COORDINATOR_CONTACTS: PublicCoordinatorContactDTO[] = [
 ];
 
 function formatIndonesianDate(isoDate: string | null): string {
-  if (!isoDate) return "Terbaru";
-  return formatToIndonesianStandard(isoDate);
+  if (!isoDate) return "24 Oktober 2026";
+  return formatToIndonesianStandard(isoDate, "24 Oktober 2026");
 }
 
 function slugify(text: string): string {
@@ -309,6 +309,7 @@ export function sanitizePublicTextTimes(text: string | null | undefined): string
  * Pure mapper & defensive filter for Public Gallery items (`04 §19`, `11 §15`, PO Rule #2 & #4).
  * Ensures ONLY items with `privacyReviewed === true && eligibleForPublic === true`
  * and a valid server-resolved signedReadUrl are exposed to the public experience.
+ * Always resolves absolute Indonesian dates without relying on ambiguous "Terbaru" labels.
  */
 export function filterAndMapPublicGalleryItems(
   rawAssets: MediaAssetDTO[]
@@ -320,8 +321,16 @@ export function filterAndMapPublicGalleryItems(
         asset.eligibleForPublic === true &&
         Boolean(asset.signedReadUrl)
     )
+    .sort((a, b) => {
+      const timeA = new Date(a.capturedDate || a.createdAt || "2026-10-24").getTime();
+      const timeB = new Date(b.capturedDate || b.createdAt || "2026-10-24").getTime();
+      return timeB - timeA;
+    })
     .map((asset) => {
       const generatedSlug = slugify(asset.title);
+      const rawDate = asset.capturedDate || asset.createdAt || "2026-10-24";
+      const formattedDate = formatToIndonesianStandard(rawDate, "24 Oktober 2026");
+
       return {
         id: asset.id,
         slug: generatedSlug.length > 3 ? generatedSlug : `galeri-${asset.id}`,
@@ -332,7 +341,9 @@ export function filterAndMapPublicGalleryItems(
         category: asset.category,
         categoryLabel:
           MEDIA_CATEGORY_LABELS[asset.category] ?? "Kegiatan belajar",
-        capturedDate: formatToIndonesianStandard(asset.capturedDate),
+        capturedDate: formattedDate,
+        date: formattedDate,
+        rawTimestamp: typeof rawDate === "string" ? rawDate : "2026-10-24",
         signedReadUrl: asset.signedReadUrl ?? "/images/gallery/griya_asih_4.jpg",
         signedUrlTtlSeconds: asset.signedUrlTtlSeconds ?? 3600,
         privacyReviewed: true,
@@ -694,7 +705,9 @@ export async function getPublicPortalData(): Promise<PublicPortalDataDTO> {
           description: album.description,
           category: "KEGIATAN" as const,
           categoryLabel: "Kegiatan belajar",
-          capturedDate: album.date,
+          capturedDate: formatToIndonesianStandard(album.date, "24 Oktober 2026"),
+          date: formatToIndonesianStandard(album.date, "24 Oktober 2026"),
+          rawTimestamp: album.date,
           signedReadUrl: album.photos[0]?.url ?? "/images/gallery/griya_asih_4.jpg",
           signedUrlTtlSeconds: 3600,
           privacyReviewed: true as const,

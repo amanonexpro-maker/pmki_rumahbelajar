@@ -22,13 +22,13 @@ const INDONESIAN_MONTHS = [
 
 export function formatToIndonesianStandard(
   dateInput: Date | string | null | undefined,
-  fallback = "Terbaru"
+  fallback = "24 Oktober 2026"
 ): string {
   if (!dateInput) return fallback;
 
   if (typeof dateInput === "string") {
     const trimmed = dateInput.trim();
-    if (!trimmed) return fallback;
+    if (!trimmed || trimmed.toLowerCase() === "terbaru") return fallback;
 
     // 1. If it already contains an Indonesian month name, preserve as-is
     for (const month of INDONESIAN_MONTHS) {

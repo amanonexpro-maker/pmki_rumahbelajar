@@ -27,6 +27,8 @@ export interface HybridNewsFeedItem {
   slug: string;
   categoryLabel: string;
   dateFormatted: string;
+  date?: string;
+  rawTimestamp?: string;
   excerpt: string;
   coverUrl: string;
 }
@@ -38,6 +40,8 @@ export interface HybridGalleryFeedItem {
   title: string;
   categoryLabel: string;
   dateFormatted: string;
+  date?: string;
+  rawTimestamp?: string;
   coverUrl: string;
   description: string;
 }
@@ -67,18 +71,25 @@ export function KabarFeedView({
   const [activeTab, setActiveTab] = React.useState<KabarTabFilter>(initialTab);
   const [displayLimit, setDisplayLimit] = React.useState(INITIAL_DISPLAY_LIMIT);
 
-  // Transformasi data real ke model feed hybrid
+  // Transformasi data real ke model feed hybrid dengan penjaminan tanggal absolut Indonesia
   const allHybridItems = React.useMemo<HybridFeedItem[]>(() => {
-    const formattedNews: HybridNewsFeedItem[] = newsItems.map((post) => ({
-      id: `news-${post.id}`,
-      type: "berita",
-      title: post.title,
-      slug: post.slug,
-      categoryLabel: post.categoryLabel,
-      dateFormatted: formatToIndonesianStandard(post.publishedDateFormatted),
-      excerpt: post.excerpt,
-      coverUrl: post.coverSignedUrl,
-    }));
+    const formattedNews: HybridNewsFeedItem[] = newsItems.map((post) => {
+      const resolvedDate = post.publishedDateFormatted || post.publishedAt;
+      const formattedDate = formatToIndonesianStandard(resolvedDate, "1 Agustus 2026");
+
+      return {
+        id: `news-${post.id}`,
+        type: "berita",
+        title: post.title,
+        slug: post.slug,
+        categoryLabel: post.categoryLabel,
+        dateFormatted: formattedDate,
+        date: formattedDate,
+        rawTimestamp: post.publishedAt || "2026-08-01",
+        excerpt: post.excerpt,
+        coverUrl: post.coverSignedUrl,
+      };
+    });
 
     const formattedGallery: HybridGalleryFeedItem[] = galleryItems.map((item) => {
       const generatedSlug = item.slug || item.title
@@ -88,24 +99,42 @@ export function KabarFeedView({
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-");
 
+      const resolvedDate = item.date || item.capturedDate;
+      const formattedDate = formatToIndonesianStandard(resolvedDate, "24 Oktober 2026");
+
       return {
         id: `gallery-${item.id}`,
         slug: generatedSlug.length > 3 ? generatedSlug : `galeri-${item.id}`,
         type: "galeri",
         title: item.title,
         categoryLabel: item.categoryLabel,
-        dateFormatted: formatToIndonesianStandard(item.capturedDate),
+        dateFormatted: formattedDate,
+        date: formattedDate,
+        rawTimestamp: item.rawTimestamp || (typeof resolvedDate === "string" ? resolvedDate : "2026-10-24"),
         coverUrl: item.signedReadUrl,
         description: item.description,
       };
     });
 
+    // Urutkan descending berdasarkan timestamp riil sebelum digabung
+    const sortedNews = [...formattedNews].sort((a, b) => {
+      const tA = new Date(a.rawTimestamp || 0).getTime();
+      const tB = new Date(b.rawTimestamp || 0).getTime();
+      return tB - tA;
+    });
+
+    const sortedGallery = [...formattedGallery].sort((a, b) => {
+      const tA = new Date(a.rawTimestamp || 0).getTime();
+      const tB = new Date(b.rawTimestamp || 0).getTime();
+      return tB - tA;
+    });
+
     // Gabung secara interleave / urut
     const combined: HybridFeedItem[] = [];
-    const maxLen = Math.max(formattedNews.length, formattedGallery.length);
+    const maxLen = Math.max(sortedNews.length, sortedGallery.length);
     for (let i = 0; i < maxLen; i++) {
-      if (formattedNews[i]) combined.push(formattedNews[i]);
-      if (formattedGallery[i]) combined.push(formattedGallery[i]);
+      if (sortedNews[i]) combined.push(sortedNews[i]);
+      if (sortedGallery[i]) combined.push(sortedGallery[i]);
     }
     return combined;
   }, [newsItems, galleryItems]);

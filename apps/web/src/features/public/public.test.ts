@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { formatToIndonesianStandard } from "@/utils/date-formatter";
+import { generateWaShareText } from "../../app/(public)/kabar/[slug]/page";
 import type { MediaAssetDTO } from "@/features/media";
 import type { PublicationDTO } from "@/features/publishing";
 import {
@@ -296,6 +297,41 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
     expect(formatToIndonesianStandard("2026-10-24T12:00:00Z")).toBe("24 Oktober 2026");
     expect(formatToIndonesianStandard(null)).toBe("Terbaru");
     expect(formatToIndonesianStandard(undefined)).toBe("Terbaru");
+  });
+
+  it("formats WhatsApp share text with single valid canonical URL without duplicating /kabar/ segment", () => {
+    const mockArticle = {
+      type: "article" as const,
+      title: "Jadwal Bimbingan Belajar Semester Ganjil",
+      slug: "jadwal-bimbingan-belajar-semester-ganjil",
+      date: "2026-11-28",
+      categoryLabel: "Jadwal",
+      excerpt: "Jadwal bimbingan belajar semester ganjil dimulai.",
+      author: "Pengurus",
+      content: "Isi artikel.",
+    };
+    const canonicalUrl = "https://pmkirumahbelajar-web.vercel.app/kabar/jadwal-bimbingan-belajar-semester-ganjil";
+    const waText = generateWaShareText(mockArticle as any, canonicalUrl);
+
+    expect(waText).toContain("https://pmkirumahbelajar-web.vercel.app/kabar/jadwal-bimbingan-belajar-semester-ganjil");
+    expect(waText).not.toContain("/kabar/jadwal-bimbingan-belajar-semester-ganjil/kabar/");
+    expect(waText.match(/\/kabar\//g)?.length).toBe(1);
+
+    const mockAlbum = {
+      type: "gallery_album" as const,
+      title: "Suasana Belajar Sabtu Griya Asih",
+      slug: "suasana-belajar-sabtu-griya-asih",
+      date: "2026-10-24",
+      author: "Tim Dokumentasi",
+      photos: [],
+      description: "Dokumentasi foto kegiatan.",
+    };
+    const albumCanonicalUrl = "https://pmkirumahbelajar-web.vercel.app/kabar/suasana-belajar-sabtu-griya-asih";
+    const albumWaText = generateWaShareText(mockAlbum as any, albumCanonicalUrl);
+
+    expect(albumWaText).toContain("https://pmkirumahbelajar-web.vercel.app/kabar/suasana-belajar-sabtu-griya-asih");
+    expect(albumWaText).not.toContain("/kabar/suasana-belajar-sabtu-griya-asih/kabar/");
+    expect(albumWaText.match(/\/kabar\//g)?.length).toBe(1);
   });
 });
 

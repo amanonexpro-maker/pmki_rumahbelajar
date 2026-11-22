@@ -22,17 +22,16 @@ interface PublicKabarDetailPageProps {
 /**
  * Standardized WhatsApp Share Formatter for Articles and Gallery Albums.
  * Ensures consistent tone, warm narrative, correct date formatting, canonical URL, and canonical hashtags.
+ * Receives the already resolved canonicalUrl to prevent duplicate path segments (/kabar/.../kabar/...).
  */
-export function generateWaShareText(content: PublicContent, baseUrl: string): string {
-  const url = `${baseUrl}/kabar/${content.slug}`;
-
+export function generateWaShareText(content: PublicContent, canonicalUrl: string): string {
   if (content.type === "gallery_album") {
     const formattedDate = formatToIndonesianStandard(content.date);
-    return `📸 Dokumentasi Kegiatan: "${content.title}"\n\nHari ini anak-anak Griya Asih belajar dengan semangat! Senang melihat perkembangan mereka.\n\nTanggal: ${formattedDate}\n\nLihat momen lengkapnya di sini:\n${url}\n\n#GriyaAsih #HappyLearning`;
+    return `📸 Dokumentasi Kegiatan: "${content.title}"\n\nHari ini anak-anak Griya Asih belajar dengan semangat! Senang melihat perkembangan mereka.\n\nTanggal: ${formattedDate}\n\nLihat momen lengkapnya di sini:\n${canonicalUrl}\n\n#GriyaAsih #HappyLearning`;
   }
 
   const dateStr = formatToIndonesianStandard(content.publishedDateFormatted || content.date);
-  return `📰 Warta Griya Asih: "${content.title}"\n\n${content.excerpt}\n\nTanggal: ${dateStr}\n\nBaca warta selengkapnya di sini:\n${url}\n\n#GriyaAsih #KabarGriyaAsih #RumahBelajar`;
+  return `📰 Warta Griya Asih: "${content.title}"\n\n${content.excerpt}\n\nTanggal: ${dateStr}\n\nBaca warta selengkapnya di sini:\n${canonicalUrl}\n\n#GriyaAsih #KabarGriyaAsih #RumahBelajar`;
 }
 
 export async function generateMetadata({
@@ -54,7 +53,8 @@ export async function generateMetadata({
     (process.env.VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
       : "https://pmkirumahbelajar-web.vercel.app");
-  const canonicalUrl = `${baseUrl}/kabar/${content.slug}`;
+  const cleanSlug = typeof content.slug === "string" ? content.slug.replace(/^\/?kabar\//, "").replace(/^\/+/, "") : "";
+  const canonicalUrl = `${baseUrl}/kabar/${cleanSlug}`;
 
   const coverUrl =
     content.type === "article"
@@ -117,7 +117,8 @@ export default async function PublicKabarDetailPage({
     (process.env.VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
       : "https://pmkirumahbelajar-web.vercel.app");
-  const canonicalUrl = `${baseUrl}/kabar/${content.slug}`;
+  const cleanSlug = typeof content.slug === "string" ? content.slug.replace(/^\/?kabar\//, "").replace(/^\/+/, "") : "";
+  const canonicalUrl = `${baseUrl}/kabar/${cleanSlug}`;
   const waShareUrl = `https://wa.me/?text=${encodeURIComponent(
     generateWaShareText(content, canonicalUrl)
   )}`;

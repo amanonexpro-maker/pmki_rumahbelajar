@@ -73,6 +73,7 @@
 | HOTFIX-BERANDA-V4 | Implemented Compact Grid 2x2 with Horizontal Layout | `DONE` | HOTFIX-BERANDA-V4: Implemented Compact Grid 2x2 with Horizontal Layout; Enforced Smart Truncation Strategy for Time/Cost values; Validated ICON_MAP keys to prevent build failures. |
 | HOTFIX-GALLERY-CANVAS | Standardized Lightbox Image Container to 4:5 Aspect Ratio | `DONE` | HOTFIX-GALLERY-CANVAS: Standardized Lightbox image containers to fixed 4:5 aspect ratio with object-contain to eliminate layout jumping during swipe navigation. |
 | HOTFIX-SPACING-V6 | Calibrated Proximity between Mission and Quick Facts | `DONE` | HOTFIX-SPACING-V6: Calibrated vertical proximity between Mission Statement and Quick Facts to mt-4/md-5; Eliminated double-spacing artifacts for cohesive narrative flow. |
+| HOTFIX-SHARE-URL-FIX | Perbaikan Duplikasi Path Tautan Share WhatsApp Berita & Galeri | `DONE` | HOTFIX-SHARE-URL-FIX: Corrected duplicated '/kabar/' segment in WhatsApp Share links for both News and Gallery details; Ensured single-source canonical URL construction. |
 
 ---
 

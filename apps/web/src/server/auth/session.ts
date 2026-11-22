@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { resolveAccessCached } from "@/features/administration";
@@ -26,34 +27,37 @@ export interface SessionUser {
  * Retrieves the authenticated session using `supabase.auth.getUser()` (D-19),
  * NEVER `getSession()`, and resolves dynamic RBAC permissions per-request (D-20).
  * Inactive users are treated as unauthenticated (Default Deny).
+ * Wrapped in React `cache` so layout and page share a single evaluation per request.
  */
-export async function getCurrentSession(): Promise<SessionUser | null> {
-  await connection();
+export const getCurrentSession = cache(
+  async (): Promise<SessionUser | null> => {
+    await connection();
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-  if (error || !user) {
-    return null;
+    if (error || !user) {
+      return null;
+    }
+
+    const access = await resolveAccessCached(user.id);
+    if (!access.active) {
+      return null;
+    }
+
+    return {
+      id: user.id,
+      email: user.email ?? "",
+      name: access.name || user.email || "Pengguna PMKI",
+      roles: access.roles,
+      permissions: access.permissions,
+      memberships: access.memberships,
+    };
   }
-
-  const access = await resolveAccessCached(user.id);
-  if (!access.active) {
-    return null;
-  }
-
-  return {
-    id: user.id,
-    email: user.email ?? "",
-    name: access.name || user.email || "Pengguna PMKI",
-    roles: access.roles,
-    permissions: access.permissions,
-    memberships: access.memberships,
-  };
-}
+);
 
 /**
  * Server-side route guard for protected workspace pages & layouts.

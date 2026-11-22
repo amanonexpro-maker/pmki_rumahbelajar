@@ -174,6 +174,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       {/* 4. SOROTAN KABAR TERKINI (Bukti Sosial Dinamis) */}
       <section
         aria-labelledby="sorotan-kabar-heading"
+        style={{ contentVisibility: "auto", containIntrinsicSize: "320px" }}
         className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-4 text-left"
       >
         <div className="flex items-center justify-between">
@@ -306,6 +307,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       {/* 5. INTIP PROGRAM (Eksplorasi Kurikulum) */}
       <section
         aria-labelledby="intip-program-heading"
+        style={{ contentVisibility: "auto", containIntrinsicSize: "300px" }}
         className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-4 text-left"
       >
         <div className="flex items-center justify-between">
@@ -365,6 +367,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
       {/* 6. AJAKAN BERGABUNG (Final Conversion Bridge) */}
       <section
         aria-labelledby="cta-heading"
+        style={{ contentVisibility: "auto", containIntrinsicSize: "260px" }}
         className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 py-12 sm:py-16"
       >
         <div className="space-y-2 max-w-xl mx-auto">

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
@@ -453,6 +454,7 @@ export function PublishingWorkspaceClient({
             return (
               <article
                 key={post.id}
+                style={{ contentVisibility: "auto", containIntrinsicSize: "220px" }}
                 className="rounded-card border border-border bg-surface p-5 space-y-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -757,11 +759,12 @@ export function PublishingWorkspaceClient({
                         {/* 4:5 Thumbnail Container */}
                         <div className="relative w-full flex-1 bg-surface-subtle overflow-hidden flex items-center justify-center">
                           {m.signedReadUrl ? (
-                            <img
+                            <Image
                               src={m.signedReadUrl}
                               alt={m.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                              loading="lazy"
+                              fill
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 150px"
+                              className="object-cover group-hover:scale-105 transition-transform duration-200"
                             />
                           ) : (
                             <ICON_MAP.image

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { EmptyState } from "@/components/compositions";
 import {
@@ -599,7 +600,7 @@ export function MediaWorkspaceClient({
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {effectiveAssets.map((asset) => {
+          {effectiveAssets.map((asset, idx) => {
             const isOwnUpload = asset.uploadedBy === currentUserId;
             const isFocused = focusedAssetId === asset.id;
             const cardError = inlineErrors[asset.id];
@@ -610,6 +611,7 @@ export function MediaWorkspaceClient({
                 tabIndex={0}
                 onFocus={() => setFocusedAssetId(asset.id)}
                 key={asset.id}
+                style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
                 className={cn(
                   "rounded-card border p-4 sm:p-5 space-y-4 flex flex-col justify-between transition-colors duration-200 outline-hidden focus-ring",
                   isOwnUpload
@@ -657,14 +659,16 @@ export function MediaWorkspaceClient({
                   {/* 4:5 Aspect Ratio Thumbnail */}
                   <div className="relative w-full aspect-[4/5] sm:aspect-[16/10] bg-surface-subtle rounded-control overflow-hidden border border-border flex items-center justify-center">
                     {asset.signedReadUrl ? (
-                      <img
+                      <Image
                         src={asset.signedReadUrl}
                         alt={asset.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        priority={idx < 2}
                         className={cn(
-                          "w-full h-full object-cover transition-transform duration-200",
+                          "object-cover transition-transform duration-200",
                           isOwnUpload && "grayscale-[35%]"
                         )}
-                        loading="lazy"
                       />
                     ) : (
                       <ICON_MAP.image

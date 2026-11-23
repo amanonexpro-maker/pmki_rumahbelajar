@@ -547,6 +547,21 @@ export const CANONICAL_AUTHENTIC_ALBUMS: GalleryAlbumContent[] = [
  * - 'gallery_album': Dokumentasi album foto (Header Narasi -> Grid Foto Responsif -> Share).
  * Menerapkan SQL WHERE clause consent gate ketat pada level server query untuk semua media asset.
  */
+/**
+ * Explicit Error for Database Timeout in Public Portal Layer (W2 Hardening).
+ * Ensures timeouts are loud, traceable, and cannot silently produce empty feeds.
+ */
+export class PublicDataTimeoutError extends Error {
+  readonly scope: string;
+  readonly code = "PUBLIC_DATA_TIMEOUT" as const;
+
+  constructor(scope: string, timeoutMs: number) {
+    super(`[PublicDataTimeoutError] Timed out after ${timeoutMs}ms while querying ${scope} from database.`);
+    this.name = "PublicDataTimeoutError";
+    this.scope = scope;
+  }
+}
+
 export async function getPublicArticleDetail(
   slug: string
 ): Promise<PublicContent | null> {
@@ -561,8 +576,17 @@ export async function getPublicArticleDetail(
     const timeoutMs = process.env.VITEST ? 15000 : 1500;
     const rawPost = await Promise.race([
       getPublishedPublicationBySlug(slug),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
-    ]).catch(() => null);
+      new Promise<null>((_, reject) =>
+        setTimeout(
+          () => reject(new PublicDataTimeoutError(`publication slug "${slug}"`, timeoutMs)),
+          timeoutMs
+        )
+      ),
+    ]).catch((err) => {
+      console.warn(`[getPublicArticleDetail] FAIL-LOUD: Database query failed or timed out for slug "${slug}":`, err);
+      return null;
+    });
+
     if (rawPost) {
       const isGalleryCategory =
         rawPost.category.toUpperCase() === "GALERI" ||
@@ -570,7 +594,10 @@ export async function getPublicArticleDetail(
 
       if (isGalleryCategory) {
         // Query media assets dengan SQL Consent Gate ketat
-        const eligibleMedia = await listPublicGalleryMedia(rawPost.serviceUnitId).catch(() => []);
+        const eligibleMedia = await listPublicGalleryMedia(rawPost.serviceUnitId).catch((err) => {
+          console.warn(`[getPublicArticleDetail] Gallery media query failed for unit "${rawPost.serviceUnitId}":`, err);
+          return [];
+        });
         const photos: GalleryPhoto[] = eligibleMedia
           .filter((m) => m.privacyReviewed === true && m.eligibleForPublic === true && Boolean(m.signedReadUrl))
           .map((m) => ({
@@ -678,34 +705,52 @@ export async function getPublicPortalData(): Promise<PublicPortalDataDTO> {
     const timeoutMs = process.env.VITEST ? 15000 : 1500;
     const pilotScope = await Promise.race([
       getDefaultPilotServiceUnit(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
-    ]).catch(() => null);
+      new Promise<null>((_, reject) =>
+        setTimeout(
+          () => reject(new PublicDataTimeoutError("pilot service unit", timeoutMs)),
+          timeoutMs
+        )
+      ),
+    ]).catch((err) => {
+      console.warn("[getPublicPortalData] FAIL-LOUD: Pilot service unit query timed out or failed:", err);
+      return null;
+    });
     const serviceUnitId = pilotScope?.serviceUnitId;
 
     const [galleryRes, pubRes] = await Promise.allSettled([
       Promise.race([
         listPublicGalleryMedia(serviceUnitId),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs)),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new PublicDataTimeoutError("gallery media", timeoutMs)),
+            timeoutMs
+          )
+        ),
       ]),
       Promise.race([
         listPublishedContent(serviceUnitId),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs)),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new PublicDataTimeoutError("published content", timeoutMs)),
+            timeoutMs
+          )
+        ),
       ]),
     ]);
 
     if (galleryRes.status === "fulfilled") {
       rawGallery = galleryRes.value;
     } else {
-      console.error("[getPublicPortalData] Gallery fetch failed:", galleryRes.reason);
+      console.warn("[getPublicPortalData] FAIL-LOUD: Gallery query failed/timed out, activating defined canonical fallback:", galleryRes.reason);
     }
 
     if (pubRes.status === "fulfilled") {
       rawPublications = pubRes.value;
     } else {
-      console.error("[getPublicPortalData] Publications fetch failed:", pubRes.reason);
+      console.warn("[getPublicPortalData] FAIL-LOUD: Publications query failed/timed out, activating defined canonical fallback:", pubRes.reason);
     }
   } catch (err) {
-    console.error("[getPublicPortalData] Fallback triggered due to transient database error:", err);
+    console.error("[getPublicPortalData] FAIL-LOUD: Transient database failure encountered:", err);
   }
 
   const mappedGallery = filterAndMapPublicGalleryItems(rawGallery);

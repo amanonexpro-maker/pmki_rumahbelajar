@@ -1,43 +1,40 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { UNIT } from "@/config/site";
 import {
   KontakActionCenter,
-  type KontakTabId,
   PublicNavbar,
 } from "@/features/public";
-
-export const instant = false;
 
 export const metadata: Metadata = {
   title: `Kontak & Layanan Komunitas | ${UNIT.name} ${UNIT.location}`,
   description: `Informasi narahubung resmi, alamat fisik belajar, pendaftaran peserta didik baru, relawan pengajar, serta dukungan bagi anak-anak di ${UNIT.name} ${UNIT.location}.`,
 };
 
-interface PublicContactPageProps {
-  searchParams?: Promise<{ tab?: string }>;
+function KontakActionCenterSkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="h-96 rounded-card bg-surface-subtle border border-border-subtle animate-pulse flex items-center justify-center text-xs text-muted-foreground"
+    >
+      Memuat pusat layanan...
+    </div>
+  );
 }
 
 /**
  * PublicContactPage (Fase 14 Step 8: Action Center Multi-Tujuan & Pelunasan TD-ADDR).
  * Server Component yang menyajikan:
  * 1. Header Editorial: Judul sans-serif, subjudul komunitas, tanpa tombol CTA di header.
- * 2. KontakActionCenter: Segmented control 4-tab (Info & Lokasi, Daftar Siswa, Jadi Relawan, Donasi).
+ * 2. KontakActionCenter: Segmented control 4-tab diisolasi dalam Suspense (Cache Components enabled).
  * 3. Teaser Penutup: Cross-link ke Program, Galeri Dokumentasi, dan Warta Kabar.
  * 4. Pelunasan TD-ADDR: Bebas dari hardcode alamat dan bebas dari field yatim locationFull/subDistrictsLabel.
  */
-export default async function PublicContactPage({
-  searchParams,
-}: PublicContactPageProps) {
-  const resolvedParams = searchParams ? await searchParams : undefined;
-  const initialTab: KontakTabId =
-    resolvedParams?.tab === "siswa"
-      ? "siswa"
-      : resolvedParams?.tab === "relawan"
-        ? "relawan"
-        : resolvedParams?.tab === "donasi"
-          ? "donasi"
-          : "info";
+export default async function PublicContactPage() {
+  "use cache";
+  cacheLife("hours");
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
@@ -58,8 +55,10 @@ export default async function PublicContactPage({
             </p>
           </div>
 
-          {/* 2. Interactive Segmented Action Center Leaf */}
-          <KontakActionCenter initialTab={initialTab} />
+          {/* 2. Interactive Segmented Action Center Leaf (Suspended for instant static shell) */}
+          <Suspense fallback={<KontakActionCenterSkeleton />}>
+            <KontakActionCenter />
+          </Suspense>
 
           {/* 3. Teaser Penutup (Cross-link Editorial ke Program & Kabar) */}
           <section

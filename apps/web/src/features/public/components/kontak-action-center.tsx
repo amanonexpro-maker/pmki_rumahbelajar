@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { ICON_MAP } from "@/config/icons";
 import { ADDRESS, CONTACTS, HOURS, MAPS_LOCATION } from "@/config/site";
 import { cn } from "@/lib/cn";
@@ -46,7 +47,24 @@ const VOLUNTEER_SUBJECT_OPTIONS = [
  * 4. Donasi: Narasi transparansi + placeholder graceful QRIS & rekening (audit-verified missing) + konfirmasi WhatsApp bendahara.
  */
 export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterProps) {
-  const [activeTab, setActiveTab] = React.useState<KontakTabId>(initialTab);
+  const searchParams = useSearchParams();
+  const queryTab = searchParams ? (searchParams.get("tab") as KontakTabId | null) : null;
+  const resolvedTab: KontakTabId =
+    queryTab === "siswa" || queryTab === "relawan" || queryTab === "donasi" || queryTab === "info"
+      ? queryTab
+      : initialTab;
+
+  const [activeTab, setActiveTab] = React.useState<KontakTabId>(resolvedTab);
+
+  React.useEffect(() => {
+    if (
+      queryTab &&
+      (queryTab === "siswa" || queryTab === "relawan" || queryTab === "donasi" || queryTab === "info") &&
+      queryTab !== activeTab
+    ) {
+      setActiveTab(queryTab);
+    }
+  }, [queryTab, activeTab]);
 
   // Address copy state
   const [isCopied, setIsCopied] = React.useState(false);

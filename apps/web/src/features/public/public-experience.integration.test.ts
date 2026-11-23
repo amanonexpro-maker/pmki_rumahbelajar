@@ -1,8 +1,24 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
+import { db } from "@/db/client";
+import { mediaAssets } from "@/db/schema";
 import { PAGE_CACHE_REVALIDATE_SECONDS } from "@/server/upload/storage-admin";
 import { getPublicPortalData } from "./index";
 
 describe("Fase 9 Integration — Public Experience Cross-Domain Data & Privacy Filtering", () => {
+  beforeAll(async () => {
+    // Deterministic Test Fixture Isolation (W1):
+    // Ensure any internal unreviewed test assets remain strictly unreviewed in the test DB
+    try {
+      await db
+        .update(mediaAssets)
+        .set({ privacyReviewed: false, eligibleForPublic: false })
+        .where(eq(mediaAssets.title, "Dokumentasi Internal Belum Ditinjau Privasi"));
+    } catch {
+      // Graceful fallback when DB not active
+    }
+  });
+
   it("loads public portal data strictly through Organization, Media, and Publishing services and excludes unreviewed media & non-published posts", async () => {
     const data = await getPublicPortalData();
 

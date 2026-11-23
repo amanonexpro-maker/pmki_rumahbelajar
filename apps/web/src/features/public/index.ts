@@ -12,6 +12,7 @@ export {
   filterAndMapPublicNewsItems,
   getPublicArticleDetail,
   getPublicPortalData,
+  PublicDataTimeoutError,
   PUBLIC_COORDINATOR_CONTACTS,
   PUBLIC_GRADE_TARGETS,
   PUBLIC_PROGRAMS_LIST,

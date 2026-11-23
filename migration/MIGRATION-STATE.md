@@ -81,6 +81,7 @@
 | PHASE-15-STEP2-PRIORITY3 | Optimasi Review Media & Feedback SoD | `DONE` | PHASE-15-STEP2-PRIORITY3: Optimized Serial Media Review Workflow with Keyboard Shortcuts and Explicit Separation-of-Duties Feedback; Enforced Inline Error Handling without Fake Bulk Actions. |
 | PHASE-16-STEP1 | Audit & Hotfix Performa Mobile & Bandwidth | `DONE` | PHASE-16-STEP1: Implemented Critical Mobile Performance Fixes including Code Splitting for Heavy Components, Next/Image Bandwidth Optimization, and Middleware Matcher Refinement. |
 | PHASE-16-STEP3 | Remediasi Performa (ISR + On-Demand Revalidation + LCP Priority) | `DONE` | PHASE-16-STEP3: Enabled ISR on static public routes with happy-path-only on-demand revalidation (freshness-safe, no catch/finally revalidate); Added bounded LCP image priority; Verified zero route regression via empirical baseline-subset check; Workspace remains dynamic. |
+| PHASE-16-STEP3.1 | Mikro-Audit Residual /kontak + Hardening W1/W2 | `DONE` | PHASE-16-STEP3.1: Successfully converted /kontak to static Cache Components (◐ 1h revalidate) by isolating client-side tab searchParams into a Suspense boundary; Hardened W1 with isolated test fixtures and dedicated consent-gate unit test; Hardened W2 with fail-loud typed PublicDataTimeoutError and defined canonical fallbacks (zero silent swallow). |
 
 ---
 

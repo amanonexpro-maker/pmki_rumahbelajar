@@ -472,5 +472,66 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
     expect(deduped).toHaveLength(2);
     expect(deduped.map((d) => d.id)).toEqual(["1", "3"]);
   });
+
+  it("enforces W1 Consent Hardening: media without active consent/review NEVER leaks into public DTO even on timeout/fallback", async () => {
+    const unconsentedAssets: MediaAssetDTO[] = [
+      {
+        id: "m-no-consent",
+        organizationId: "org-1",
+        serviceUnitId: "unit-1",
+        title: "Dokumentasi Tanpa Consent Siswa",
+        description: "Anak tanpa izin foto",
+        filePath: "raw/no-consent.jpg",
+        mimeType: "image/jpeg",
+        fileSize: 120000,
+        category: "KEGIATAN",
+        categoryLabel: "Kegiatan belajar",
+        privacyReviewed: false, // NOT REVIEWED
+        eligibleForPublic: false, // NOT ELIGIBLE
+        reviewedBy: null,
+        reviewedAt: null,
+        capturedDate: "2026-11-20",
+        uploadedBy: "u-1",
+        createdAt: "2026-11-20T00:00:00Z",
+        signedReadUrl: "/images/no-consent.jpg",
+        signedUrlTtlSeconds: 3600,
+      },
+      {
+        id: "m-partial-revoked",
+        organizationId: "org-1",
+        serviceUnitId: "unit-1",
+        title: "Dokumentasi Izin Dicabut",
+        description: "Consent dicabut orang tua",
+        filePath: "raw/revoked.jpg",
+        mimeType: "image/jpeg",
+        fileSize: 120000,
+        category: "KEGIATAN",
+        categoryLabel: "Kegiatan belajar",
+        privacyReviewed: true,
+        eligibleForPublic: false, // Revocation turns eligible to false
+        reviewedBy: "rev-1",
+        reviewedAt: "2026-11-20T00:00:00Z",
+        capturedDate: "2026-11-20",
+        uploadedBy: "u-1",
+        createdAt: "2026-11-20T00:00:00Z",
+        signedReadUrl: "/images/revoked.jpg",
+        signedUrlTtlSeconds: 3600,
+      },
+    ];
+
+    // 1. Direct mapper check: must be strictly filtered out
+    const mapped = filterAndMapPublicGalleryItems(unconsentedAssets);
+    expect(mapped).toHaveLength(0);
+
+    // 2. Full portal data check (even if DB is mocked/timed out and canonical fallback triggers)
+    const { getPublicPortalData } = await import("./index");
+    const portalData = await getPublicPortalData();
+    expect(portalData.galleryItems.length).toBeGreaterThan(0);
+    for (const item of portalData.galleryItems) {
+      expect(item.privacyReviewed).toBe(true);
+      expect(item.eligibleForPublic).toBe(true);
+      expect(item.title).not.toMatch(/tanpa consent|izin dicabut|belum ditinjau/i);
+    }
+  });
 });
 

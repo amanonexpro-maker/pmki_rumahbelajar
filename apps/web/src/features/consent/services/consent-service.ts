@@ -10,6 +10,7 @@ import {
   canReadConfidentialConsentEvidence,
 } from "../permissions/consent-policy";
 import {
+  countRevokedConsentsByUnitIds,
   findConsentById,
   findConsentsByServiceUnitIds,
   findLatestConsentByStudentId,
@@ -227,4 +228,18 @@ export async function updateStudentConsent(
     photoVideoConsent: updated.photoVideoConsent as ConsentStatus,
     revokedAt: updated.revokedAt ? updated.revokedAt.toISOString() : null,
   });
+}
+
+export async function countRevokedConsentsForDashboard(
+  user: SessionUser | null | undefined
+): Promise<number> {
+  const authz = authorizeReadConsents(user);
+  if (!authz.success) return 0;
+
+  const serviceUnitIds = Array.from(
+    new Set((user?.memberships ?? []).map((m) => m.serviceUnitId))
+  );
+  if (serviceUnitIds.length === 0) return 0;
+
+  return countRevokedConsentsByUnitIds(serviceUnitIds);
 }

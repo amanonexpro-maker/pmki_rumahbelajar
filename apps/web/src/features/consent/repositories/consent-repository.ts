@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@/db/client";
 import { consents } from "@/db/schema";
 import type { ConsentStatus } from "@/lib/status";
@@ -99,4 +99,24 @@ export async function updateConsentRecordById(params: {
     .returning();
 
   return updated ?? null;
+}
+
+export async function countRevokedConsentsByUnitIds(
+  serviceUnitIds: string[]
+): Promise<number> {
+  if (serviceUnitIds.length === 0) return 0;
+  const [row] = await db
+    .select({ total: count() })
+    .from(consents)
+    .where(
+      and(
+        inArray(consents.serviceUnitId, serviceUnitIds),
+        or(
+          eq(consents.personalDataConsent, "REVOKED"),
+          eq(consents.photoVideoConsent, "REVOKED")
+        ),
+        isNull(consents.archivedAt)
+      )
+    );
+  return Number(row?.total ?? 0);
 }

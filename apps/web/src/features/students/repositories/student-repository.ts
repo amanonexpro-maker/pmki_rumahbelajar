@@ -7,6 +7,7 @@ import {
   inArray,
   isNull,
   or,
+  sql,
 } from "drizzle-orm";
 import { db } from "@/db/client";
 import { guardians, studentGuardians, students } from "@/db/schema";
@@ -29,6 +30,40 @@ export async function countTotalStudentsByUnit(
     .from(students)
     .where(eq(students.serviceUnitId, serviceUnitId));
   return Number(row?.total ?? 0);
+}
+
+export async function countStudentMetricsByUnitIds(serviceUnitIds: string[]) {
+  if (serviceUnitIds.length === 0) {
+    return {
+      activeCount: 0,
+      pendingVerificationCount: 0,
+      verifiedAwaitingClassCount: 0,
+    };
+  }
+  const [row] = await db
+    .select({
+      activeCount: count(
+        sql`CASE WHEN ${students.registrationStatus} = 'ACTIVE' THEN 1 END`
+      ),
+      pendingVerificationCount: count(
+        sql`CASE WHEN ${students.registrationStatus} IN ('SUBMITTED', 'PENDING_VERIFICATION') THEN 1 END`
+      ),
+      verifiedAwaitingClassCount: count(
+        sql`CASE WHEN ${students.registrationStatus} IN ('VERIFIED', 'CLASS_PLACEMENT') AND ${students.assignedClassId} IS NULL THEN 1 END`
+      ),
+    })
+    .from(students)
+    .where(
+      and(
+        inArray(students.serviceUnitId, serviceUnitIds),
+        isNull(students.archivedAt)
+      )
+    );
+  return {
+    activeCount: Number(row?.activeCount ?? 0),
+    pendingVerificationCount: Number(row?.pendingVerificationCount ?? 0),
+    verifiedAwaitingClassCount: Number(row?.verifiedAwaitingClassCount ?? 0),
+  };
 }
 
 export async function insertStudentWithGuardian(params: {

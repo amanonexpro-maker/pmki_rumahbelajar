@@ -5,6 +5,7 @@
 export const DOMAIN_NAME = "consent" as const;
 
 export {
+  countRevokedConsentsForDashboard,
   getStudentConsentStatus,
   isPersonalDataProcessingAllowed,
   isPhotoVideoPublicAllowed,

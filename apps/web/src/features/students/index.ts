@@ -15,6 +15,7 @@ export { placeStudentInClass } from "./services/placement-service";
 export { getConfidentialGuardianForStudent } from "./services/guardian-service";
 
 export {
+  countStudentsForDashboard,
   getStudentDetailForWorkspace,
   listStudentsForWorkspace,
   updateStudentProfile,

@@ -15,6 +15,7 @@ import {
   canUpdateConfidentialGuardian,
 } from "../permissions/student-policy";
 import {
+  countStudentMetricsByUnitIds,
   findPrimaryGuardianByStudentId,
   findStudentRowById,
   findStudentsFiltered,
@@ -298,5 +299,36 @@ export async function updateStudentProfile(
   });
 
   return ok({ studentId: row.id });
+}
+
+export async function countStudentsForDashboard(
+  user: SessionUser | null | undefined
+): Promise<{
+  activeCount: number;
+  pendingVerificationCount: number;
+  verifiedAwaitingClassCount: number;
+}> {
+  const authz = authorizeReadStudents(user);
+  if (!authz.success) {
+    return {
+      activeCount: 0,
+      pendingVerificationCount: 0,
+      verifiedAwaitingClassCount: 0,
+    };
+  }
+
+  const serviceUnitIds = Array.from(
+    new Set((user?.memberships ?? []).map((m) => m.serviceUnitId))
+  );
+
+  if (serviceUnitIds.length === 0) {
+    return {
+      activeCount: 0,
+      pendingVerificationCount: 0,
+      verifiedAwaitingClassCount: 0,
+    };
+  }
+
+  return countStudentMetricsByUnitIds(serviceUnitIds);
 }
 

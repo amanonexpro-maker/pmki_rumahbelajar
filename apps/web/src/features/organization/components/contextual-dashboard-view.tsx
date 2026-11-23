@@ -8,14 +8,136 @@ import {
 import { PageHeader } from "@/components/patterns";
 import { Badge, type BadgeProps } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import type {
-  ContextualDashboardViewModelDTO,
-  DashboardActivityEntryDTO,
-  DashboardTone,
+import { getRoleLabel, type SystemRole } from "@/lib/status";
+import type { SessionUser } from "@/server/auth/session";
+import {
+  getIndonesianTimeGreeting,
+  type ContextualDashboardViewModelDTO,
+  type DashboardActionLinkDTO,
+  type DashboardActivityEntryDTO,
+  type DashboardTone,
 } from "../services/dashboard-overview-service";
 
 export interface ContextualDashboardViewProps {
   vm: ContextualDashboardViewModelDTO;
+}
+
+export interface DashboardOrientationHeaderProps {
+  session?: SessionUser;
+  vm?: ContextualDashboardViewModelDTO;
+}
+
+function resolveHeaderData(props: DashboardOrientationHeaderProps): {
+  eyebrow: string;
+  title: string;
+  badgeLabel: string;
+  description: string;
+  primaryAction: DashboardActionLinkDTO | null;
+  secondaryAction: DashboardActionLinkDTO | null;
+} {
+  if (props.vm) {
+    return {
+      eyebrow: `${props.vm.serviceUnitName} · Tahun ajaran ${props.vm.academicYearName}`,
+      title: `${props.vm.greeting}, ${props.vm.userName}`,
+      badgeLabel: props.vm.primaryRoleLabel,
+      description: props.vm.contextSummarySentence,
+      primaryAction: props.vm.primaryAction,
+      secondaryAction: props.vm.secondaryAction,
+    };
+  }
+
+  const session = props.session;
+  const primaryRole = (session?.roles[0] ?? "TEACHER") as SystemRole;
+  const primaryRoleLabel = getRoleLabel(primaryRole) ?? primaryRole;
+  const greeting = getIndonesianTimeGreeting();
+  const userName = session?.name ?? "Pengguna";
+
+  let primaryAction: DashboardActionLinkDTO | null = null;
+  let secondaryAction: DashboardActionLinkDTO | null = null;
+
+  if (primaryRole === "TEACHER") {
+    primaryAction = {
+      label: "Catat presensi",
+      href: "/workspace/attendance",
+    };
+    secondaryAction = {
+      label: "Tambah catatan perkembangan",
+      href: "/workspace/development/new",
+    };
+  } else if (primaryRole === "APPROVER" || primaryRole === "REVIEWER") {
+    primaryAction = {
+      label: "Tinjau laporan",
+      href: "/workspace/reports",
+    };
+  } else if (primaryRole === "EDITOR") {
+    primaryAction = {
+      label: "Kelola publikasi",
+      href: "/workspace/publishing",
+    };
+    secondaryAction = {
+      label: "Unggah dokumentasi",
+      href: "/workspace/media",
+    };
+  } else if (primaryRole === "AUDITOR") {
+    primaryAction = {
+      label: "Lihat jejak audit",
+      href: "/workspace/audit",
+    };
+  } else {
+    // UNIT_COORDINATOR, PLATFORM_ADMIN
+    primaryAction = {
+      label: "Verifikasi pendaftaran",
+      href: "/workspace/students",
+    };
+    secondaryAction = {
+      label: "Catat presensi",
+      href: "/workspace/attendance",
+    };
+  }
+
+  return {
+    eyebrow: "Rumah Belajar Griya Asih Lawang · Tahun ajaran 2026/2027",
+    title: `${greeting}, ${userName}`,
+    badgeLabel: primaryRoleLabel,
+    description:
+      "Tinjauan ringkas operasional unit layanan, antrean tindak lanjut tugas, jadwal belajar Sabtu, dan aktivitas terbaru.",
+    primaryAction,
+    secondaryAction,
+  };
+}
+
+export function DashboardOrientationHeader(props: DashboardOrientationHeaderProps) {
+  const data = resolveHeaderData(props);
+
+  return (
+    <PageHeader
+      eyebrow={data.eyebrow}
+      title={data.title}
+      badge={<Badge variant="primary">{data.badgeLabel}</Badge>}
+      description={data.description}
+      primaryAction={
+        data.primaryAction ? (
+          <Link
+            href={data.primaryAction.href}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-primary hover:bg-primary-hover text-primary-foreground px-4 py-2 text-sm font-semibold shadow-xs transition-colors active:scale-[0.985] focus-ring"
+          >
+            <span>{data.primaryAction.label}</span>
+            <ArrowRight aria-hidden="true" className="w-4 h-4" />
+          </Link>
+        ) : undefined
+      }
+      secondaryActions={
+        data.secondaryAction ? (
+          <Link
+            href={data.secondaryAction.href}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-surface hover:bg-surface-subtle text-foreground border border-border px-4 py-2 text-sm font-semibold shadow-xs transition-colors active:scale-[0.985] focus-ring"
+          >
+            <span>{data.secondaryAction.label}</span>
+          </Link>
+        ) : undefined
+      }
+    />
+  );
 }
 
 function mapToneToBadgeVariant(
@@ -42,16 +164,13 @@ function mapToneToBadgeVariant(
 }
 
 /**
- * UI-3 Contextual Workspace Dashboard (`UI-UX §24`, `03 §5`, `10 §8`, `AGENTS.md`).
- *
- * Mental Model:
- * 1. Orientation (Greeting, Role, Service Unit & Academic Year context, Primary/Secondary CTA)
- * 2. Operational Summary Strip (Lightweight inline typography strip — NO isolated 4 KPI cards, NO chart)
- * 3. Perlu perhatian (Actionable role-filtered attention queue)
- * 4. Jadwal belajar (Upcoming Saturday learning sessions with direct attendance link)
- * 5. Aktivitas terbaru (Restrained, privacy-safe human-readable activity list grouped by date)
+ * Body sections of UI-3 Contextual Workspace Dashboard (`UI-UX §24`, `03 §5`, `10 §8`).
  */
-export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
+export function ContextualDashboardBody({
+  vm,
+}: {
+  vm: ContextualDashboardViewModelDTO;
+}) {
   // Group recent activities by dateGroup
   const activityGroups: {
     dateGroup: string;
@@ -67,36 +186,7 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* 1. ORIENTATION & GREETING (Open, calm, not wrapped in a card) */}
-      <PageHeader
-        eyebrow={`${vm.serviceUnitName} · Tahun ajaran ${vm.academicYearName}`}
-        title={`${vm.greeting}, ${vm.userName}`}
-        badge={<Badge variant="primary">{vm.primaryRoleLabel}</Badge>}
-        description={vm.contextSummarySentence}
-        primaryAction={
-          vm.primaryAction ? (
-            <Link
-              href={vm.primaryAction.href}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-primary hover:bg-primary-hover text-primary-foreground px-4 py-2 text-sm font-semibold shadow-xs transition-colors active:scale-[0.985] focus-ring"
-            >
-              <span>{vm.primaryAction.label}</span>
-              <ArrowRight aria-hidden="true" className="w-4 h-4" />
-            </Link>
-          ) : undefined
-        }
-        secondaryActions={
-          vm.secondaryAction ? (
-            <Link
-              href={vm.secondaryAction.href}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-surface hover:bg-surface-subtle text-foreground border border-border px-4 py-2 text-sm font-semibold shadow-xs transition-colors active:scale-[0.985] focus-ring"
-            >
-              <span>{vm.secondaryAction.label}</span>
-            </Link>
-          ) : undefined
-        }
-      />
-
+    <>
       {/*
        * Responsive Order (UI-3 Parity):
        * Mobile (<640px): Orientation -> [Perlu perhatian & Jadwal belajar] -> Ringkasan operasional -> Aktivitas terbaru
@@ -436,6 +526,18 @@ export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
           </div>
         </section>
       )}
+    </>
+  );
+}
+
+/**
+ * UI-3 Contextual Workspace Dashboard (`UI-UX §24`, `03 §5`, `10 §8`, `AGENTS.md`).
+ */
+export function ContextualDashboardView({ vm }: ContextualDashboardViewProps) {
+  return (
+    <div className="flex flex-col gap-8">
+      <DashboardOrientationHeader vm={vm} />
+      <ContextualDashboardBody vm={vm} />
     </div>
   );
 }

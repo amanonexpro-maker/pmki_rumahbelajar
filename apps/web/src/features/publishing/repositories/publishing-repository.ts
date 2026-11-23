@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { publications } from "@/db/schema";
 import type { PublicationStatus } from "@/lib/status";
@@ -124,5 +124,22 @@ export async function updatePublicationStatusById(params: {
     .where(eq(publications.id, params.publicationId))
     .returning();
   return updated ?? null;
+}
+
+export async function countAwaitingPublicationsByUnitIds(
+  serviceUnitIds: string[]
+): Promise<number> {
+  if (serviceUnitIds.length === 0) return 0;
+  const [row] = await db
+    .select({ total: count() })
+    .from(publications)
+    .where(
+      and(
+        inArray(publications.serviceUnitId, serviceUnitIds),
+        inArray(publications.status, ["DRAFT", "PRIVACY_REVIEW", "APPROVED"]),
+        isNull(publications.archivedAt)
+      )
+    );
+  return Number(row?.total ?? 0);
 }
 

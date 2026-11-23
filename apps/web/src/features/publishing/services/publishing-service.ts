@@ -16,6 +16,7 @@ import {
   authorizeSubmitForPrivacyReview,
 } from "../permissions/publishing-policy";
 import {
+  countAwaitingPublicationsByUnitIds,
   findPublicationById,
   findPublicationBySlug,
   findPublicationsByUnitIds,
@@ -475,5 +476,19 @@ export async function getPublishedPublicationBySlug(
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+export async function countAwaitingPublicationsForDashboard(
+  user: SessionUser | null | undefined
+): Promise<number> {
+  const authz = authorizeReadPublications(user);
+  if (!authz.success) return 0;
+
+  const serviceUnitIds = Array.from(
+    new Set((user?.memberships ?? []).map((m) => m.serviceUnitId))
+  );
+  if (serviceUnitIds.length === 0) return 0;
+
+  return countAwaitingPublicationsByUnitIds(serviceUnitIds);
 }
 

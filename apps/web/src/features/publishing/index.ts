@@ -5,6 +5,7 @@
 export const DOMAIN_NAME = "publishing" as const;
 
 export {
+  countAwaitingPublicationsForDashboard,
   createPublicationDraft,
   getPublishedPublicationBySlug,
   isValidPublicationTransition,

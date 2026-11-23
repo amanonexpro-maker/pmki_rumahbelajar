@@ -29,6 +29,7 @@ export async function submitPublicRegistrationAction(
   const result = await submitPublicRegistration(payload, session);
   if (result.success) {
     revalidatePath("/workspace/students");
+    revalidatePath("/workspace");
   }
   return result;
 }
@@ -47,6 +48,7 @@ export async function verifyStudentRegistrationAction(
   if (result.success) {
     revalidatePath("/workspace/students");
     revalidatePath(`/workspace/students/${result.data.studentId}`);
+    revalidatePath("/workspace");
   }
   return result;
 }
@@ -67,6 +69,7 @@ export async function placeStudentInClassAction(
   if (result.success) {
     revalidatePath("/workspace/students");
     revalidatePath(`/workspace/students/${result.data.studentId}`);
+    revalidatePath("/workspace");
   }
   return result;
 }

@@ -6,6 +6,7 @@ export const DOMAIN_NAME = "media" as const;
 
 export {
   confirmMediaUpload,
+  countUnreviewedMediaForDashboard,
   createMediaUploadUrl,
   getSignedMediaReadUrl,
   isMediaAssetEligibleForPublic,

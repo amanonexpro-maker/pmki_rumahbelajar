@@ -27,4 +27,8 @@ export {
   type DashboardUpcomingScheduleDTO,
 } from "./services/dashboard-overview-service";
 
-export { ContextualDashboardView } from "./components/contextual-dashboard-view";
+export {
+  ContextualDashboardBody,
+  ContextualDashboardView,
+  DashboardOrientationHeader,
+} from "./components/contextual-dashboard-view";

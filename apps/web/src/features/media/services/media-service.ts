@@ -16,6 +16,7 @@ import {
   authorizeReviewMediaWithSoD,
 } from "../permissions/media-policy";
 import {
+  countUnreviewedMediaByUnitIds,
   findMediaAssetByFilePath,
   findMediaAssetById,
   findMediaAssetsByUnitIds,
@@ -496,5 +497,19 @@ export async function listPublicGalleryMedia(
   );
 
   return items;
+}
+
+export async function countUnreviewedMediaForDashboard(
+  user: SessionUser | null | undefined
+): Promise<number> {
+  const authz = authorizeReadMedia(user);
+  if (!authz.success) return 0;
+
+  const serviceUnitIds = Array.from(
+    new Set((user?.memberships ?? []).map((m) => m.serviceUnitId))
+  );
+  if (serviceUnitIds.length === 0) return 0;
+
+  return countUnreviewedMediaByUnitIds(serviceUnitIds);
 }
 

@@ -1,9 +1,12 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import {
   buildContextualDashboardViewModel,
-  ContextualDashboardView,
+  ContextualDashboardBody,
+  DashboardOrientationHeader,
 } from "@/features/organization";
-import { requireSession } from "@/server/auth/session";
+import { requireSession, type SessionUser } from "@/server/auth/session";
+import { DashboardBodySkeleton } from "./loading";
 
 export const instant = false;
 
@@ -13,9 +16,23 @@ export const metadata: Metadata = {
     "Ringkasan operasional kontekstual, antrean tindak lanjut, jadwal belajar Sabtu, dan aktivitas terbaru unit layanan.",
 };
 
+async function AsyncDashboardBody({ session }: { session: SessionUser }) {
+  const vm = await buildContextualDashboardViewModel(session);
+  return <ContextualDashboardBody vm={vm} />;
+}
+
 export default async function WorkspaceDashboardPage() {
   const session = await requireSession();
-  const vm = await buildContextualDashboardViewModel(session);
 
-  return <ContextualDashboardView vm={vm} />;
+  return (
+    <div className="flex flex-col gap-8">
+      {/* 1. Orientation Header: Immediate 0ms rendering from resolved session */}
+      <DashboardOrientationHeader session={session} />
+
+      {/* 2. Granular Streaming Boundary for Operational Aggregates */}
+      <Suspense fallback={<DashboardBodySkeleton />}>
+        <AsyncDashboardBody session={session} />
+      </Suspense>
+    </div>
+  );
 }

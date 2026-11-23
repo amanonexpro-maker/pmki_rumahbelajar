@@ -7,11 +7,11 @@ import {
 } from "@/features/academic";
 import { listAttendanceSessionHistory } from "@/features/attendance";
 import { listAuditLogsForWorkspace } from "@/features/audit";
-import { listConsentsForWorkspace } from "@/features/consent";
+import { countRevokedConsentsForDashboard } from "@/features/consent";
 import { listGovernanceReportsForWorkspace } from "@/features/governance";
-import { listMediaAssetsForWorkspace } from "@/features/media";
-import { listPublicationsForWorkspace } from "@/features/publishing";
-import { listStudentsForWorkspace } from "@/features/students";
+import { countUnreviewedMediaForDashboard } from "@/features/media";
+import { countAwaitingPublicationsForDashboard } from "@/features/publishing";
+import { countStudentsForDashboard } from "@/features/students";
 import { getRoleLabel, type SystemRole } from "@/lib/status";
 import type { SessionUser } from "@/server/auth/session";
 import { can } from "@/server/permissions/can";
@@ -275,7 +275,7 @@ export async function buildContextualDashboardViewModel(
   const hasPerm = (perm: string) =>
     can(session, perm, serviceUnitId ? { serviceUnitId } : undefined);
 
-  // 1. Academic Context (Classes, Teachers, Active Academic Year, Schedules)
+  // Chunk 1: Academic Context (Classes, Teachers, Active Academic Year, Schedules)
   const [activeYear, classesList, teachersList, matchedTeacher] =
     serviceUnitId
       ? await Promise.all([
@@ -286,42 +286,60 @@ export async function buildContextualDashboardViewModel(
         ])
       : [null, [], [], null];
 
+  // Chunk 2: Class Learning Contexts (Dependent on classesList, bounded by class count)
   const classContexts = await Promise.all(
     classesList.map((cls) => getClassLearningContext(cls.id))
   );
 
-  // 2. Students Context (via Students Public API)
-  const studentsResult = hasPerm("student.read")
-    ? await listStudentsForWorkspace(session, { page: 1, pageSize: 200 })
-    : null;
-  const studentsItems =
-    studentsResult && studentsResult.success ? studentsResult.data.items : [];
+  // Chunk 3a: Operational Aggregates (Targeted students count, attendance history, governance reports)
+  const [studentCounts, attendanceResult, reportsResult] = await Promise.all([
+    hasPerm("student.read")
+      ? countStudentsForDashboard(session)
+      : Promise.resolve({
+          activeCount: 0,
+          pendingVerificationCount: 0,
+          verifiedAwaitingClassCount: 0,
+        }),
+    hasPerm("attendance.read") && serviceUnitId
+      ? listAttendanceSessionHistory(session, serviceUnitId)
+      : Promise.resolve(null),
+    hasPerm("report.read")
+      ? listGovernanceReportsForWorkspace(session)
+      : Promise.resolve(null),
+  ]);
 
-  const activeStudentsCount = studentsItems.filter(
-    (s) => s.registrationStatus === "ACTIVE"
-  ).length;
-  const pendingVerificationCount = studentsItems.filter(
-    (s) =>
-      s.registrationStatus === "SUBMITTED" ||
-      s.registrationStatus === "PENDING_VERIFICATION"
-  ).length;
-  const verifiedAwaitingClassCount = studentsItems.filter(
-    (s) =>
-      (s.registrationStatus === "VERIFIED" ||
-        s.registrationStatus === "CLASS_PLACEMENT") &&
-      !s.assignedClassId
-  ).length;
+  // Chunk 3b: Targeted Auxiliary Counts & Audit Feed (Zero loops, zero over-fetching, connection-pool safe <= 4)
+  const [
+    revokedOrDeniedConsentCount,
+    unreviewedMediaCount,
+    publicationsAwaitingPublishCount,
+    auditRes,
+  ] = await Promise.all([
+    hasPerm("consent.read")
+      ? countRevokedConsentsForDashboard(session)
+      : Promise.resolve(0),
+    hasPerm("media.read")
+      ? countUnreviewedMediaForDashboard(session)
+      : Promise.resolve(0),
+    hasPerm("publication.create") ||
+    hasPerm("publication.review") ||
+    hasPerm("publication.publish")
+      ? countAwaitingPublicationsForDashboard(session)
+      : Promise.resolve(0),
+    hasPerm("audit.read")
+      ? listAuditLogsForWorkspace(session, { page: 1, pageSize: 8 })
+      : Promise.resolve(null),
+  ]);
+
+  const activeStudentsCount = studentCounts.activeCount;
+  const pendingVerificationCount = studentCounts.pendingVerificationCount;
+  const verifiedAwaitingClassCount = studentCounts.verifiedAwaitingClassCount;
 
   const totalEnrolledAcrossClasses = classesList.reduce(
     (sum, cls) => sum + cls.enrolledCount,
     0
   );
 
-  // 3. Attendance Context (via Attendance Public API)
-  const attendanceResult =
-    hasPerm("attendance.read") && serviceUnitId
-      ? await listAttendanceSessionHistory(session, serviceUnitId)
-      : null;
   const attendanceHistory =
     attendanceResult && attendanceResult.success ? attendanceResult.data : [];
 
@@ -348,10 +366,6 @@ export async function buildContextualDashboardViewModel(
       ? Math.round((attendanceTotals.present / attendanceTotals.total) * 100)
       : null;
 
-  // 4. Governance Reports Context (via Governance Public API)
-  const reportsResult = hasPerm("report.read")
-    ? await listGovernanceReportsForWorkspace(session)
-    : null;
   const reportsItems =
     reportsResult && reportsResult.success ? reportsResult.data : [];
 
@@ -361,39 +375,6 @@ export async function buildContextualDashboardViewModel(
   const reportsAwaitingApproval = reportsItems.filter(
     (r) => r.status === "ORGANIZATION_APPROVAL"
   );
-
-  // 5. Consent, Media & Publishing Context (via their respective Public APIs)
-  const [consentsRes, mediaRes, publishingRes] = await Promise.all([
-    hasPerm("consent.read")
-      ? listConsentsForWorkspace(session)
-      : Promise.resolve(null),
-    hasPerm("media.read")
-      ? listMediaAssetsForWorkspace(session)
-      : Promise.resolve(null),
-    hasPerm("publication.read")
-      ? listPublicationsForWorkspace(session)
-      : Promise.resolve(null),
-  ]);
-  const consentsList =
-    consentsRes && consentsRes.success ? consentsRes.data : [];
-  const mediaList = mediaRes && mediaRes.success ? mediaRes.data : [];
-  const publicationsList =
-    publishingRes && publishingRes.success ? publishingRes.data : [];
-
-  const unreviewedMediaCount = mediaList.filter(
-    (m) => !m.privacyReviewed
-  ).length;
-  const revokedOrDeniedConsentCount = consentsList.filter(
-    (c) =>
-      c.photoVideoConsent === "REVOKED" ||
-      c.personalDataConsent === "REVOKED"
-  ).length;
-  const publicationsAwaitingPublishCount = publicationsList.filter(
-    (p) =>
-      p.status === "DRAFT" ||
-      p.status === "PRIVACY_REVIEW" ||
-      p.status === "APPROVED"
-  ).length;
 
   // 6. Build Role-Aware "Perlu perhatian" (Needs Attention) Items
   const rawAttentionItems: DashboardAttentionItemDTO[] = [];
@@ -724,16 +705,10 @@ export async function buildContextualDashboardViewModel(
   const canViewAuditLog = hasPerm("audit.read");
   let activityItems: DashboardActivityEntryDTO[] = [];
 
-  if (canViewAuditLog) {
-    const auditRes = await listAuditLogsForWorkspace(session, {
-      page: 1,
-      pageSize: 8,
-    });
-    if (auditRes.success) {
-      activityItems = auditRes.data.items
-        .map((item) => mapPrivacySafeActivityEntry(item, now))
-        .slice(0, 6);
-    }
+  if (canViewAuditLog && auditRes && auditRes.success) {
+    activityItems = auditRes.data.items
+      .map((item) => mapPrivacySafeActivityEntry(item, now))
+      .slice(0, 6);
   }
 
   if (activityItems.length === 0) {

@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import type { SessionUser } from "@/server/auth/session";
 import { fail, ok, type ActionResult } from "@/server/contracts/result";
 import { getHumanErrorMessage } from "@/lib/messages";
@@ -31,9 +32,26 @@ import {
  * Cross-domain consumers (such as `students.PlacementService`) MUST interact
  * with classes & enrollments ONLY through this service.
  */
+function safeRevalidateClassTag(serviceUnitId: string) {
+  try {
+    revalidateTag(`classes-${serviceUnitId}`, "hours");
+  } catch {
+    // Safe no-op outside Next.js runtime
+  }
+}
+
 export async function getActiveAcademicYear(
   serviceUnitId: string
 ): Promise<AcademicYearDTO | null> {
+  "use cache";
+  if (process.env.__NEXT_USE_CACHE) {
+    try {
+      cacheLife("days");
+      cacheTag(`academic-year-${serviceUnitId}`);
+    } catch {
+      // Safe no-op outside Next.js runtime
+    }
+  }
   return findActiveAcademicYearByUnit(serviceUnitId);
 }
 
@@ -47,6 +65,15 @@ export async function listClassesForServiceUnit(
   serviceUnitId: string,
   academicYearId?: string
 ): Promise<ClassSummaryDTO[]> {
+  "use cache";
+  if (process.env.__NEXT_USE_CACHE) {
+    try {
+      cacheLife("hours");
+      cacheTag(`classes-${serviceUnitId}`);
+    } catch {
+      // Safe no-op outside Next.js runtime
+    }
+  }
   return findClassesByUnit(serviceUnitId, academicYearId);
 }
 
@@ -128,6 +155,7 @@ export async function enrollStudentInClass(params: {
   });
 
   const updatedCount = await countActiveEnrollmentsByClassId(classRow.id);
+  safeRevalidateClassTag(classRow.serviceUnitId);
 
   return ok({
     enrollmentId: enrolled.id,
@@ -155,6 +183,7 @@ export async function createAcademicClass(
   if (!authz.success) return authz;
 
   const created = await insertClass(parsed.data, user?.id ?? null);
+  safeRevalidateClassTag(parsed.data.serviceUnitId);
   return ok({ id: created.id, name: created.name });
 }
 
@@ -168,6 +197,15 @@ export async function resolveTeacherForActor(
 export async function listTeachersForServiceUnit(
   serviceUnitId: string
 ): Promise<Array<{ id: string; userId: string | null; name: string }>> {
+  "use cache";
+  if (process.env.__NEXT_USE_CACHE) {
+    try {
+      cacheLife("hours");
+      cacheTag(`teachers-${serviceUnitId}`);
+    } catch {
+      // Safe no-op outside Next.js runtime
+    }
+  }
   return findTeachersByUnit(serviceUnitId);
 }
 

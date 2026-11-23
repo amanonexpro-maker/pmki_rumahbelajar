@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { mediaAssets } from "@/db/schema";
 import type { MediaCategoryCode } from "../types/media-types";
@@ -136,5 +136,22 @@ export async function updateMediaAssetPrivacyStatus(params: {
     .where(eq(mediaAssets.id, params.mediaId))
     .returning();
   return updated ?? null;
+}
+
+export async function countUnreviewedMediaByUnitIds(
+  serviceUnitIds: string[]
+): Promise<number> {
+  if (serviceUnitIds.length === 0) return 0;
+  const [row] = await db
+    .select({ total: count() })
+    .from(mediaAssets)
+    .where(
+      and(
+        inArray(mediaAssets.serviceUnitId, serviceUnitIds),
+        eq(mediaAssets.privacyReviewed, false),
+        isNull(mediaAssets.archivedAt)
+      )
+    );
+  return Number(row?.total ?? 0);
 }
 

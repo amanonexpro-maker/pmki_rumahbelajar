@@ -20,6 +20,11 @@ export async function createPublicationDraftAction(
   const result = await createPublicationDraft(session, payload);
   if (result.success) {
     revalidatePath("/workspace/publishing");
+    revalidatePath("/");
+    revalidatePath("/kabar");
+    if (result.data.slug) {
+      revalidatePath(`/kabar/${result.data.slug}`);
+    }
   }
   return result;
 }
@@ -32,6 +37,7 @@ export async function transitionPublicationStatusAction(
     previousStatus: PublicationStatus;
     newStatus: PublicationStatus;
     publishedAt: string | null;
+    slug?: string;
   }>
 > {
   const session = await getCurrentSession();
@@ -39,6 +45,10 @@ export async function transitionPublicationStatusAction(
   if (result.success) {
     revalidatePath("/workspace/publishing");
     revalidatePath("/");
+    revalidatePath("/kabar");
+    if (result.data.slug) {
+      revalidatePath(`/kabar/${result.data.slug}`);
+    }
   }
   return result;
 }

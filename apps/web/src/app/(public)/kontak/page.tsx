@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { connection } from "next/server";
 import { UNIT } from "@/config/site";
 import {
   KontakActionCenter,
@@ -30,8 +29,6 @@ interface PublicContactPageProps {
 export default async function PublicContactPage({
   searchParams,
 }: PublicContactPageProps) {
-  await connection();
-
   const resolvedParams = searchParams ? await searchParams : undefined;
   const initialTab: KontakTabId =
     resolvedParams?.tab === "siswa"

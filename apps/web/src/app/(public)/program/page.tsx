@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { connection } from "next/server";
+import { cacheLife } from "next/cache";
 import { ICON_MAP } from "@/config/icons";
 import { ADDRESS, HOURS, MAP_QUERY } from "@/config/site";
 import {
@@ -9,8 +9,6 @@ import {
   PublicNavbar,
   VolunteerGrid,
 } from "@/features/public";
-
-export const instant = false;
 
 export const metadata: Metadata = {
   title: "Program & Jadwal Belajar | Rumah Belajar Griya Asih Lawang",
@@ -27,7 +25,8 @@ export const metadata: Metadata = {
  * 4. Pengajar Relawan: Avatar grid 13 relawan dengan inisial circle elegan.
  */
 export default async function PublicProgramPage() {
-  await connection();
+  "use cache";
+  cacheLife("hours");
   const data = await getPublicPortalData();
 
   // Defensive anti-Kamis filter (memastikan DOM publik bebas dari jadwal Kamis)

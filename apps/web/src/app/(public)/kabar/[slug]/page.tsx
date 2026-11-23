@@ -2,18 +2,24 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
+import { cacheLife } from "next/cache";
 import { ArrowLeft, Calendar, MapPin, Share2, ShieldCheck, User } from "lucide-react";
 import { ICON_MAP } from "@/config/icons";
 import { formatToIndonesianStandard } from "@/utils/date-formatter";
 import {
+  CANONICAL_AUTHENTIC_ALBUMS,
+  CANONICAL_AUTHENTIC_PUBLICATIONS,
   GalleryAlbumGrid,
   getPublicArticleDetail,
   PublicNavbar,
   type PublicContent,
 } from "@/features/public";
 
-export const instant = false;
+export function generateStaticParams() {
+  const newsSlugs = CANONICAL_AUTHENTIC_PUBLICATIONS.map((p) => ({ slug: p.slug }));
+  const albumSlugs = CANONICAL_AUTHENTIC_ALBUMS.map((a) => ({ slug: a.slug }));
+  return [...newsSlugs, ...albumSlugs];
+}
 
 interface PublicKabarDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -100,11 +106,9 @@ export async function generateMetadata({
  * 2. 'gallery_album': Merender layout galeri dokumentasi (Breadcrumb -> Header Narasi -> Grid Foto Responsif -> Enhanced Lightbox -> Share).
  * Sesuai Design Identity §7 (Narrative Flow), §9 (Visual Restraint), UI-UX §15, §30.
  */
-export default async function PublicKabarDetailPage({
-  params,
-}: PublicKabarDetailPageProps) {
-  await connection();
-  const { slug } = await params;
+async function KabarDetailContent({ slug }: { slug: string }) {
+  "use cache";
+  cacheLife("hours");
   const content = await getPublicArticleDetail(slug);
 
   if (!content) {
@@ -380,4 +384,11 @@ export default async function PublicKabarDetailPage({
       </main>
     </div>
   );
+}
+
+export default async function PublicKabarDetailPage({
+  params,
+}: PublicKabarDetailPageProps) {
+  const { slug } = await params;
+  return <KabarDetailContent slug={slug} />;
 }

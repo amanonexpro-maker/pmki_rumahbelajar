@@ -30,6 +30,9 @@ export async function confirmMediaUploadAction(
   const result = await confirmMediaUpload(session, payload);
   if (result.success) {
     revalidatePath("/workspace/media");
+    revalidatePath("/workspace/publishing");
+    revalidatePath("/");
+    revalidatePath("/kabar");
   }
   return result;
 }
@@ -49,6 +52,7 @@ export async function reviewMediaAssetPrivacyAction(
     revalidatePath("/workspace/media");
     revalidatePath("/workspace/publishing");
     revalidatePath("/");
+    revalidatePath("/kabar");
   }
   return result;
 }

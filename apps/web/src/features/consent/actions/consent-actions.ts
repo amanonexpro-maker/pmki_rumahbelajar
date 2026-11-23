@@ -27,6 +27,8 @@ export async function updateStudentConsentAction(
     revalidatePath("/workspace/media");
     revalidatePath("/workspace/publishing");
     revalidatePath(`/workspace/students/${result.data.studentId}`);
+    revalidatePath("/");
+    revalidatePath("/kabar");
   }
   return result;
 }

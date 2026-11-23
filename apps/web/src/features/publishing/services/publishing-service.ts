@@ -172,6 +172,7 @@ export async function transitionPublicationStatus(
     previousStatus: PublicationStatus;
     newStatus: PublicationStatus;
     publishedAt: string | null;
+    slug?: string;
   }>
 > {
   const parsed = transitionPublicationStatusSchema.safeParse(rawInput);
@@ -313,6 +314,7 @@ export async function transitionPublicationStatus(
     previousStatus: currentStatus,
     newStatus: updated.status as PublicationStatus,
     publishedAt: updated.publishedAt ? updated.publishedAt.toISOString() : null,
+    slug: post.slug,
   });
 }
 

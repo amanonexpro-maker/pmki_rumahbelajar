@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
+import { cacheLife } from "next/cache";
 import { HOURS } from "@/config/site";
 import {
   getPublicPortalData,
   PublicCuratedHome,
   PublicNavbar,
 } from "@/features/public";
-
-export const instant = false;
 
 export const metadata: Metadata = {
   title:
@@ -52,7 +50,8 @@ export const metadata: Metadata = {
 };
 
 export default async function PublicHomePage() {
-  await connection();
+  "use cache";
+  cacheLife("hours");
   const data = await getPublicPortalData();
 
   return (

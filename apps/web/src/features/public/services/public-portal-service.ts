@@ -556,9 +556,13 @@ export async function getPublicArticleDetail(
     return canonicalAlbum;
   }
 
-  // 2. Query database publikasi
+  // 2. Query database publikasi (dengan defensive timeout untuk keamanan prerender static build)
   try {
-    const rawPost = await getPublishedPublicationBySlug(slug).catch(() => null);
+    const timeoutMs = process.env.VITEST ? 15000 : 1500;
+    const rawPost = await Promise.race([
+      getPublishedPublicationBySlug(slug),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+    ]).catch(() => null);
     if (rawPost) {
       const isGalleryCategory =
         rawPost.category.toUpperCase() === "GALERI" ||
@@ -671,12 +675,22 @@ export async function getPublicPortalData(): Promise<PublicPortalDataDTO> {
   let rawPublications: PublicationDTO[] = [];
 
   try {
-    const pilotScope = await getDefaultPilotServiceUnit().catch(() => null);
+    const timeoutMs = process.env.VITEST ? 15000 : 1500;
+    const pilotScope = await Promise.race([
+      getDefaultPilotServiceUnit(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+    ]).catch(() => null);
     const serviceUnitId = pilotScope?.serviceUnitId;
 
     const [galleryRes, pubRes] = await Promise.allSettled([
-      listPublicGalleryMedia(serviceUnitId),
-      listPublishedContent(serviceUnitId),
+      Promise.race([
+        listPublicGalleryMedia(serviceUnitId),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs)),
+      ]),
+      Promise.race([
+        listPublishedContent(serviceUnitId),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs)),
+      ]),
     ]);
 
     if (galleryRes.status === "fulfilled") {

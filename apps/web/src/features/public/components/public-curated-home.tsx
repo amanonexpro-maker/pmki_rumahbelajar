@@ -208,6 +208,7 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
                       alt={primaryArticle.title}
                       fill
                       sizes="80px"
+                      priority
                       className="object-cover group-hover:scale-105 transition-transform duration-200"
                     />
                   </div>

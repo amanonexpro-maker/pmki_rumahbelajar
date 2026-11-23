@@ -3,6 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { formatToIndonesianStandard } from "@/utils/date-formatter";
 import { deduplicateFeedItems } from "../utils/feed-deduplicator";
@@ -68,8 +69,26 @@ export function KabarFeedView({
   galleryItems = [],
   initialTab = "semua",
 }: KabarFeedViewProps) {
-  const [activeTab, setActiveTab] = React.useState<KabarTabFilter>(initialTab);
+  const searchParams = useSearchParams();
+  const queryTab = searchParams ? (searchParams.get("tab") as KabarTabFilter | null) : null;
+  const resolvedTab: KabarTabFilter =
+    queryTab === "galeri" || queryTab === "berita" || queryTab === "semua"
+      ? queryTab
+      : initialTab;
+
+  const [activeTab, setActiveTab] = React.useState<KabarTabFilter>(resolvedTab);
   const [displayLimit, setDisplayLimit] = React.useState(INITIAL_DISPLAY_LIMIT);
+
+  React.useEffect(() => {
+    if (
+      queryTab &&
+      (queryTab === "galeri" || queryTab === "berita" || queryTab === "semua") &&
+      queryTab !== activeTab
+    ) {
+      setActiveTab(queryTab);
+      setDisplayLimit(INITIAL_DISPLAY_LIMIT);
+    }
+  }, [queryTab, activeTab]);
 
   // Transformasi data real ke model feed hybrid dengan penjaminan tanggal absolut Indonesia
   const allHybridItems = React.useMemo<HybridFeedItem[]>(() => {
@@ -173,6 +192,15 @@ export function KabarFeedView({
                 onClick={() => {
                   setActiveTab(tab.id);
                   setDisplayLimit(INITIAL_DISPLAY_LIMIT);
+                  if (typeof window !== "undefined") {
+                    const url = new URL(window.location.href);
+                    if (tab.id === "semua") {
+                      url.searchParams.delete("tab");
+                    } else {
+                      url.searchParams.set("tab", tab.id);
+                    }
+                    window.history.replaceState(null, "", url.toString());
+                  }
                 }}
                 className={cn(
                   "min-h-11 rounded-pill px-4 py-2 text-xs sm:text-sm font-medium transition-colors duration-200 focus-ring shrink-0 cursor-pointer",

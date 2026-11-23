@@ -122,6 +122,7 @@ export interface GalleryAlbumContent {
   categoryLabel: string;
   coverImage?: string;
   photos: GalleryPhoto[];
+  isDegraded?: boolean;
 }
 
 export type PublicContent = ArticleContent | GalleryAlbumContent;

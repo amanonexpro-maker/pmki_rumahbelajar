@@ -1,20 +1,38 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { connection } from "next/server";
+import { cacheLife } from "next/cache";
 import { HOURS } from "@/config/site";
 import {
   getPublicPortalData,
   KabarFeedView,
-  type KabarTabFilter,
   PublicNavbar,
 } from "@/features/public";
-
-export const instant = false;
 
 export const metadata: Metadata = {
   title: "Kabar Griya Asih | Rumah Belajar Griya Asih Lawang",
   description:
     "Kabar terkini seputar kegiatan bimbingan belajar, kisah kemajuan anak, dan dokumentasi komunitas Rumah Belajar Griya Asih di Lawang.",
 };
+
+function KabarFeedSkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="min-h-[500px] rounded-card bg-surface-subtle border border-border-subtle animate-pulse p-6 space-y-6"
+    >
+      <div className="flex gap-2">
+        <div className="h-10 w-24 bg-border rounded-pill" />
+        <div className="h-10 w-24 bg-border rounded-pill" />
+        <div className="h-10 w-24 bg-border rounded-pill" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-64 bg-surface rounded-card border border-border" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const UPCOMING_EVENTS = [
   {
@@ -40,29 +58,18 @@ const UPCOMING_EVENTS = [
   },
 ];
 
-interface PublicKabarPageProps {
-  searchParams?: Promise<{ tab?: string }>;
-}
-
 /**
- * PublicKabarPage (Fase 14 Step 7: Feed Hybrid Kabar & Jurnal Komunitas).
- * Server Component yang menyajikan:
+ * PublicKabarPage (Fase 14 Step 7 & Fase 16 Step 3.2 R3).
+ * Server Component dengan modern Cache Components (ISR 1h):
  * 1. Header Editorial: Judul sans-serif, subjudul komunitas, tanpa tombol CTA.
- * 2. Segmented Control & Feed Hybrid: Menyajikan berita & galeri dengan data nyata ber-consent.
+ * 2. Segmented Control & Feed Hybrid: Client-side URL query tab terisolasi dalam Suspense boundary.
  * 3. Lightbox Album: Interaksi modal imersif untuk melihat dokumentasi foto.
  * 4. Agenda Mendatang Widget: Timeline vertikal sederhana tanggal penting kegiatan belajar.
  */
-export default async function PublicKabarPage({ searchParams }: PublicKabarPageProps) {
-  await connection();
+export default async function PublicKabarPage() {
+  "use cache";
+  cacheLife("hours");
   const data = await getPublicPortalData();
-
-  const resolvedParams = searchParams ? await searchParams : undefined;
-  const initialTab: KabarTabFilter =
-    resolvedParams?.tab === "galeri"
-      ? "galeri"
-      : resolvedParams?.tab === "berita"
-        ? "berita"
-        : "semua";
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
@@ -81,12 +88,12 @@ export default async function PublicKabarPage({ searchParams }: PublicKabarPageP
           </div>
 
           {/* 2 & 3 & 4. Filter Segmented Control, Feed Hybrid Kartu, & Lightbox Album */}
-          <KabarFeedView
-            key={initialTab}
-            newsItems={data.newsItems}
-            galleryItems={data.galleryItems}
-            initialTab={initialTab}
-          />
+          <Suspense fallback={<KabarFeedSkeleton />}>
+            <KabarFeedView
+              newsItems={data.newsItems}
+              galleryItems={data.galleryItems}
+            />
+          </Suspense>
 
           {/* 5. Agenda Mendatang Widget */}
           <section

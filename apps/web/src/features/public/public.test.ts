@@ -533,5 +533,34 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       expect(item.title).not.toMatch(/tanpa consent|izin dicabut|belum ditinjau/i);
     }
   });
+
+  it("enforces R2 Gallery Fallback Accuracy: NEVER substitutes photos from album X for album Y on timeout/failure", async () => {
+    const { getPublicArticleDetail, CANONICAL_AUTHENTIC_ALBUMS } = await import("./index");
+
+    // 1. For a canonical album (e.g. 'suasana-belajar-sabtu-griya-asih'), must match THAT album's photos
+    const canonicalSlug = "suasana-belajar-sabtu-griya-asih";
+    const canonicalDetail = await getPublicArticleDetail(canonicalSlug);
+    expect(canonicalDetail).not.toBeNull();
+    expect(canonicalDetail?.type).toBe("gallery_album");
+    if (canonicalDetail?.type === "gallery_album") {
+      expect(canonicalDetail.slug).toBe(canonicalSlug);
+      // Photos must match the canonical album's own photos, not an arbitrary fallback
+      const expectedAlbum = CANONICAL_AUTHENTIC_ALBUMS.find((a) => a.slug === canonicalSlug);
+      expect(canonicalDetail.photos).toEqual(expectedAlbum?.photos);
+      expect(canonicalDetail.isDegraded).toBeFalsy();
+    }
+
+    // 2. For a non-existent / non-canonical album slug, must return null or EmptyState with isDegraded: true
+    // NEVER returning photos from CANONICAL_AUTHENTIC_ALBUMS[0]
+    const nonCanonicalSlug = "dokumentasi-kegiatan-luar-kota-99999";
+    const nonCanonicalDetail = await getPublicArticleDetail(nonCanonicalSlug);
+    if (nonCanonicalDetail && nonCanonicalDetail.type === "gallery_album") {
+      expect(nonCanonicalDetail.photos).toHaveLength(0);
+      expect(nonCanonicalDetail.isDegraded).toBe(true);
+      expect(nonCanonicalDetail.photos).not.toEqual(CANONICAL_AUTHENTIC_ALBUMS[0].photos);
+    } else {
+      expect(nonCanonicalDetail).toBeNull();
+    }
+  });
 });
 

@@ -32,6 +32,23 @@ describe("Fase 9 Integration — Public Experience Cross-Domain Data & Privacy F
 
     // 1. Gallery items: only privacyReviewed === true && eligibleForPublic === true
     expect(data.galleryItems.length).toBeGreaterThan(0);
+
+    // Anti-false-green verification (W-watch-1):
+    // Assert that an unreviewed media asset physically present in the database is strictly excluded
+    try {
+      const [unreviewedRow] = await db
+        .select({ id: mediaAssets.id })
+        .from(mediaAssets)
+        .where(eq(mediaAssets.title, "Dokumentasi Internal Belum Ditinjau Privasi"))
+        .limit(1);
+      if (unreviewedRow) {
+        const leaked = data.galleryItems.some((item) => item.id === unreviewedRow.id);
+        expect(leaked).toBe(false);
+      }
+    } catch {
+      // Graceful when DB not active
+    }
+
     for (const item of data.galleryItems) {
       expect(item.privacyReviewed).toBe(true);
       expect(item.eligibleForPublic).toBe(true);

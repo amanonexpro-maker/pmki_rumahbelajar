@@ -595,15 +595,32 @@ export async function getPublicArticleDetail(
       if (isGalleryCategory) {
         // Query media assets dengan SQL Consent Gate ketat
         const eligibleMedia = await listPublicGalleryMedia(rawPost.serviceUnitId).catch((err) => {
-          console.warn(`[getPublicArticleDetail] Gallery media query failed for unit "${rawPost.serviceUnitId}":`, err);
+          console.warn(`[getPublicArticleDetail] FAIL-LOUD: Gallery media query failed for unit "${rawPost.serviceUnitId}" on album slug "${rawPost.slug}":`, err);
           return [];
         });
-        const photos: GalleryPhoto[] = eligibleMedia
+        const mappedPhotos: GalleryPhoto[] = eligibleMedia
           .filter((m) => m.privacyReviewed === true && m.eligibleForPublic === true && Boolean(m.signedReadUrl))
           .map((m) => ({
             url: m.signedReadUrl ?? "/images/gallery/griya_asih_4.jpg",
             caption: m.description ?? m.title,
           }));
+
+        // R2 FIX (Content Accuracy): NEVER substitute photos from an arbitrary album!
+        let finalPhotos: GalleryPhoto[] = mappedPhotos;
+        let isDegraded = false;
+
+        if (finalPhotos.length === 0) {
+          // Rule 3a: If slug matches a canonical album, use THAT canonical album's photos
+          const matchedCanonical = CANONICAL_AUTHENTIC_ALBUMS.find((a) => a.slug === rawPost.slug);
+          if (matchedCanonical && matchedCanonical.photos.length > 0) {
+            finalPhotos = matchedCanonical.photos;
+          } else {
+            // Rule 3b: Non-canonical album with empty/failed media query: Return photos: [] + isDegraded: true
+            finalPhotos = [];
+            isDegraded = true;
+            console.warn(`[getPublicArticleDetail] FAIL-LOUD: Album "${rawPost.slug}" has 0 eligible photos from database query and no canonical slug match. Rendering degraded empty state.`);
+          }
+        }
 
         return {
           type: "gallery_album",
@@ -613,8 +630,9 @@ export async function getPublicArticleDetail(
           description: rawPost.excerpt ?? rawPost.content,
           author: "Tim Pelayanan Griya Asih",
           categoryLabel: PUBLICATION_CATEGORY_LABELS[rawPost.category] ?? "Dokumentasi Kegiatan",
-          coverImage: rawPost.coverSignedUrl ?? photos[0]?.url,
-          photos: photos.length > 0 ? photos : (CANONICAL_AUTHENTIC_ALBUMS[0]?.photos ?? []),
+          coverImage: rawPost.coverSignedUrl ?? finalPhotos[0]?.url,
+          photos: finalPhotos,
+          isDegraded,
         };
       }
 

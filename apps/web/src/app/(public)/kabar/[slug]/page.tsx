@@ -203,7 +203,11 @@ async function KabarDetailContent({ slug }: { slug: string }) {
               <h2 id="album-grid-heading" className="sr-only">
                 Koleksi Foto {content.title}
               </h2>
-              <GalleryAlbumGrid photos={content.photos} albumTitle={content.title} />
+              <GalleryAlbumGrid
+                photos={content.photos}
+                albumTitle={content.title}
+                isDegraded={content.isDegraded}
+              />
             </section>
 
             {/* 4. Privacy Notice */}

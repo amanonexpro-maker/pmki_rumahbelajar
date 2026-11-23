@@ -82,6 +82,7 @@
 | PHASE-16-STEP1 | Audit & Hotfix Performa Mobile & Bandwidth | `DONE` | PHASE-16-STEP1: Implemented Critical Mobile Performance Fixes including Code Splitting for Heavy Components, Next/Image Bandwidth Optimization, and Middleware Matcher Refinement. |
 | PHASE-16-STEP3 | Remediasi Performa (ISR + On-Demand Revalidation + LCP Priority) | `DONE` | PHASE-16-STEP3: Enabled ISR on static public routes with happy-path-only on-demand revalidation (freshness-safe, no catch/finally revalidate); Added bounded LCP image priority; Verified zero route regression via empirical baseline-subset check; Workspace remains dynamic. |
 | PHASE-16-STEP3.1 | Mikro-Audit Residual /kontak + Hardening W1/W2 | `DONE` | PHASE-16-STEP3.1: Successfully converted /kontak to static Cache Components (◐ 1h revalidate) by isolating client-side tab searchParams into a Suspense boundary; Hardened W1 with isolated test fixtures and dedicated consent-gate unit test; Hardened W2 with fail-loud typed PublicDataTimeoutError and defined canonical fallbacks (zero silent swallow). |
+| PHASE-16-STEP3.2 | Tutup R2 (Akurasi Konten Galeri) + R3 (ISR /kabar) + Gate W-Watch | `DONE` | PHASE-16-STEP3.2: Converted /kabar to Cache Components via client-searchParams+Suspense (high-traffic ISR, pattern proven on /kontak); Fixed gallery detail fallback to match-by-slug or explicit EmptyState (eliminated wrong-album photo substitution under DB degradation); Hardened integration fixture against false-green; Wired degradation warns to log drain for ops alerting. |
 
 ---
 

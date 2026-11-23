@@ -3,6 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { LoginForm } from "@/features/identity";
+import { hasSupabaseAuthCookie } from "@/server/auth/cookie";
+import { sanitizeRedirectUrl } from "@/server/auth/redirect";
 import { getCurrentSession } from "@/server/auth/session";
 
 export const instant = false;
@@ -16,27 +18,16 @@ interface LoginPageProps {
   searchParams?: Promise<{ next?: string | string[] }>;
 }
 
-function sanitizeNextUrl(next?: string | string[]): string {
-  const raw = Array.isArray(next) ? next[0] : next;
-  if (!raw || typeof raw !== "string") return "/workspace";
-  if (!raw.startsWith("/") || raw.startsWith("//")) return "/workspace";
-  if (!raw.startsWith("/workspace")) return "/workspace";
-  return raw;
-}
-
 export default async function LoginPage(props: LoginPageProps) {
   const resolvedSearchParams = props.searchParams ? await props.searchParams : undefined;
-  const redirectTo = sanitizeNextUrl(resolvedSearchParams?.next);
+  const rawNext = Array.isArray(resolvedSearchParams?.next)
+    ? resolvedSearchParams.next[0]
+    : resolvedSearchParams?.next;
+  const redirectTo = sanitizeRedirectUrl(rawNext);
 
   // R4: Bypass getCurrentSession() jika tidak ada cookie autentikasi sama sekali (0 RTT untuk anonim)
   const cookieStore = await cookies();
-  const hasAuthCookie = cookieStore
-    .getAll()
-    .some(
-      (c) =>
-        c.name.startsWith("sb-") &&
-        (c.name.endsWith("-auth-token") || c.name.includes("-auth-token."))
-    );
+  const hasAuthCookie = hasSupabaseAuthCookie(cookieStore.getAll());
 
   if (hasAuthCookie) {
     const session = await getCurrentSession();

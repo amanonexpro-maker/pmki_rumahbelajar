@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Button, Input } from "@/components/ui";
+import { sanitizeRedirectUrl } from "@/server/auth/redirect";
 import {
   loginAction,
   requestPasswordResetAction,
@@ -11,18 +12,12 @@ export interface LoginFormProps {
   redirectTo?: string;
 }
 
-function sanitizeRedirectUrl(url?: string): string {
-  if (!url || typeof url !== "string") return "/workspace";
-  if (!url.startsWith("/") || url.startsWith("//")) return "/workspace";
-  if (!url.startsWith("/workspace")) return "/workspace";
-  return url;
-}
-
 export function LoginForm({ redirectTo = "/workspace" }: LoginFormProps) {
   const [mode, setMode] = React.useState<"login" | "recovery">("login");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [pending, setPending] = React.useState(false);
+  const [redirecting, setRedirecting] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
 
@@ -36,13 +31,18 @@ export function LoginForm({ redirectTo = "/workspace" }: LoginFormProps) {
       const result = await loginAction({ email, password });
       if (!result.success) {
         setErrorMessage(result.error.message);
+        setPending(false);
         return;
       }
+      // W-2: State tombol deliberate sebelum hard-nav (anti double-fire)
+      setRedirecting(true);
       const targetUrl = sanitizeRedirectUrl(redirectTo);
       // Hard navigation menjamin browser commit cookie SEBELUM request berikutnya
       window.location.assign(targetUrl);
-    } finally {
+    } catch {
+      setErrorMessage("Terjadi kendala jaringan saat menghubungi server. Silakan coba lagi.");
       setPending(false);
+      setRedirecting(false);
     }
   }
 
@@ -190,9 +190,13 @@ export function LoginForm({ redirectTo = "/workspace" }: LoginFormProps) {
               type="submit"
               variant="primary"
               className="w-full"
-              disabled={pending}
+              disabled={pending || redirecting}
             >
-              {pending ? "Memeriksa akun..." : "Masuk ke ruang kerja"}
+              {redirecting
+                ? "Mengalihkan ke ruang kerja..."
+                : pending
+                  ? "Memeriksa akun..."
+                  : "Masuk ke ruang kerja"}
             </Button>
           </form>
         ) : (

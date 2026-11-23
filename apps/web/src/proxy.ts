@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { hasSupabaseAuthCookie } from "@/server/auth/cookie";
 
 /**
  * Edge-safe Proxy (Next.js 16 Proxy Architecture, ADR-13 / D-28, 14-Step9 & Hotfix).
@@ -68,13 +69,7 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  const hasAuthCookie = request.cookies
-    .getAll()
-    .some(
-      (c) =>
-        c.name.startsWith("sb-") &&
-        (c.name.endsWith("-auth-token") || c.name.includes("-auth-token."))
-    );
+  const hasAuthCookie = hasSupabaseAuthCookie(request.cookies.getAll());
 
   if (!hasAuthCookie) {
     const loginUrl = request.nextUrl.clone();

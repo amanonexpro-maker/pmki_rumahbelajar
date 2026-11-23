@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { Button, Input } from "@/components/ui";
 import {
   loginAction,
@@ -12,8 +11,14 @@ export interface LoginFormProps {
   redirectTo?: string;
 }
 
+function sanitizeRedirectUrl(url?: string): string {
+  if (!url || typeof url !== "string") return "/workspace";
+  if (!url.startsWith("/") || url.startsWith("//")) return "/workspace";
+  if (!url.startsWith("/workspace")) return "/workspace";
+  return url;
+}
+
 export function LoginForm({ redirectTo = "/workspace" }: LoginFormProps) {
-  const router = useRouter();
   const [mode, setMode] = React.useState<"login" | "recovery">("login");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -33,8 +38,9 @@ export function LoginForm({ redirectTo = "/workspace" }: LoginFormProps) {
         setErrorMessage(result.error.message);
         return;
       }
-      router.push(redirectTo);
-      router.refresh();
+      const targetUrl = sanitizeRedirectUrl(redirectTo);
+      // Hard navigation menjamin browser commit cookie SEBELUM request berikutnya
+      window.location.assign(targetUrl);
     } finally {
       setPending(false);
     }

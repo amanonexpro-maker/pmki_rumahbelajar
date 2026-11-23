@@ -51,7 +51,14 @@ describe("Platform Wiring Verification (ADR-13)", () => {
     expect(middlewareSrc).not.toMatch(/drizzle-orm/);
     expect(middlewareSrc).not.toMatch(/from\s+["']postgres["']/);
     expect(middlewareSrc).not.toMatch(/@\/db\/client/);
-    expect(middlewareSrc).toMatch(/supabase\.auth\.getUser\(\)/);
+    expect(middlewareSrc).toMatch(/hasAuthCookie/);
+
+    // Verify session.ts in Node runtime enforces getUser()
+    const sessionSrc = readFileSync(
+      path.resolve(process.cwd(), "src/server/auth/session.ts"),
+      "utf-8"
+    );
+    expect(sessionSrc).toMatch(/supabase\.auth\.getUser\(\)/);
   });
 });
 

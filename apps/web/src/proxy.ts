@@ -1,11 +1,11 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Edge-safe Proxy (Next.js 16 Proxy Architecture, ADR-13 / D-28, 14-Step9 & Hotfix).
  * 1. Explicit 308 Permanent Redirects: /news & /gallery dialihkan ke /kabar?tab=...
  * 2. Splash Visibility: HANYA dievaluasi pada root '/', tidak mengganggu rute publik lain.
- * 3. Supabase Auth: HANYA dievaluasi dan di-refresh pada rute /workspace.
+ * 3. Supabase Auth Coarse Gate: HANYA mengecek keberadaan cookie autentikasi pada rute /workspace
+ *    tanpa network RTT ke Supabase (validasi kriptografis & RBAC ditegakkan 100% oleh session.ts di Node runtime).
  * FORBIDDEN: importing Drizzle, postgres-js, atau domain repositories di sini.
  */
 export async function proxy(request: NextRequest) {
@@ -44,7 +44,7 @@ export async function proxy(request: NextRequest) {
     requestHeaders.set("x-pmki-splash", "0");
   }
 
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
@@ -60,45 +60,23 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // 3. Supabase Auth Session Refresh & Route Gating (HANYA untuk /workspace routes)
+  // 3. Supabase Auth Coarse Route Gating (HANYA untuk /workspace routes)
+  // Per ADR-13 D-28: Proxy bertindak sebagai coarse gate (cek keberadaan cookie, 0x network RTT ke Supabase).
+  // Validasi kriptografis token dan resolusi RBAC ditegakkan secara otoritatif oleh session.ts di Node runtime.
   const isWorkspaceRoute = pathname.startsWith("/workspace");
   if (!isWorkspaceRoute) {
     return response;
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some(
+      (c) =>
+        c.name.startsWith("sb-") &&
+        (c.name.endsWith("-auth-token") || c.name.includes("-auth-token."))
+    );
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return response;
-  }
-
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value)
-        );
-        response = NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options)
-        );
-      },
-    },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!hasAuthCookie) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/auth/login";
     loginUrl.searchParams.set("next", pathname);

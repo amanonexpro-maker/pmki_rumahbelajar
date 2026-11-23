@@ -207,6 +207,7 @@ async function KabarDetailContent({ slug }: { slug: string }) {
                 photos={content.photos}
                 albumTitle={content.title}
                 isDegraded={content.isDegraded}
+                isEmptyLegitimate={content.isEmptyLegitimate}
               />
             </section>
 

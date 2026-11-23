@@ -26,3 +26,4 @@ export function hasSupabaseAuthCookie(
   }
   return false;
 }
+

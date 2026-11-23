@@ -593,8 +593,10 @@ export async function getPublicArticleDetail(
         rawPost.category.toUpperCase() === "DOKUMENTASI";
 
       if (isGalleryCategory) {
+        let queryFailed = false;
         // Query media assets dengan SQL Consent Gate ketat
         const eligibleMedia = await listPublicGalleryMedia(rawPost.serviceUnitId).catch((err) => {
+          queryFailed = true;
           console.warn(`[getPublicArticleDetail] FAIL-LOUD: Gallery media query failed for unit "${rawPost.serviceUnitId}" on album slug "${rawPost.slug}":`, err);
           return [];
         });
@@ -605,9 +607,10 @@ export async function getPublicArticleDetail(
             caption: m.description ?? m.title,
           }));
 
-        // R2 FIX (Content Accuracy): NEVER substitute photos from an arbitrary album!
+        // R2 & W-WATCH-3: Bedakan degradasi (throw/timeout) vs kosong-sah (query sukses tapi 0 foto lolos consent)
         let finalPhotos: GalleryPhoto[] = mappedPhotos;
         let isDegraded = false;
+        let isEmptyLegitimate = false;
 
         if (finalPhotos.length === 0) {
           // Rule 3a: If slug matches a canonical album, use THAT canonical album's photos
@@ -615,10 +618,15 @@ export async function getPublicArticleDetail(
           if (matchedCanonical && matchedCanonical.photos.length > 0) {
             finalPhotos = matchedCanonical.photos;
           } else {
-            // Rule 3b: Non-canonical album with empty/failed media query: Return photos: [] + isDegraded: true
+            // Rule 3b: Non-canonical album with 0 photos:
             finalPhotos = [];
-            isDegraded = true;
-            console.warn(`[getPublicArticleDetail] FAIL-LOUD: Album "${rawPost.slug}" has 0 eligible photos from database query and no canonical slug match. Rendering degraded empty state.`);
+            if (queryFailed) {
+              isDegraded = true;
+              console.warn(`[getPublicArticleDetail] FAIL-LOUD: Album "${rawPost.slug}" media query failed/timed out. Rendering degraded empty state.`);
+            } else {
+              isEmptyLegitimate = true;
+              // Kosong sah: TANPA warn degradasi karena query sukses dan media memang belum ada / belum lolos review
+            }
           }
         }
 
@@ -633,6 +641,7 @@ export async function getPublicArticleDetail(
           coverImage: rawPost.coverSignedUrl ?? finalPhotos[0]?.url,
           photos: finalPhotos,
           isDegraded,
+          isEmptyLegitimate,
         };
       }
 

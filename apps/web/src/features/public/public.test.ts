@@ -562,5 +562,35 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       expect(nonCanonicalDetail).toBeNull();
     }
   });
+
+  it("enforces W-WATCH-3: distinguishes legitimate-empty (query success with 0 eligible photos) vs degradation (query throw/timeout) in empty-state rendering", async () => {
+    const { GalleryAlbumGrid } = await import("./index");
+    const React = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+
+    // 1. Mock legitimate-empty: query succeeded, but 0 photos eligible (isEmptyLegitimate: true, isDegraded: false)
+    const legitEmptyHtml = renderToStaticMarkup(
+      React.createElement(GalleryAlbumGrid, {
+        photos: [],
+        albumTitle: "Album Tanpa Foto Publik",
+        isDegraded: false,
+        isEmptyLegitimate: true,
+      })
+    );
+    expect(legitEmptyHtml).toContain("Belum ada dokumentasi publik untuk album ini.");
+    expect(legitEmptyHtml).not.toContain("kendala");
+
+    // 2. Mock degraded: query failed/timed out (isDegraded: true, isEmptyLegitimate: false)
+    const degradedHtml = renderToStaticMarkup(
+      React.createElement(GalleryAlbumGrid, {
+        photos: [],
+        albumTitle: "Album Terganggu",
+        isDegraded: true,
+        isEmptyLegitimate: false,
+      })
+    );
+    expect(degradedHtml).toContain("Terjadi kendala memuat dokumentasi kegiatan");
+    expect(degradedHtml).not.toContain("Belum ada dokumentasi publik untuk album ini.");
+  });
 });
 

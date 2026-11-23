@@ -123,6 +123,7 @@ export interface GalleryAlbumContent {
   coverImage?: string;
   photos: GalleryPhoto[];
   isDegraded?: boolean;
+  isEmptyLegitimate?: boolean;
 }
 
 export type PublicContent = ArticleContent | GalleryAlbumContent;

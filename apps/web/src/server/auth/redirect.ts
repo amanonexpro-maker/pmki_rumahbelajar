@@ -108,3 +108,4 @@ export function sanitizeRedirectUrl(url?: unknown): string {
 
   return "/workspace";
 }
+

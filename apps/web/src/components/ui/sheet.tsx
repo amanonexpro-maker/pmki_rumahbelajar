@@ -92,7 +92,7 @@ export function SheetHeader({
   return (
     <div
       className={cn(
-        "px-6 py-4 pr-14 border-b border-border space-y-1",
+        "px-6 py-4 pr-14 border-b border-border space-y-1 shrink-0",
         className
       )}
       {...props}
@@ -129,7 +129,10 @@ export function SheetBody({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("flex-1 overflow-y-auto p-6", className)} {...props} />
+    <div
+      className={cn("flex-1 overflow-y-auto overscroll-contain p-6", className)}
+      {...props}
+    />
   );
 }
 
@@ -150,7 +153,7 @@ export function SheetFooter({
   return (
     <div
       className={cn(
-        "px-6 py-4 bg-surface-subtle border-t border-border flex flex-wrap items-center justify-end gap-2.5",
+        "px-6 py-4 bg-surface-subtle border-t border-border flex flex-wrap items-center justify-end gap-2.5 shrink-0",
         shouldApplySafeArea &&
           "bg-surface pb-[max(env(safe-area-inset-bottom,0px),16px)]",
         className

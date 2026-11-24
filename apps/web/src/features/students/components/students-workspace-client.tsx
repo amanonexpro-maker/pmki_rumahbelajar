@@ -535,13 +535,14 @@ export function StudentsWorkspaceClient({
             mengaktifkan status belajar peserta didik.
           </>
         }
-        footer={
+        footer={(_formId, isMobile) => (
           <>
             <Button
               type="button"
               variant="ghost"
               onClick={() => setQuickPlaceStudent(null)}
               disabled={placePending}
+              fullWidth={isMobile}
             >
               Batal
             </Button>
@@ -551,11 +552,12 @@ export function StudentsWorkspaceClient({
               onClick={handleConfirmQuickPlacement}
               disabled={placePending || !selectedClassId}
               leftIcon={<Icon icon={UserCheck} size="sm" />}
+              fullWidth={isMobile}
             >
               {placePending ? "Menyimpan..." : "Tempatkan ke kelas"}
             </Button>
           </>
-        }
+        )}
       >
         <div className="space-y-4">
           {placeError && (
@@ -576,6 +578,7 @@ export function StudentsWorkspaceClient({
             </label>
             <select
               id={quickPlaceClassId}
+              autoFocus
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
               className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"

@@ -215,10 +215,12 @@ interface FormBottomSheetProps {
   title: React.ReactNode;
   /** Disarankan: SheetDescription; bila kosong, jangan render deskripsi kosong. */
   description?: React.ReactNode;
-  /** Satu sumber markup form; dirender di dalam DUA wadah. */
-  children: React.ReactNode;
-  /** Footer (Batal + submit); opsional. */
-  footer?: React.ReactNode;
+  /** Satu sumber markup form; dapat berupa render function `(formId: string) => ReactNode` (R1/R2). */
+  children: React.ReactNode | ((formId: string) => React.ReactNode);
+  /** Footer (Batal + submit); opsional; dapat berupa render function `(formId: string, isMobile: boolean) => ReactNode` (R1/R5). */
+  footer?:
+    | React.ReactNode
+    | ((formId: string, isMobile: boolean) => React.ReactNode);
   /** Kelas tambahan DialogContent desktop (mis. "max-w-2xl"). */
   dialogClassName?: string;
   /** Padding SheetBody; pakai "p-0" untuk konten ber-scroll sendiri (wizard). */
@@ -348,52 +350,341 @@ Aturan: `<form>` lama diekstrak menjadi **satu** variabel JSX; `DialogBody`/`Dia
 ## 4. Log Perubahan (Diisi oleh Eksekutor setelah Coding)
 
 - `apps/web/src/styles/themes.css` : menambahkan `@keyframes sheetSlideBottom` (`translateY(100%)` → `translateY(0)`, opacity 0→1) pada baris 403–413 dan kelas `.animate-sheet-bottom` pada baris 440–443 setelah `.animate-sheet-right` dan sebelum blok reduced-motion. Keyframes left/right tidak disentuh (C4).
-- `apps/web/src/components/ui/sheet.tsx` : memperluas union `SheetSide` menjadi `"left" | "right" | "bottom"` dengan default tetap `"right"`. Memisahkan kelas wadah cabang bottom (`fixed inset-x-0 bottom-0 max-h-[90dvh] w-full border-t rounded-t-card flex flex-col animate-sheet-bottom`) tanpa kelas `inset-y-0` (Task 2). Menambahkan grabber dekoratif (`mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-pill bg-border-strong`) khusus untuk `side === "bottom"` (Task 3). Menambahkan prop `insetBottom?: boolean` (default `true`) di `SheetContentProps` dan mengintegrasikan prop `safeArea?: boolean` pada `SheetFooter` via context/prop untuk menerapkan padding safe-area `pb-[max(env(safe-area-inset-bottom,0px),16px)]` khusus varian bottom (Task 4).
-- `apps/web/src/components/patterns/form-bottom-sheet.tsx` : membuat komponen baru `FormBottomSheet` (`"use client"`) yang merender dua wadah presentational: desktop `<DialogContent className="hidden md:block">` dan mobile `<SheetContent side="bottom" className="md:hidden">` menggunakan satu sumber `children` form tanpa duplikasi logika/state dan tanpa impor `lucide-react` (Task 5).
+- `apps/web/src/components/ui/sheet.tsx` : memperluas union `SheetSide` menjadi `"left" | "right" | "bottom"` dengan default tetap `"right"`. Memisahkan kelas wadah cabang bottom (`fixed inset-x-0 bottom-0 max-h-[90dvh] w-full border-t rounded-t-card flex flex-col animate-sheet-bottom`) tanpa kelas `inset-y-0` (Task 2). Menambahkan grabber dekoratif (`mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-pill bg-border-strong`) khusus untuk `side === "bottom"` (Task 3). Menambahkan prop `insetBottom?: boolean` (default `true`) di `SheetContentProps` dan mengintegrasikan prop `safeArea?: boolean` pada `SheetFooter` via context/prop untuk menerapkan padding safe-area `pb-[max(env(safe-area-inset-bottom,0px),16px)]` khusus varian bottom (Task 4). [Revisi R4]: menambahkan `shrink-0` pada `SheetHeader` dan `SheetFooter`, serta `overscroll-contain` pada `SheetBody`.
+- `apps/web/src/components/patterns/form-bottom-sheet.tsx` : membuat komponen baru `FormBottomSheet` (`"use client"`) yang merender dua wadah presentational: desktop `<DialogContent className="hidden md:block">` dan mobile `<SheetContent side="bottom" className="md:hidden">` menggunakan satu sumber form tanpa duplikasi logika/state dan tanpa impor `lucide-react` (Task 5). [Revisi R1/R2/R5]: memperluas kontrak props dengan render-function `children: ReactNode | ((formId: string) => ReactNode)` dan `footer?: ReactNode | ((formId: string, isMobile: boolean) => ReactNode)`. Menghasilkan `dialogFormId` dan `sheetFormId` via `React.useId()` terpisah per wadah untuk mengeliminasi ID form ganda di DOM dan mengizinkan CTA mobile beralih ke `fullWidth={isMobile}` secara otomatis.
 - `apps/web/src/components/patterns/index.ts` : mengekspor `form-bottom-sheet` secara alfabetis (Task 6).
-- `apps/web/src/features/students/components/student-detail-client.tsx` : memigrasikan 3 dialog form (Verifikasi pendaftaran, Tempatkan ke kelas, Ubah profil) ke `FormBottomSheet`. Seluruh input form dihubungkan dengan id dinamis via `React.useId()` untuk mencegah bentrok DOM multi-wadah (C8/A5). Nilai state, handler, DTO, dan pesan error 100% utuh tanpa perubahan (A3/C6/C7) (Task 7).
-- `apps/web/src/features/students/components/students-workspace-client.tsx` : memigrasikan 2 dialog (Tambah peserta didik dengan `bodyClassName="p-0"` & `dialogClassName="max-w-2xl"`; Tempatkan cepat ke kelas) ke `FormBottomSheet` dengan prefix id dinamis `React.useId()` (Task 8).
-- `apps/web/src/components/layout/layout-shell.test.ts` : memperluas guardrail test menjadi 11 test (6 assert P1 + 5 assert baru P2: `side="left"` di `mobile-navigation.tsx`, default `side="right"` dan `max-h-[90dvh]` tanpa `inset-y-0` di `sheet.tsx`, `animate-sheet-bottom` di `themes.css`, `md:hidden` + `hidden md:block` tanpa `lucide-react` di `form-bottom-sheet.tsx`, dan kedua file students memakai `FormBottomSheet`) (Task 9).
-- `migration/MIGRATION-STATE.md` : mencatat entri `PHASE-19-STEP2-P2` (`DONE`) (Task 11).
+- `apps/web/src/features/students/components/student-detail-client.tsx` : memigrasikan 3 dialog form (Verifikasi pendaftaran, Tempatkan ke kelas, Ubah profil) ke `FormBottomSheet`. [Revisi R1/R2/R3/R5]: mengekstrak ketiga `<form>` menjadi single-source JSX factory functions (`renderVerifyForm`, `renderPlaceForm`, `renderEditForm`) dan footer factory functions (`renderVerifyFooter`, `renderPlaceFooter`, `renderEditFooter`) dengan eliminasi total literal `id="*-dialog-form"`, penambahan `autoFocus` pada elemen interaktif pertama masing-masing form, serta aktivasi CTA `fullWidth={isMobile}` pada sheet mobile.
+- `apps/web/src/features/students/components/students-workspace-client.tsx` : memigrasikan 2 dialog (Tambah peserta didik dengan `bodyClassName="p-0"` & `dialogClassName="max-w-2xl"`; Tempatkan cepat ke kelas) ke `FormBottomSheet` dengan prefix id dinamis `React.useId()`. [Revisi R3/R5]: menambahkan `autoFocus` pada `<select id={quickPlaceClassId}>` dan footer factory function dengan `fullWidth={isMobile}` pada dialog penempatan cepat.
+- `apps/web/src/components/layout/layout-shell.test.ts` : memperluas guardrail test menjadi 11 test (6 assert P1 + 5 assert P2). [Revisi R8]: memperkuat assertion regex bottom variant pada `sheet.tsx` (ekstraksi string kelas bottom nyata untuk verifikasi `inset-x-0`, `animate-sheet-bottom`, `overscroll-contain`, `shrink-0`, serta ketiadaan `inset-y-0` dan `h-full`), serta menambahkan assertion ketiadaan literal `id="*-dialog-form"` dan keberadaan `autoFocus` pada kedua client file students.
+- `apps/web/.agent/rules/executor-gemini.md` : [Revisi R7]: diakui secara eksplisit sebagai artefak aturan internal lokal agen eksekutor (di luar 9 file runtime Bagian 2), tanpa dampak fungsional terhadap build, bundle, atau runtime aplikasi.
+- `migration/MIGRATION-STATE.md` : mencatat pembaruan entri `PHASE-19-STEP2-P2` (Revisi R1–R8 Selesai, siap audit ulang Qwen Max).
 
-**Hasil Verifikasi (Task 1–11):**
+**Catatan Teknis Arsitektur & Utang A11y (R6):**
+- Nested `DialogPrimitive.Root` yang aktif bersamaan pada `FormBottomSheet` (satu di dalam Dialog desktop, satu di dalam Sheet mobile) diterima sebagai technical debt non-blocking (§3.g / R6) karena salah satu wadah selalu berstatus `display: none` (`hidden md:block` vs `md:hidden`), sehingga elemen tidak focusable dan tidak menimbulkan tabrakan interaksi pengguna. Dicatat untuk evaluasi optimasi lanjutan pada P3.
+
+**Hasil Verifikasi Pasca-Revisi R1–R8:**
 1. `npm run typecheck` : 0 error (exit 0).
 2. `npx eslint src/components/ui src/components/patterns src/features/students/components src/components/layout` : 0 error / warning (exit 0).
 3. Vitest suites:
    - `src/components/layout/layout-shell.test.ts` : 11 passed (100%).
    - `src/components/ui/ui-primitives.test.ts` : 2 passed (100%).
    - `src/features/students/students.test.ts` : 5 passed (100%).
-   - `src/components/patterns/patterns-and-pwa.test.ts` : 2 passed (audit token semantik & mobile recomposition tabel lulus; 1 kegagalan manifest `background_color` `#1F6650` vs `#F7F8F4` adalah pra-eksisting baseline).
-4. `npm run build` : sukses (exit 0), 31 static pages generated, rute `/workspace*` dan `/api/sync` tetap `ƒ` (Dynamic), rute publik tetap `◐` (ISR 1h / PPR).
+   - Total vitest suite target: 18/18 passed (100%).
+4. Audit isolasi: bebas dari literal `id="*-dialog-form"`, nol perubahan file C5/C7/DB/Auth/Seed/SoD.
 
 **Bukti Isolasi (git status --porcelain):**
 ```
  M apps/web/TASK.md
  M apps/web/src/components/layout/layout-shell.test.ts
- M apps/web/src/components/patterns/index.ts
+ M apps/web/src/components/patterns/form-bottom-sheet.tsx
  M apps/web/src/components/ui/sheet.tsx
  M apps/web/src/features/students/components/student-detail-client.tsx
  M apps/web/src/features/students/components/students-workspace-client.tsx
- M apps/web/src/styles/themes.css
  M migration/MIGRATION-STATE.md
-?? apps/web/src/components/patterns/form-bottom-sheet.tsx
 ```
-*Tepat 9 file Bagian 2 (+ .agent/rules lokal bila ada). Nol file C5/C7/DB/Auth/Seed/SoD yang disentuh.*
+*Tepat file Bagian 2 yang diizinkan untuk revisi P2. Nol file C5/C7/DB/Auth/Seed/SoD yang disentuh.*
 
 ---
 
 ## 5. Catatan Review & Audit (Diisi oleh Gemini Pro)
 
-**STATUS: PENDING**
+**STATUS: APPROVED**
 
-Menunggu Log Perubahan (Bagian 4). Fokus audit saat review P2:
+**Auditor:** Cline (VS Code) · **Basis commit:** `db7e582` · **Parent:** `979bc7b` (PHASE-19-STEP2-P1) · **Siklus:** Audit #2 (verifikasi ulang R1–R8) · **Worktree saat audit #2:** 7 file modified belum ter-commit, seluruhnya file Bagian 2 (§5.1).
 
-1. **C1** — diff `sheet.tsx` hanya aditif: kelas `left`/`right` identik, default `side = "right"`, cabang `bottom` bebas `inset-y-0`/`h-full`.
-2. **A2/A5** — `form-bottom-sheet.tsx` benar-benar satu sumber `children`; tidak ada duplikasi markup form di file students; id field memakai `useId`/tanpa id statis ganda.
-3. **A3/C6/C7** — nol perubahan nilai, DTO, validasi, copy/label, action/service/validator students; `students.test.ts` lulus tanpa diubah.
-4. **C3/C4** — `dialog.tsx` tidak diubah; `themes.css` hanya +1 keyframe & +1 kelas; tidak ada `@media` baru.
-5. **Guardrail** — 6 assert P1 masih ada di `layout-shell.test.ts` dan hijau; assert baru P2 sesuai Task 9.
-6. **Isolasi** — `git status --porcelain` = 9 file Bagian 2 (+ `.clinerules`); nol file C5/C7.
+> **Riwayat status:** Audit #1 → `NEEDS REVISION` (R1–R8). Audit #2 (bagian ini) → **`APPROVED`**: R1–R5 tuntas, R6 dicatat, R7 terdokumentasi, R8 terpasang; nol regresi P1.
+
+### 5.0 Ringkasan Audit #2 — Verifikasi Ulang R1–R8
+
+| # | Prioritas | Tuntutan | Status | Bukti aktual (dibaca langsung dari worktree) |
+|---|---|---|---|---|
+| R1 | BLOCKER | Eliminasi `id`/`form` literal; id per wadah via `useId` | **TUNTAS** | `form-bottom-sheet.tsx:69-76` (`dialogFormId`/`sheetFormId` via `React.useId()`, `renderChildren`/`renderFooter`); `student-detail-client.tsx:315,412,490` (`<form id={formId}>`), footer `form={formId}` di `:399,:479,:645`; grep `dialog-form` di `src/` → **0 hit** di file aplikasi (hanya pola negatif `layout-shell.test.ts:128`) |
+| R2 | BLOCKER | Satu sumber markup form (factory) | **TUNTAS** | `renderVerifyForm`/`renderPlaceForm`/`renderEditForm` (`:315`,`:411`,`:489`) dipakai dua wadah lewat satu prop `children={renderXForm}` (`:1011,:1029,:1040`); nol blok `<form>` inline di JSX `FormBottomSheet` |
+| R3 | MAYOR | `autoFocus` field pertama | **TUNTAS** | `student-detail-client.tsx:335` (select keputusan), `:431` (select kelas), `:510` (`Input` nama lengkap); `students-workspace-client.tsx:581` (select kelas cepat) |
+| R4 | MAYOR | `overscroll-contain` + `shrink-0` | **TUNTAS** | `sheet.tsx:133` `flex-1 overflow-y-auto overscroll-contain p-6`; `:95` `SheetHeader` + `shrink-0`; `:156` `SheetFooter` + `shrink-0`; grabber `:71` `shrink-0` |
+| R5 | MAYOR | CTA `fullWidth` varian bottom | **TUNTAS** | `fullWidth={isMobile}` pada Batal **dan** CTA di `:393,:402` (verifikasi), `:473,:482` (tempatkan), `:639,:648` (ubah profil), `students-workspace-client.tsx:545,:555` (tempatkan cepat); `isMobile=false` untuk Dialog (`form-bottom-sheet.tsx:91`) → desktop tak berubah |
+| R6 | MINOR | Nested `Dialog.Root` dicatat | **DICATAT** | Technical debt non-blocking di Bagian 4 + backlog P3; nol perubahan kode |
+| R7 | DOKUMENTASI | Koreksi Bagian 4 & `MIGRATION-STATE.md` | **TUNTAS** | Bagian 4 menyatakan `.agent/rules/executor-gemini.md` sebagai penyimpangan terdokumentasi; `MIGRATION-STATE.md:93` `PHASE-19-STEP2-P2 … (Revisi R1–R8 Selesai)` |
+| R8 | TEST | Perkuat guardrail `layout-shell.test.ts` | **TUNTAS** | `:83-93` regex string kelas bottom nyata (`inset-x-0`/`animate-sheet-bottom` ada; `inset-y-0`/`h-full` absen); `:94-95` `overscroll-contain`/`shrink-0`; `:128-130` larangan `id="*-dialog-form"` + wajib `autoFocus` |
+
+**Kesimpulan:** seluruh blocker (R1, R2) dan mayor (R3, R4, R5) tuntas; tidak ada sisa temuan yang menahan `APPROVED`.
+
+### 5.1 Audit #2 — Verifikasi Isolasi & Nol Regresi P1
+
+**`git status --porcelain` saat audit #2 (7 entri, seluruhnya Bagian 2):** `sheet.tsx` (#1), `form-bottom-sheet.tsx` (#2), `student-detail-client.tsx` (#5), `students-workspace-client.tsx` (#6), `layout-shell.test.ts` (#7), `TASK.md` (#8), `MIGRATION-STATE.md` (#9).
+
+- **Nol sentuhan terlarang:** `dialog.tsx`, `icon.tsx`, `button.tsx`, `input.tsx`, `select.tsx`, `textarea.tsx`, `app-shell.tsx`, `sidebar.tsx`, `mobile-navigation.tsx`, `workspace-header.tsx`, `workspace-bottom-nav.tsx`, `page-container.tsx`, `layout/index.ts` → absen dari diff. ✅
+- **Nol sentuhan C5:** `db/seed/*`, `permission-resolver.ts`, `server/auth/*`, `RBAC-MATRIX.md`, `rbac.integration.test.ts`, `student-policy.ts` → absen. ✅
+- **Nol sentuhan C7:** `student-actions.ts`, `registration-service.ts`, `student-validator.ts`, `student-types.ts`, `students.test.ts`, `students.integration.test.ts` → absen (students.test 5/5 hijau tanpa modifikasi). ✅
+- **Nol sentuhan lain:** `patterns/index.ts` & `themes.css` (Task 1/6 sudah ter-commit, tak berubah lagi), `package.json`/`tsconfig`/`next.config`/`eslint.config.mjs`, `src/app/**`, komponen publik & `PublicRegistrationWizard` → absen. ✅
+- **Encoding:** diverifikasi via `Buffer` → **tanpa BOM**, **0 × U+FFFD**, em-dash `U+2014` utuh (5 × di detail, 1 × `— Terisi` di workspace). ✅
+
+**Regresi P1 = NOL** — 6 assert P1 (`layout-shell.test.ts:13-22`, `:24-30`, `:32-38`, `:40-47`, `:49-55`, `:57-63`) semuanya tetap ada dan hijau.
+
+- **C1:** `sheet.tsx:58-63` cabang `left`/`right` **identik** `979bc7b`; guardrail `side="left"` (`mobile-navigation.tsx:41`) + default `side = "right"` (`sheet.tsx:50`) hijau.
+- **C4:** hanya `@keyframes sheetSlideBottom` (`themes.css:402-411`) + `.animate-sheet-bottom` (`:440-442`); `sheetSlideLeft`/`sheetSlideRight` (`:384-400`) utuh; blok `prefers-reduced-motion` (`:454-463`, selektor `*`) menetralkan kelas baru; tanpa `@media` baru.
+
+### 5.2 Audit #2 — Kepatuhan Kontrak (A/B/C)
+
+| Butir | Status | Bukti |
+|---|---|---|
+| Guard kelas murni (A1), **nol** `useMediaQuery`/`matchMedia`/`window.innerWidth` | ✅ | 0 hit di file P2; `hidden md:block` (`form-bottom-sheet.tsx:82`) vs `md:hidden` (`:98`) |
+| Kelas varian bottom (§1.B) | ✅ | `sheet.tsx:56-57` lengkap; `inset-y-0`/`h-full` **absen** |
+| Grabber hanya `side === "bottom"`, `aria-hidden`, non-interaktif | ✅ | `sheet.tsx:68-73`; tanpa `<button>`/`onPointerDown` |
+| Footer bottom `bg-surface` + safe-area; left/right tetap `bg-surface-subtle` | ✅ | `sheet.tsx:150-158` |
+| Content→Header(`shrink-0`)→Body(`flex-1 overflow-y-auto overscroll-contain`)→Footer(`shrink-0`) | ✅ | `sheet.tsx:95,133,156`; `form-bottom-sheet.tsx:83-108` |
+| `SheetBody p-0` untuk wizard (anti scroll ganda) | ✅ | `students-workspace-client.tsx:510` |
+| Judul + deskripsi a11y di kedua wadah, tanpa deskripsi kosong | ✅ | `form-bottom-sheet.tsx:84-85`, `:100-101` (guard `description &&`) |
+| Nested `Dialog.Root` (R6) | ⚠️ Diterima | Wadah non-aktif selalu `display:none` → non-focusable; backlog P3 |
+
+**Catatan presisi R3:** `autoFocus` menyala di kedua subtree; elemen pada wadah `display:none` tidak dapat menerima fokus, sehingga fokus tetap jatuh pada field yang sama di wadah aktif. Tanpa `scrollIntoView` manual (sesuai §1.C.4). Perilaku akhir setara.
+
+### 5.3 Audit #2 — Verifikasi Eksekusi (dijalankan ulang oleh auditor)
+
+| Perintah | Hasil |
+|---|---|
+| `npm run typecheck` | **exit 0**, 0 error |
+| `npx eslint src/components/ui src/components/patterns src/features/students/components src/components/layout` | **exit 0**, 0 error/warning |
+| `npx vitest run layout-shell.test.ts ui-primitives.test.ts students.test.ts` | **18/18 passed** (11 + 2 + 5) |
+| `npx vitest run patterns-and-pwa.test.ts` | **1 failed / 2 passed** — `manifest.background_color` `#1F6650` ≠ `#F7F8F4`. **Pra-eksisting** (`src/app/manifest.ts` bukan diff P2) → dikecualikan sesuai Kriteria Selesai |
+
+### 5.4 Audit #2 — Catatan Non-Blocking (tidak menahan `APPROVED`)
+
+1. **C8 vs R1:** §1.C.8 (id field via `useId()`) **terpenuhi** — 11 id field `student-detail-client.tsx:153-163`, 1 id `students-workspace-client.tsx:91`. `id` **form** kini berasal dari `useId()` milik `FormBottomSheet` → id dinamis, anti-duplikat (semangat C8 setara).
+2. **Cakupan guardrail (minor):** assert `id="*-dialog-form"` hanya diterapkan ke `student-detail-client.tsx` (file workspace memang tak punya `<form>`, risiko nol); `fullWidth` terverifikasi manual (§5.0 R5). Boleh diperkuat di P3.
+3. **`DialogBody p-6` pada wizard desktop:** warisan pra-P2, bukan regresi.
+4. **Backlog tetap terbuka (di luar P2):** M5 progressive disclosure, M6 normalisasi label, 8 dialog non-students, `mobile-card-list`/`summary-strip`, RBAC P5.
+
+---
+
+<details>
+<summary><strong>ARSIP Audit #1 — STATUS: NEEDS REVISION (basis commit <code>db7e582</code>) — riwayat keputusan, tidak lagi mengikat</strong></summary>
+
+**Auditor:** Cline (VS Code) · **Basis commit:** `db7e582` (`docs`→`feat(mobile): implement FormBottomSheet…`) · **Parent:** `979bc7b` (PHASE-19-STEP2-P1) · **Worktree saat audit:** bersih (`git status --porcelain` kosong).
+
+
+**Sintesis:** Fondasi teknis P2 **sudah benar** (varian `side="bottom"`, cabang `left`/`right` identik, `dvh`, grabber, safe-area, `useId` field, `themes.css` aditif, guardrail hijau). Namun **kontrak §1.A2, §1.A5, §1.C.1, §1.C.2, §1.C.4, §1.E.3 dan §1.E.4 belum terpenuhi**: `<form>` tidak diekstrak menjadi satu sumber JSX, atribut `form="…"` pada CTA memakai `id` literal yang terduplikasi lintas wadah, `autoFocus` tidak diimplementasikan, CTA belum `fullWidth`, serta `SheetBody`/`SheetHeader`/`SheetFooter` belum `overscroll-contain`/`shrink-0`. `APPROVED` ditahan sampai R1–R5 selesai.
+
+---
+
+#### 1. Isolasi File & Git Diff — **LULUS (dengan catatan)**
+
+`git diff --name-only 979bc7b db7e582` = tepat 10 entri:
+
+| # | File | Sesuai Bagian 2 |
+|---|---|---|
+| 1 | `apps/web/src/components/ui/sheet.tsx` | ✅ |
+| 2 | `apps/web/src/components/patterns/form-bottom-sheet.tsx` (baru) | ✅ |
+| 3 | `apps/web/src/components/patterns/index.ts` | ✅ |
+| 4 | `apps/web/src/styles/themes.css` | ✅ |
+| 5 | `apps/web/src/features/students/components/student-detail-client.tsx` | ✅ |
+| 6 | `apps/web/src/features/students/components/students-workspace-client.tsx` | ✅ |
+| 7 | `apps/web/src/components/layout/layout-shell.test.ts` | ✅ |
+| 8 | `apps/web/TASK.md` | ✅ |
+| 9 | `migration/MIGRATION-STATE.md` | ✅ |
+| 10 | `apps/web/.agent/rules/executor-gemini.md` | ⚠️ **di luar Bagian 2** (artefak aturan agen, bukan kode aplikasi) |
+
+- **Nol sentuhan terlarang:** `dialog.tsx`, `workspace-header.tsx`, `sidebar.tsx`, `workspace-bottom-nav.tsx`, `page-container.tsx`, `app-shell.tsx`, `mobile-navigation.tsx`, `icon.tsx`, `button.tsx` → **tidak ada di diff**. ✅
+- **Nol sentuhan artefak C5:** `db/seed/*`, `permission-resolver.ts`, `server/auth/*`, `migration/RBAC-MATRIX.md`, `rbac.integration.test.ts`, `student-policy.ts` → absen. ✅
+- **Nol sentuhan C7:** `student-actions.ts`, `registration-service.ts`, `student-validator.ts`, `student-types.ts`, `students.test.ts`, `students.integration.test.ts` → absen. ✅
+- **Encoding:** ketujuh file di-audit via `ReadAllBytes` → **tanpa BOM U+FEFF, nol `U+FFFD`**. Em-dash di `students-workspace-client.tsx` (`— Terisi`) tetap `E2 80 94` UTF-8 valid (mojibake pada output terminal = artefak PowerShell, bukan kerusakan berkas). ✅
+- **Catatan:** `.agent/rules/executor-gemini.md` adalah aturan lokal agen eksekutor, **bukan** artefak runtime (tidak memengaruhi build/test/UI). Boleh dipertahankan tetapi wajib dinyatakan eksplisit di Bagian 4 sebagai penyimpangan terdokumentasi (R7).
+
+---
+
+#### 2. Perluasan `sheet.tsx` & Preseden `side="left"` — **LULUS**
+
+| Aspek | Verdict | Bukti |
+|---|---|---|
+| `SheetSide` → `"left" \| "right" \| "bottom"` | ✅ | `sheet.tsx:28` |
+| Default `side = "right"` | ✅ | `:50`; guardrail `layout-shell.test.ts:79` |
+| Cabang `left` identik (char-per-char) | ✅ | `:59-61` — zero diff vs `979bc7b` |
+| Cabang `right` identik (char-per-char) | ✅ | `:62` — zero diff |
+| Preseden drawer `side="left"` | ✅ | `mobile-navigation.tsx:41` tidak diubah; guardrail `:66-72` |
+| `SheetFooter` left/right tak berubah | ✅ | `:147-148` `shouldApplySafeArea = safeArea ?? (context.side === "bottom" && context.insetBottom)` → `false`; base `:153` tetap `bg-surface-subtle`, `bg-surface` hanya di cabang safe-area (`:154-155`) → tidak ada dua `bg-*` bertabrakan |
+| Regresi drawer | **Tidak ada** | `SheetContext` default `{ side: "right", insetBottom: true }` (`:42-45`) → konsumen `SheetFooter` di luar `SheetContent` tetap berperilaku lama |
+| Aditivitas tipe | ✅ | `SheetFooterProps extends React.HTMLAttributes<HTMLDivElement>` + `safeArea?: boolean`; `insetBottom` tidak bocor ke DOM |
+
+**Catatan desain (bukan blocker):** `insetBottom` diteruskan via React Context, bukan prop-drilling — tepat karena Radix `Content` tidak merender `SheetFooter` langsung.
+
+---
+
+#### 3. Kontrak Visual, Virtual-Keyboard, & `useId` (Aturan A–D) — **SEBAGIAN**
+
+**3.a Responsif kelas murni (A1/A3/A4) — LULUS**
+
+- `form-bottom-sheet.tsx:61` → `cn("hidden md:block", dialogClassName)`; `:73` → `SheetContent side="bottom" className="md:hidden"`.
+- Ambang `md` = 768px sesuai §1.A4. ✅
+- **Nol hook media query**: grep `useMediaQuery|matchMedia|window.innerWidth|visualViewport` pada file P2 → 0 hit. ✅
+
+**3.b Kelas varian bottom (§1.B + aturan B) — LULUS**
+
+`sheet.tsx:56-57` = `fixed inset-x-0 bottom-0 z-50 flex flex-col w-full max-h-[90dvh] rounded-t-card border-t border-border bg-surface text-foreground shadow-overlay outline-none animate-sheet-bottom`.
+
+| Wajib | Hasil | Terlarang | Hasil |
+|---|---|---|---|
+| `inset-x-0`/`bottom-0`/`max-h-[90dvh]`/`rounded-t-card`/`border-t`/`animate-sheet-bottom`/`z-50`/`bg-surface` | ✅ semua | `inset-y-0`, `h-full` | ✅ absen |
+| Grabber `aria-hidden="true"` `mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-pill bg-border-strong`, hanya `side === "bottom"` | ✅ `:68-73` | handler drag / `<button>` | ✅ absen (murni dekoratif) |
+
+**3.c Virtual keyboard & scroll area (§1.C) — MARKUP LULUS, 3 CELAH**
+
+| Butir | Status | Bukti |
+|---|---|---|
+| `Content(flex flex-col)` → Header → Body(`flex-1 overflow-y-auto`) → Footer | ⚠️ | `SheetHeader` (`sheet.tsx:88-101`) **tanpa** `shrink-0`; `SheetBody` (`:132`) **tanpa** `overscroll-contain` — keduanya disyaratkan eksplisit §1.C.1 |
+| Footer bottom `bg-surface border-t pb-[max(env(safe-area-inset-bottom,0px),16px)]` | ✅ | `sheet.tsx:154-155` |
+| `env(safe-area-inset-bottom)` ada; **tanpa** `interactive-widget` | ✅ | grep `interactive-widget` → 0 hit; `layout.tsx` tak disentuh |
+| CTA primer `Button fullWidth` | ❌ | `student-detail-client.tsx:678-687`, `:783-790`, `:863-870`, `students-workspace-client.tsx:540-556` — tanpa `fullWidth` (prop tersedia: `ui/button.tsx:48`) |
+| Field pertama `autoFocus` di kedua varian | ❌ | grep `autoFocus` di 2 file students → **0 hit**; §1.C.4 dilanggar |
+| `DialogTitle`/`SheetTitle` + deskripsi di kedua wadah | ✅ | `form-bottom-sheet.tsx:62-65`, `:74-77` (guard `description &&` → tanpa deskripsi kosong) |
+| `useId` untuk semua `htmlFor`+`id` | ✅ | `student-detail-client.tsx:153-163` (11 id), `students-workspace-client.tsx:91` (1 id); **nol** id field literal |
+
+**3.d Anti-drift C1–C8 — LULUS kecuali temuan §3.e**
+
+| Aturan | Status | Bukti |
+|---|---|---|
+| **C1** kelas `left`/`right` tak berubah | ✅ | §2; `ui-primitives.test.ts` 2/2 |
+| **C2** file baru tanpa `lucide-react` | ✅ | `form-bottom-sheet.tsx` hanya impor `@/components/ui` + `@/lib/cn`; guardrail `:106` |
+| **C3** nol kelas palet hardcoded | ✅ | `ui-primitives.test.ts:25-44` memindai `ui/*.tsx` + `layout/*.tsx` → 2 passed; hanya token semantik |
+| **C4** `themes.css` aditif murni | ✅ | `:402-411` keyframe, `:440-442` kelas 240ms `cubic-bezier(0.32,0.72,0,1)`; setelah `.animate-sheet-right` (`:436-438`) & sebelum `@media (prefers-reduced-motion: no-preference)` (`:448`); keyframe left/right (`:384-400`) utuh; blok reduce (`:454-463`) memakai `*, *::before, *::after` → kelas baru otomatis ternetralkan; **tanpa** `@media` baru |
+| **C5** isolasi RBAC/seed/auth | ✅ | nol diff |
+| **C6** tanpa `any`/`eslint-disable`/config | ✅ | grep `\bany\b|eslint-disable` di `sheet.tsx` + `form-bottom-sheet.tsx` → 0 hit; `eslint` exit 0 |
+| **C7** logika students utuh | ✅ | nol diff action/service/validator/types/test |
+| **C8** `useId` wajib | ✅ | 3.c |
+
+**3.e [BLOCKER] Pelanggaran A2 + id form duplikat (§1.C.6)**
+
+§1.A2/§1.E.3 mewajibkan `<form>` diekstrak **satu variabel JSX** lalu dipakai dua wadah. Aktual: `student-detail-client.tsx:691` (`id="verify-dialog-form"`), `:794` (`"place-dialog-form"`), `:874` (`"edit-dialog-form"`) memakai **id literal** di dalam `children`, sementara `FormBottomSheet` merender `children` **dua kali** (`form-bottom-sheet.tsx:66` dan `:78`). Akibat:
+
+1. Markup form **terduplikasi** di DOM — drift yang dilarang §1.A2.
+2. `id` form **duplikat** → `Button type="submit" form="verify-dialog-form"` (`:680`), `form="place-dialog-form"` (`:785`), `form="edit-dialog-form"` (`:865`) menjadi **ambigu**: atribut `form` me-resolve elemen **pertama dalam document order**, yang bisa jatuh pada wadah `hidden`. Kedua subtree di-portal ke `body` oleh Radix sehingga urutan DOM tidak dijamin mengikuti urutan JSX → **submit CTA berisiko menargetkan varian non-aktif**.
+3. Melanggar aturan "nol id statis ganda" (§1.A5).
+
+**3.f Close-button `dialog.tsx` di wadah tersembunyi — risiko diterima**
+
+`dialog.tsx:60-67` menyuntik `DialogPrimitive.Close` selama `showClose !== false`; `FormBottomSheet` tidak mengoper `showClose={false}` sehingga kedua wadah memiliki `X`. Pada wadah `hidden` (`display:none`) tombol **tidak focusable** → **bukan blocker**; R1/R2 menutup celah ini secara alami. **Dilarang** memperbaikinya dengan mengubah `dialog.tsx` (C3).
+
+**3.g Nested `Dialog.Root` di `open` bersamaan — risiko a11y dicatat (R6)**
+
+Dua `DialogPrimitive.Root` aktif → dua `FocusScope`/`DismissableLayer` bersamaan; `modal` default `true` menandai konten di luar lapisan sebagai outside. Tidak ada regresi fungsional terdeteksi, tetapi tercatat sebagai utang a11y (backlog P3, bukan blocker P2).
+
+---
+
+#### 4. Audit Migrasi 5 Dialog Students — **GAGAL (3 temuan)**
+
+| Dialog | Lokasi | Pola `FormBottomSheet` | State/handler utuh | Masalah |
+|---|---|---|---|---|
+| Verifikasi pendaftaran | `student-detail-client.tsx:657-758` | ✅ | ✅ `handleVerifySubmit`, `verifyDecision/Reason/Pending/Error` identik | id form literal `:691`; `autoFocus` absen; CTA tanpa `fullWidth` |
+| Tempatkan ke kelas | `:761-845` | ✅ | ✅ `handlePlaceSubmit`, `classes`, `selectedClassId`, `placeNotes` | id form literal `:794`; `autoFocus`; `fullWidth` |
+| Ubah profil | `:848-1013` | ✅ | ✅ 6+1 field, state `edit*`, checkbox RAAL | id form literal `:874`; `autoFocus`; `fullWidth` |
+| Tambah peserta didik | `students-workspace-client.tsx:504-519` | ✅ | ✅ `PublicRegistrationWizard` **tidak diubah**; `bodyClassName="p-0"` + `dialogClassName="max-w-2xl"` sesuai §1.E.4 | tidak ada `<form>` → id duplikat tidak berlaku; **aman**. `overflow-y-auto` lama hilang namun wizard punya scroll internal → aman |
+| Tempatkan cepat | `:522-592` | ✅ | ✅ `handleConfirmQuickPlacement`, `placeError`, `classes` | `quickPlaceClassId` via `useId` ✅; `autoFocus` absen; `fullWidth` absen; tanpa `<form>` → **aman** |
+
+**Copy/label (C6):** seluruh label, opsi status, placeholder, pesan error **identik** dengan `979bc7b`; em-dash `—` terjaga. ✅
+
+**Regresi fungsional:** poin §3.e (submit CTA menargetkan id form duplikat). API `handle*` dan DTO tidak berubah sehingga `students.test.ts` (5/5) tetap hijau — bug ini **tidak tertangkap** karena test tidak merender komponen.
+
+---
+
+#### 5. Guardrail Test & Dokumentasi — **LULUS (dengan celah cakupan)**
+
+`layout-shell.test.ts` — hasil aktual **11/11 passed**.
+
+| Assert P1 (wajib dipertahankan) | Baris | Status |
+|---|---|---|
+| bottom-nav `md:hidden`/`z-40`/`aria-current`/safe-area | `:13-22` | ✅ |
+| header `lg:hidden` | `:24-30` | ✅ |
+| sidebar `hidden lg:flex` | `:32-38` | ✅ |
+| `5rem` + `md:pb-0` | `:40-47` | ✅ |
+| render `<WorkspaceBottomNav` | `:49-55` | ✅ |
+| no `lucide-react` bottom-nav | `:57-63` | ✅ |
+
+| Assert P2 baru | Baris | Status |
+|---|---|---|
+| `mobile-navigation.tsx` masih `side="left"` | `:66-72` | ✅ |
+| `sheet.tsx` default `side = "right"` + `max-h-[90dvh]` + bottom tanpa `inset-y-0` | `:74-88` | ✅ (tapi lihat celah) |
+| `themes.css` `animate-sheet-bottom` + `sheetSlideBottom` | `:90-97` | ✅ |
+| `form-bottom-sheet.tsx` `md:hidden` + `hidden md:block` tanpa `lucide-react` | `:99-107` | ✅ |
+| kedua file students memakai `<FormBottomSheet` | `:109-120` | ✅ |
+
+**Celah cakupan (penyebab R1/R3/R4/R5 tidak tertangkap):**
+- Regex `:83` `/side === "bottom"[\s\S]*?:/` bersifat **coarse** — berhenti pada `:` pertama setelah `"bottom"`, sehingga hanya menguji literal `side === "bottom"`. Assert `not.toContain("inset-y-0")` (`:86`) karenanya **vakum**: tidak pernah memeriksa string kelas varian bottom. Guardrail `inset-y-0` **tidak berfungsi**.
+- Tidak ada assert untuk: (a) absennya `id`/`form` literal duplikat; (b) `autoFocus`; (c) `fullWidth`; (d) `overscroll-contain`.
+
+**`migration/MIGRATION-STATE.md`:** entri `PHASE-19-STEP2-P2 | DONE` ada & format kolom valid. ✅ Namun status **`DONE` prematur** → wajib direvisi (R7).
+
+**Verifikasi aktual yang saya jalankan ulang (bukan mengutip Bagian 4):**
+
+| Perintah | Hasil |
+|---|---|
+| `npm run typecheck` | **exit 0**, 0 error |
+| `npx eslint src/components/ui src/components/patterns src/features/students/components src/components/layout` | **exit 0**, 0 error/warning |
+| `npx vitest run layout-shell.test.ts ui-primitives.test.ts students.test.ts` | **18/18 passed** (11 + 2 + 5) |
+| `npx vitest run patterns-and-pwa.test.ts` | **1 failed / 2 passed** — `manifest.background_color` `#F7F8F4` vs `#1F6650`. **Pra-eksisting terbukti**: `src/app/manifest.ts` lahir di commit `43424a7` (Fase 14) dan absen dari diff P2. Dikecualikan sesuai Kriteria Selesai. |
+
+---
+
+#### 6. Isolasi — **LULUS**
+
+`git status --porcelain` = **kosong** (P2 sudah ter-commit di `db7e582`). Diff vs `979bc7b` = 10 entri (9 file Bagian 2 + `.agent/rules/executor-gemini.md`). Nol file C5, nol file C7, nol artefak RBAC. ✅
+
+---
+
+### Daftar Perbaikan Wajib (R1–R8) — untuk Eksekutor
+
+> Semua perbaikan **hanya** di file Bagian 2. **Dilarang** menyentuh `dialog.tsx` (C3), C5, dan C7.
+
+**R1 — [BLOCKER] Eliminasi `id`/`form` form literal (A2 + A5 + §1.C.6)**
+- File: `student-detail-client.tsx` (`:691`, `:794`, `:874`, `:680`, `:785`, `:865`).
+- Wajib: setiap `<form>` mendapat `id` dari `React.useId()` **per wadah**, dan setiap `Button form={…}` di footer menunjuk **id milik wadah yang sama**. Karena `FormBottomSheet` merender dua subtree dengan `children`/`footer` **yang sama**, solusi yang patuh semua kontrak adalah memperluas §1.E.2 secara aditif:
+  ```ts
+  children: React.ReactNode | ((formId: string) => React.ReactNode);
+  footer?: React.ReactNode | ((formId: string) => React.ReactNode);
+  ```
+  Lalu di `FormBottomSheet`: `const dialogFormId = React.useId(); const sheetFormId = React.useId();` → `typeof children === "function" ? children(dialogFormId) : children` (dan analog untuk footer). Di pemanggil: `<form id={formId}>` + `<Button type="submit" form={formId}>`.
+- **Wajib** mencatat revisi kontrak `§1.E.2` di Bagian 1 sebelum eksekusi (perubahan signature bersifat aditif & backward-compatible).
+- Alternatif yang **tidak** diizinkan: memindahkan `footer` ke dalam `SheetBody` (melanggar §1.C.1 — footer wajib sticky di luar scroll).
+- Hasil akhir: **nol** string `id="*-dialog-form"` dan **nol** `form="*-dialog-form"` literal di repo.
+
+**R2 — [BLOCKER] Satu sumber markup form (A2)**
+- File: `student-detail-client.tsx` (`:657-758`, `:761-845`, `:848-1013`).
+- Ekstrak markup `<form>` menjadi **satu variabel JSX** (bukan blok inline di dalam `children`) dan dokumentasikan di `form-bottom-sheet.tsx` bahwa `children` **wajib** berupa *factory* bila memuat `id` (lihat R1), sehingga tidak ada dua `<form>` dengan `id` identik di DOM.
+
+**R3 — [MAYOR] `autoFocus` field pertama (§1.C.4)**
+- `student-detail-client.tsx:708` (`<select id={verifyDecisionId}>`), `:811` (`placeClassId`), `:892` (`<Input id={editFullNameId}>`); `students-workspace-client.tsx:577` (`quickPlaceClassId`).
+- Aman untuk dua wadah: elemen di wadah `display:none` **tidak** mencuri fokus. Tanpa `scrollIntoView` manual.
+
+**R4 — [MAYOR] Scroll area & shrink (§1.C.1)**
+- `sheet.tsx:132` → `cn("flex-1 overflow-y-auto overscroll-contain p-6", className)`.
+- `sheet.tsx:94-97` (`SheetHeader`) → tambah `shrink-0`; `sheet.tsx:153` (`SheetFooter`) → tambah `shrink-0`.
+- Catatan: `shrink-0` pada footer left/right tidak mengubah visual (parent hanya `flex flex-col` dengan satu anak flex-grow).
+
+**R5 — [MAYOR] CTA `fullWidth` varian bottom (§1.C.2)**
+- Terapkan lewat render-function footer (R1): CTA varian Sheet `fullWidth`, CTA varian Dialog tanpa `fullWidth` (desktop tetap rapi). Prop `fullWidth` sudah ada di `ui/button.tsx:48` — **jangan** ubah `button.tsx`.
+
+**R6 — [MINOR/OPSIONAL, tidak memblokir] Nested `Dialog.Root`**
+- Catat sebagai risiko a11y ter-*accept* (§3.g) atau buka backlog P3.
+
+**R7 — [DOKUMENTASI] Koreksi Bagian 4 & `MIGRATION-STATE.md`**
+- Bagian 4 wajib menyatakan `.agent/rules/executor-gemini.md` sebagai file di luar Bagian 2 (penyimpangan terdokumentasi).
+- `PHASE-19-STEP2-P2` → ubah `DONE` menjadi `NEEDS REVISION` sampai R1–R5 selesai; baru kemudian `DONE`.
+
+**R8 — [TEST] Perkuat guardrail (setelah R1–R5)**
+- `layout-shell.test.ts:83-87`: ganti regex coarse dengan pembacaan blok bottom yang nyata, mis. ekstrak potongan string kelas bottom (`content.split('"')` → cari elemen yang memuat `inset-x-0` lalu assert `not.toContain("inset-y-0")` **dan** `not.toContain("h-full")`), plus `toContain("animate-sheet-bottom")` pada elemen yang sama.
+- Tambah assert: (a) `expect(detail).not.toMatch(/\bid="[a-z]+-dialog-form"/)`; (b) `expect(detail).toContain("autoFocus")`; (c) `expect(sheet).toContain("overscroll-contain")`; (d) `expect(sheet).toContain("shrink-0")`.
+
+---
+
+### Keputusan (Audit #1 — diarsipkan)
+
+**STATUS saat itu: NEEDS REVISION** — telah dituntaskan pada Audit #2 (§5.0); lihat `STATUS: APPROVED` di kepala Bagian 5.
+
+- **R1 & R2 = blocker fungsional** (submit CTA menargetkan `<form>` dengan `id` duplikat → berisiko lolos ke varian non-aktif) sekaligus pelanggaran eksplisit §1.A2/§1.A5/§1.C.6.
+- **R3–R5 = kepatuhan kontrak tertulis** §1.C.1/§1.C.2/§1.C.4 (missing `overscroll-contain`/`shrink-0`, missing `autoFocus`, missing `fullWidth`).
+- **R7–R8 = dokumentasi & penguatan guardrail** (regex `:83` terbukti vakum).
+- Fondasi `sheet.tsx` (C1), `themes.css` (C4), `useId` field, guardrail P1, dan isolasi file **sudah benar** — tidak perlu dikerjakan ulang.
+- Perbaikan **tetap di 8 file Bagian 2**; `dialog.tsx`/C5/C7 tetap steril. Setelah R1–R5 + R8 diterapkan, ajukan audit ulang → target `APPROVED`.
+
+</details>
 
 ---
 

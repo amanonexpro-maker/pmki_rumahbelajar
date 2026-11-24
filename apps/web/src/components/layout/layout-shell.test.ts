@@ -79,12 +79,20 @@ describe("Layout Shell & Mobile Navigation Guardrails (Fase 19 Step 2 - P1 & P2)
     expect(content).toContain('side = "right"');
     expect(content).toContain("max-h-[90dvh]");
 
-    // Verify bottom branch does not contain inset-y-0
-    const bottomBranchMatch = content.match(/side === "bottom"[\s\S]*?:/);
-    expect(bottomBranchMatch).not.toBeNull();
-    if (bottomBranchMatch) {
-      expect(bottomBranchMatch[0]).not.toContain("inset-y-0");
+    // Extract the specific class string for bottom variant (R8)
+    const bottomClassMatch = content.match(
+      /side === "bottom"\s*\?\s*["'`]([^"'`]+)["'`]/
+    );
+    expect(bottomClassMatch).not.toBeNull();
+    if (bottomClassMatch) {
+      const bottomClass = bottomClassMatch[1];
+      expect(bottomClass).toContain("inset-x-0");
+      expect(bottomClass).toContain("animate-sheet-bottom");
+      expect(bottomClass).not.toContain("inset-y-0");
+      expect(bottomClass).not.toContain("h-full");
     }
+    expect(content).toContain("overscroll-contain");
+    expect(content).toContain("shrink-0");
   });
 
   it("verifies themes.css contains animate-sheet-bottom and sheetSlideBottom keyframes", () => {
@@ -106,7 +114,7 @@ describe("Layout Shell & Mobile Navigation Guardrails (Fase 19 Step 2 - P1 & P2)
     expect(content).not.toMatch(/from\s+["']lucide-react["']/);
   });
 
-  it("verifies both students workspace and detail clients use FormBottomSheet", () => {
+  it("verifies both students workspace and detail clients use FormBottomSheet, autoFocus, and zero literal dialog form IDs", () => {
     const detailContent = readFileSync(
       path.join(studentsDir, "student-detail-client.tsx"),
       "utf-8"
@@ -117,5 +125,8 @@ describe("Layout Shell & Mobile Navigation Guardrails (Fase 19 Step 2 - P1 & P2)
     );
     expect(detailContent).toContain("<FormBottomSheet");
     expect(workspaceContent).toContain("<FormBottomSheet");
+    expect(detailContent).not.toMatch(/\bid="[a-z]+-dialog-form"/);
+    expect(detailContent).toContain("autoFocus");
+    expect(workspaceContent).toContain("autoFocus");
   });
 });

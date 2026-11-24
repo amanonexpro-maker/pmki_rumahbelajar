@@ -311,6 +311,347 @@ export function StudentDetailClient({
     student.registrationStatus === "WAITLIST" ||
     student.registrationStatus === "ACTIVE";
 
+  // --- Form Factory & Footer Functions for FormBottomSheet (R1/R2/R3/R5) ---
+  const renderVerifyForm = (formId: string) => (
+    <form id={formId} onSubmit={handleVerifySubmit} className="space-y-4">
+      {verifyError && (
+        <div
+          role="alert"
+          className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
+        >
+          {verifyError}
+        </div>
+      )}
+
+      <div className="space-y-1.5">
+        <label
+          htmlFor={verifyDecisionId}
+          className="block text-sm font-medium text-foreground"
+        >
+          Keputusan verifikasi
+        </label>
+        <select
+          id={verifyDecisionId}
+          autoFocus
+          value={verifyDecision}
+          onChange={(e) =>
+            setVerifyDecision(
+              e.target.value as
+                | "VERIFIED"
+                | "PENDING_VERIFICATION"
+                | "WAITLIST"
+                | "REJECTED"
+                | "CANCELLED"
+            )
+          }
+          className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
+        >
+          <option value="VERIFIED">
+            Terverifikasi (Siap ditempatkan ke kelas)
+          </option>
+          <option value="PENDING_VERIFICATION">
+            Menunggu verifikasi lanjutan
+          </option>
+          <option value="WAITLIST">
+            Daftar tunggu (Kapasitas kelas penuh)
+          </option>
+          <option value="REJECTED">Ditolak (Wajib isi alasan)</option>
+          <option value="CANCELLED">
+            Dibatalkan (Wajib isi alasan)
+          </option>
+        </select>
+      </div>
+
+      <div className="space-y-1.5">
+        <label
+          htmlFor={verifyReasonId}
+          className="block text-sm font-medium text-foreground"
+        >
+          Catatan atau alasan keputusan{" "}
+          {(verifyDecision === "REJECTED" ||
+            verifyDecision === "CANCELLED") &&
+            "*"}
+        </label>
+        <Textarea
+          id={verifyReasonId}
+          rows={3}
+          value={verifyReason}
+          onChange={(e) => setVerifyReason(e.target.value)}
+          placeholder="Tuliskan catatan verifikasi atau alasan keputusan..."
+        />
+      </div>
+    </form>
+  );
+
+  const renderVerifyFooter = (formId: string, isMobile: boolean) => (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => setVerifyOpen(false)}
+        disabled={verifyPending}
+        fullWidth={isMobile}
+      >
+        Batal
+      </Button>
+      <Button
+        type="submit"
+        form={formId}
+        variant="primary"
+        disabled={verifyPending}
+        fullWidth={isMobile}
+      >
+        {verifyPending
+          ? "Menyimpan..."
+          : "Simpan keputusan verifikasi"}
+      </Button>
+    </>
+  );
+
+  const renderPlaceForm = (formId: string) => (
+    <form id={formId} onSubmit={handlePlaceSubmit} className="space-y-4">
+      {placeError && (
+        <div
+          role="alert"
+          className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
+        >
+          {placeError}
+        </div>
+      )}
+
+      <div className="space-y-1.5">
+        <label
+          htmlFor={placeClassId}
+          className="block text-sm font-medium text-foreground"
+        >
+          Kelas tujuan
+        </label>
+        <select
+          id={placeClassId}
+          autoFocus
+          value={selectedClassId}
+          onChange={(e) => setSelectedClassId(e.target.value)}
+          className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
+        >
+          {classes.map((cls) => (
+            <option key={cls.id} value={cls.id}>
+              {cls.name} — {cls.enrolledCount}/{cls.capacity} peserta
+              didik
+              {cls.isFull
+                ? " (Penuh)"
+                : ` (Sisa ${cls.remainingSeats} kursi)`}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="space-y-1.5">
+        <label
+          htmlFor={placeNotesId}
+          className="block text-sm font-medium text-foreground"
+        >
+          Catatan penempatan (opsional)
+        </label>
+        <Textarea
+          id={placeNotesId}
+          rows={2}
+          value={placeNotes}
+          onChange={(e) => setPlaceNotes(e.target.value)}
+          placeholder="Catatan tambahan penempatan kelas..."
+        />
+      </div>
+    </form>
+  );
+
+  const renderPlaceFooter = (formId: string, isMobile: boolean) => (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => setPlaceOpen(false)}
+        disabled={placePending}
+        fullWidth={isMobile}
+      >
+        Batal
+      </Button>
+      <Button
+        type="submit"
+        form={formId}
+        variant="primary"
+        disabled={placePending || !selectedClassId}
+        fullWidth={isMobile}
+      >
+        {placePending ? "Menempatkan..." : "Tempatkan ke kelas"}
+      </Button>
+    </>
+  );
+
+  const renderEditForm = (formId: string) => (
+    <form id={formId} onSubmit={handleEditSubmit} className="space-y-4">
+      {editError && (
+        <div
+          role="alert"
+          className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
+        >
+          {editError}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label
+            htmlFor={editFullNameId}
+            className="block text-xs font-medium text-foreground"
+          >
+            Nama lengkap
+          </label>
+          <Input
+            id={editFullNameId}
+            autoFocus
+            value={editFullName}
+            onChange={(e) => setEditFullName(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label
+            htmlFor={editNicknameId}
+            className="block text-xs font-medium text-foreground"
+          >
+            Nama panggilan
+          </label>
+          <Input
+            id={editNicknameId}
+            value={editNickname}
+            onChange={(e) => setEditNickname(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label
+            htmlFor={editBirthDateId}
+            className="block text-xs font-medium text-foreground"
+          >
+            Tanggal lahir
+          </label>
+          <Input
+            id={editBirthDateId}
+            type="date"
+            value={editBirthDate}
+            onChange={(e) => setEditBirthDate(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label
+            htmlFor={editGenderId}
+            className="block text-xs font-medium text-foreground"
+          >
+            Jenis kelamin
+          </label>
+          <select
+            id={editGenderId}
+            value={editGender}
+            onChange={(e) =>
+              setEditGender(e.target.value as "L" | "P")
+            }
+            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
+          >
+            <option value="L">Laki-laki</option>
+            <option value="P">Perempuan</option>
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label
+            htmlFor={editLevelId}
+            className="block text-xs font-medium text-foreground"
+          >
+            Jenjang kelas
+          </label>
+          <select
+            id={editLevelId}
+            value={editLevel}
+            onChange={(e) =>
+              setEditLevel(e.target.value as EducationLevelCode)
+            }
+            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
+          >
+            {EDUCATION_LEVEL_VALUES.map((code) => (
+              <option key={code} value={code}>
+                {EDUCATION_LEVEL_LABELS[code]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label
+            htmlFor={editDistrictId}
+            className="block text-xs font-medium text-foreground"
+          >
+            Wilayah
+          </label>
+          <select
+            id={editDistrictId}
+            value={editDistrict}
+            onChange={(e) =>
+              setEditDistrict(
+                e.target.value as "Kalirejo" | "Lawang" | "Lainnya"
+              )
+            }
+            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
+          >
+            <option value="Kalirejo">Kelurahan Kalirejo</option>
+            <option value="Lawang">Kecamatan Lawang</option>
+            <option value="Lainnya">Wilayah lainnya</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <label
+          htmlFor={editSchoolId}
+          className="block text-xs font-medium text-foreground"
+        >
+          Asal sekolah
+        </label>
+        <Input
+          id={editSchoolId}
+          value={editSchoolName}
+          onChange={(e) => setEditSchoolName(e.target.value)}
+        />
+      </div>
+
+      <label className="inline-flex items-center gap-2 text-sm text-foreground cursor-pointer">
+        <input
+          type="checkbox"
+          checked={editIsRaal}
+          onChange={(e) => setEditIsRaal(e.target.checked)}
+        />
+        <span>Anak asuh Asrama RAAL Griya Asih</span>
+      </label>
+    </form>
+  );
+
+  const renderEditFooter = (formId: string, isMobile: boolean) => (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => setEditOpen(false)}
+        disabled={editPending}
+        fullWidth={isMobile}
+      >
+        Batal
+      </Button>
+      <Button
+        type="submit"
+        form={formId}
+        variant="primary"
+        disabled={editPending}
+        fullWidth={isMobile}
+      >
+        {editPending ? "Menyimpan..." : "Simpan perubahan"}
+      </Button>
+    </>
+  );
+
   return (
     <div className="space-y-6">
       {/* 1. Entity Header */}
@@ -665,96 +1006,9 @@ export function StudentDetailClient({
             {PRIVACY_MESSAGES.auditLogged}
           </>
         }
-        footer={
-          <>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setVerifyOpen(false)}
-              disabled={verifyPending}
-            >
-              Batal
-            </Button>
-            <Button
-              type="submit"
-              form="verify-dialog-form"
-              variant="primary"
-              disabled={verifyPending}
-            >
-              {verifyPending
-                ? "Menyimpan..."
-                : "Simpan keputusan verifikasi"}
-            </Button>
-          </>
-        }
+        footer={renderVerifyFooter}
       >
-        <form id="verify-dialog-form" onSubmit={handleVerifySubmit} className="space-y-4">
-          {verifyError && (
-            <div
-              role="alert"
-              className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
-            >
-              {verifyError}
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <label
-              htmlFor={verifyDecisionId}
-              className="block text-sm font-medium text-foreground"
-            >
-              Keputusan verifikasi
-            </label>
-            <select
-              id={verifyDecisionId}
-              value={verifyDecision}
-              onChange={(e) =>
-                setVerifyDecision(
-                  e.target.value as
-                    | "VERIFIED"
-                    | "PENDING_VERIFICATION"
-                    | "WAITLIST"
-                    | "REJECTED"
-                    | "CANCELLED"
-                )
-              }
-              className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-            >
-              <option value="VERIFIED">
-                Terverifikasi (Siap ditempatkan ke kelas)
-              </option>
-              <option value="PENDING_VERIFICATION">
-                Menunggu verifikasi lanjutan
-              </option>
-              <option value="WAITLIST">
-                Daftar tunggu (Kapasitas kelas penuh)
-              </option>
-              <option value="REJECTED">Ditolak (Wajib isi alasan)</option>
-              <option value="CANCELLED">
-                Dibatalkan (Wajib isi alasan)
-              </option>
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label
-              htmlFor={verifyReasonId}
-              className="block text-sm font-medium text-foreground"
-            >
-              Catatan atau alasan keputusan{" "}
-              {(verifyDecision === "REJECTED" ||
-                verifyDecision === "CANCELLED") &&
-                "*"}
-            </label>
-            <Textarea
-              id={verifyReasonId}
-              rows={3}
-              value={verifyReason}
-              onChange={(e) => setVerifyReason(e.target.value)}
-              placeholder="Tuliskan catatan verifikasi atau alasan keputusan..."
-            />
-          </div>
-        </form>
+        {renderVerifyForm}
       </FormBottomSheet>
 
       {/* Dialog: Tempatkan ke kelas */}
@@ -770,78 +1024,9 @@ export function StudentDetailClient({
             dicatat dalam jejak audit.
           </>
         }
-        footer={
-          <>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setPlaceOpen(false)}
-              disabled={placePending}
-            >
-              Batal
-            </Button>
-            <Button
-              type="submit"
-              form="place-dialog-form"
-              variant="primary"
-              disabled={placePending || !selectedClassId}
-            >
-              {placePending ? "Menempatkan..." : "Tempatkan ke kelas"}
-            </Button>
-          </>
-        }
+        footer={renderPlaceFooter}
       >
-        <form id="place-dialog-form" onSubmit={handlePlaceSubmit} className="space-y-4">
-          {placeError && (
-            <div
-              role="alert"
-              className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
-            >
-              {placeError}
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <label
-              htmlFor={placeClassId}
-              className="block text-sm font-medium text-foreground"
-            >
-              Kelas tujuan
-            </label>
-            <select
-              id={placeClassId}
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-            >
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.name} — {cls.enrolledCount}/{cls.capacity} peserta
-                  didik
-                  {cls.isFull
-                    ? " (Penuh)"
-                    : ` (Sisa ${cls.remainingSeats} kursi)`}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label
-              htmlFor={placeNotesId}
-              className="block text-sm font-medium text-foreground"
-            >
-              Catatan penempatan (opsional)
-            </label>
-            <Textarea
-              id={placeNotesId}
-              rows={2}
-              value={placeNotes}
-              onChange={(e) => setPlaceNotes(e.target.value)}
-              placeholder="Catatan tambahan penempatan kelas..."
-            />
-          </div>
-        </form>
+        {renderPlaceForm}
       </FormBottomSheet>
 
       {/* Dialog: Ubah profil */}
@@ -850,166 +1035,9 @@ export function StudentDetailClient({
         onOpenChange={setEditOpen}
         title="Ubah profil peserta didik"
         description="Perbarui data identitas dan pendidikan peserta didik."
-        footer={
-          <>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setEditOpen(false)}
-              disabled={editPending}
-            >
-              Batal
-            </Button>
-            <Button
-              type="submit"
-              form="edit-dialog-form"
-              variant="primary"
-              disabled={editPending}
-            >
-              {editPending ? "Menyimpan..." : "Simpan perubahan"}
-            </Button>
-          </>
-        }
+        footer={renderEditFooter}
       >
-        <form id="edit-dialog-form" onSubmit={handleEditSubmit} className="space-y-4">
-          {editError && (
-            <div
-              role="alert"
-              className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
-            >
-              {editError}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label
-                htmlFor={editFullNameId}
-                className="block text-xs font-medium text-foreground"
-              >
-                Nama lengkap
-              </label>
-              <Input
-                id={editFullNameId}
-                value={editFullName}
-                onChange={(e) => setEditFullName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <label
-                htmlFor={editNicknameId}
-                className="block text-xs font-medium text-foreground"
-              >
-                Nama panggilan
-              </label>
-              <Input
-                id={editNicknameId}
-                value={editNickname}
-                onChange={(e) => setEditNickname(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <label
-                htmlFor={editBirthDateId}
-                className="block text-xs font-medium text-foreground"
-              >
-                Tanggal lahir
-              </label>
-              <Input
-                id={editBirthDateId}
-                type="date"
-                value={editBirthDate}
-                onChange={(e) => setEditBirthDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1">
-              <label
-                htmlFor={editGenderId}
-                className="block text-xs font-medium text-foreground"
-              >
-                Jenis kelamin
-              </label>
-              <select
-                id={editGenderId}
-                value={editGender}
-                onChange={(e) =>
-                  setEditGender(e.target.value as "L" | "P")
-                }
-                className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-              >
-                <option value="L">Laki-laki</option>
-                <option value="P">Perempuan</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label
-                htmlFor={editLevelId}
-                className="block text-xs font-medium text-foreground"
-              >
-                Jenjang kelas
-              </label>
-              <select
-                id={editLevelId}
-                value={editLevel}
-                onChange={(e) =>
-                  setEditLevel(e.target.value as EducationLevelCode)
-                }
-                className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-              >
-                {EDUCATION_LEVEL_VALUES.map((code) => (
-                  <option key={code} value={code}>
-                    {EDUCATION_LEVEL_LABELS[code]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label
-                htmlFor={editDistrictId}
-                className="block text-xs font-medium text-foreground"
-              >
-                Wilayah
-              </label>
-              <select
-                id={editDistrictId}
-                value={editDistrict}
-                onChange={(e) =>
-                  setEditDistrict(
-                    e.target.value as "Kalirejo" | "Lawang" | "Lainnya"
-                  )
-                }
-                className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-              >
-                <option value="Kalirejo">Kelurahan Kalirejo</option>
-                <option value="Lawang">Kecamatan Lawang</option>
-                <option value="Lainnya">Wilayah lainnya</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label
-              htmlFor={editSchoolId}
-              className="block text-xs font-medium text-foreground"
-            >
-              Asal sekolah
-            </label>
-            <Input
-              id={editSchoolId}
-              value={editSchoolName}
-              onChange={(e) => setEditSchoolName(e.target.value)}
-            />
-          </div>
-
-          <label className="inline-flex items-center gap-2 text-sm text-foreground cursor-pointer">
-            <input
-              type="checkbox"
-              checked={editIsRaal}
-              onChange={(e) => setEditIsRaal(e.target.checked)}
-            />
-            <span>Anak asuh Asrama RAAL Griya Asih</span>
-          </label>
-        </form>
+        {renderEditForm}
       </FormBottomSheet>
     </div>
   );

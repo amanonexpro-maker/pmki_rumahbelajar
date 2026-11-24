@@ -19,6 +19,7 @@ import { ConnectivityTopBanner } from "@/hooks/use-connectivity";
 import { MobileNavigation } from "./mobile-navigation";
 import { PageContainer, type ContainerWidth } from "./page-container";
 import { Sidebar, type SidebarNavGroup } from "./sidebar";
+import { WorkspaceBottomNav } from "./workspace-bottom-nav";
 import { WorkspaceHeader, type WorkspaceHeaderUser } from "./workspace-header";
 
 /**
@@ -183,6 +184,12 @@ export function AppShell({
             groups={navGroups}
             currentPath={pathname}
             userPermissions={userPermissions}
+          />
+
+          <WorkspaceBottomNav
+            groups={navGroups}
+            userPermissions={userPermissions}
+            currentPath={pathname}
           />
 
           <main className="flex-1 py-6 sm:py-8">

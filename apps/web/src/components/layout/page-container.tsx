@@ -7,6 +7,7 @@ export interface PageContainerProps
   extends React.HTMLAttributes<HTMLDivElement> {
   width?: ContainerWidth;
   padded?: boolean;
+  bottomInset?: "none" | "nav";
 }
 
 const widthClasses: Record<ContainerWidth, string> = {
@@ -20,6 +21,7 @@ const widthClasses: Record<ContainerWidth, string> = {
 export function PageContainer({
   width = "default",
   padded = true,
+  bottomInset = "nav",
   className,
   children,
   ...props
@@ -30,6 +32,9 @@ export function PageContainer({
         "w-full mx-auto",
         widthClasses[width],
         padded && "px-4 sm:px-6 lg:px-8",
+        padded &&
+          bottomInset === "nav" &&
+          "pb-[calc(5rem+max(env(safe-area-inset-bottom,0px),16px))] md:pb-0",
         className
       )}
       {...props}

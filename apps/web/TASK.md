@@ -331,25 +331,54 @@ Aturan: `<form>` lama diekstrak menjadi **satu** variabel JSX; `DialogBody`/`Dia
 
 **FASE 19 STEP 2 — P2: Sheet `bottom` + `FormBottomSheet` + Migrasi 5 Dialog Students**
 
-- [ ] **Task 1 (Keyframe CSS):** Di `src/styles/themes.css`, tambah `@keyframes sheetSlideBottom` (`translateY(100%)` → `translateY(0)`, opacity 0→1) dan `.animate-sheet-bottom` (240ms `cubic-bezier(0.32,0.72,0,1)`), diletakkan setelah `.animate-sheet-right` dan **sebelum** blok `prefers-reduced-motion`. Jangan sentuh `sheetSlideLeft`/`sheetSlideRight` (C4); pastikan blok reduced-motion `:439-448` tetap menetralkan kelas baru.
-- [ ] **Task 2 (`SheetSide` + cabang bottom):** Di `src/components/ui/sheet.tsx`, perluas `SheetSide` → `"left" | "right" | "bottom"` (default **tetap** `"right"`). Pisahkan kelas wadah per `side` sesuai tabel §1.E.1: varian `left`/`right` **karakter-per-karakter tidak berubah** (C1); varian `bottom` = `fixed inset-x-0 bottom-0 max-h-[90dvh] w-full border-t rounded-t-card flex flex-col animate-sheet-bottom` **tanpa** `inset-y-0`/`h-full`.
-- [ ] **Task 3 (Grabber):** Render grabber dekoratif hanya bila `side === "bottom"`: `aria-hidden="true"`, `mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-pill bg-border-strong`. Tanpa handler pointer/drag, tanpa `<button>`.
-- [ ] **Task 4 (Safe-area footer):** Tambah prop `insetBottom?: boolean` (default `true`) di `SheetContentProps`; teruskan ke `SheetFooter` via prop `safeArea` sehingga hanya footer varian bottom mendapat `pb-[max(env(safe-area-inset-bottom,0px),16px)]`. Footer left/right tidak berubah.
-- [ ] **Task 5 (Primitive `FormBottomSheet`):** Buat `src/components/patterns/form-bottom-sheet.tsx` (`"use client"`) sesuai §1.E.2: `open`, `onOpenChange`, `title`, `description?`, `children`, `footer?`, `dialogClassName?`, `bodyClassName?`. Render `Dialog` → `<DialogContent className="hidden md:block">` dan `Sheet` → `<SheetContent side="bottom" className="md:hidden">`, keduanya memakai `children` **yang sama**. Tanpa state internal, tanpa logika submit, tanpa impor `lucide-react` (C2).
-- [ ] **Task 6 (Ekspor pattern):** Tambah `export * from "./form-bottom-sheet";` di `src/components/patterns/index.ts` (jaga urutan alfabetis bila sudah ada).
-- [ ] **Task 7 (Migrasi 3 dialog detail):** Di `student-detail-client.tsx`, ekstrak markup `<form>` tiap dialog (Verifikasi `:650-745`, Tempatkan `:748-830`, Ubah profil `:833-996`) menjadi satu variabel JSX, lalu bungkus dengan `<FormBottomSheet>`. Nilai/state/mutasi/pesan error **tidak berubah** (A3). Semua `htmlFor`+`id` memakai prefix `React.useId()` (C8). Copy/label/opsi tidak diubah (C6).
-- [ ] **Task 8 (Migrasi 2 dialog workspace):** Di `students-workspace-client.tsx`, migrasi "Tambah peserta didik" (`:509-527`: `bodyClassName="p-0"` + `dialogClassName="max-w-2xl"`, `PublicRegistrationWizard` tidak diubah) dan "Tempatkan cepat" (`:529-560`, `FormBottomSheet` standar).
-- [ ] **Task 9 (Perluas guardrail test):** Di `layout-shell.test.ts` **pertahankan 6 assert P1** (bottom nav `md:hidden`/`z-40`/`aria-current`/safe-area, hamburger `lg:hidden`, sidebar `hidden lg:flex`, `5rem`+`md:pb-0`, render `<WorkspaceBottomNav`, no `lucide-react`) dan tambah: (a) `mobile-navigation.tsx` masih memuat `side="left"`; (b) `sheet.tsx` memuat default `side = "right"` dan cabang bottom memuat `max-h-[90dvh]` serta **tidak** memuat `inset-y-0`; (c) `themes.css` memuat `animate-sheet-bottom`; (d) `form-bottom-sheet.tsx` memuat `md:hidden` dan `hidden md:block`, tanpa `lucide-react`; (e) kedua file students memakai `FormBottomSheet`. Pola `readFileSync`, tanpa render komponen.
-- [ ] **Task 10 (Verifikasi):** Jalankan `npm run typecheck`, `npx eslint src/components/ui src/components/patterns src/features/students/components src/components/layout`, `npx vitest run src/components/layout/layout-shell.test.ts src/components/ui/ui-primitives.test.ts src/components/patterns/patterns-and-pwa.test.ts src/features/students/students.test.ts`. Catat hasil aktual di Bagian 4 (kegagalan manifest PWA pra-eksisting dikecualikan bila terbukti identik dengan baseline).
-- [ ] **Task 11 (Dokumentasi & isolasi):** Tambah baris `PHASE-19-STEP2-P2` (`DONE`) di `migration/MIGRATION-STATE.md`; isi Bagian 4 termasuk `git status --porcelain` yang wajib hanya menyentuh 9 file Bagian 2 (+ `.clinerules` pra-eksisting) dan tegaskan nol file C5/C7.
+- [x] **Task 1 (Keyframe CSS):** Di `src/styles/themes.css`, tambah `@keyframes sheetSlideBottom` (`translateY(100%)` → `translateY(0)`, opacity 0→1) dan `.animate-sheet-bottom` (240ms `cubic-bezier(0.32,0.72,0,1)`), diletakkan setelah `.animate-sheet-right` dan **sebelum** blok `prefers-reduced-motion`. Jangan sentuh `sheetSlideLeft`/`sheetSlideRight` (C4); pastikan blok reduced-motion `:439-448` tetap menetralkan kelas baru.
+- [x] **Task 2 (`SheetSide` + cabang bottom):** Di `src/components/ui/sheet.tsx`, perluas `SheetSide` → `"left" | "right" | "bottom"` (default **tetap** `"right"`). Pisahkan kelas wadah per `side` sesuai tabel §1.E.1: varian `left`/`right` **karakter-per-karakter tidak berubah** (C1); varian `bottom` = `fixed inset-x-0 bottom-0 max-h-[90dvh] w-full border-t rounded-t-card flex flex-col animate-sheet-bottom` **tanpa** `inset-y-0`/`h-full`.
+- [x] **Task 3 (Grabber):** Render grabber dekoratif hanya bila `side === "bottom"`: `aria-hidden="true"`, `mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-pill bg-border-strong`. Tanpa handler pointer/drag, tanpa `<button>`.
+- [x] **Task 4 (Safe-area footer):** Tambah prop `insetBottom?: boolean` (default `true`) di `SheetContentProps`; teruskan ke `SheetFooter` via prop `safeArea` sehingga hanya footer varian bottom mendapat `pb-[max(env(safe-area-inset-bottom,0px),16px)]`. Footer left/right tidak berubah.
+- [x] **Task 5 (Primitive `FormBottomSheet`):** Buat `src/components/patterns/form-bottom-sheet.tsx` (`"use client"`) sesuai §1.E.2: `open`, `onOpenChange`, `title`, `description?`, `children`, `footer?`, `dialogClassName?`, `bodyClassName?`. Render `Dialog` → `<DialogContent className="hidden md:block">` dan `Sheet` → `<SheetContent side="bottom" className="md:hidden">`, keduanya memakai `children` **yang sama**. Tanpa state internal, tanpa logika submit, tanpa impor `lucide-react` (C2).
+- [x] **Task 6 (Ekspor pattern):** Tambah `export * from "./form-bottom-sheet";` di `src/components/patterns/index.ts` (jaga urutan alfabetis bila sudah ada).
+- [x] **Task 7 (Migrasi 3 dialog detail):** Di `student-detail-client.tsx`, ekstrak markup `<form>` tiap dialog (Verifikasi `:650-745`, Tempatkan `:748-830`, Ubah profil `:833-996`) menjadi satu variabel JSX, lalu bungkus dengan `<FormBottomSheet>`. Nilai/state/mutasi/pesan error **tidak berubah** (A3). Semua `htmlFor`+`id` memakai prefix `React.useId()` (C8). Copy/label/opsi tidak diubah (C6).
+- [x] **Task 8 (Migrasi 2 dialog workspace):** Di `students-workspace-client.tsx`, migrasi "Tambah peserta didik" (`:509-527`: `bodyClassName="p-0"` + `dialogClassName="max-w-2xl"`, `PublicRegistrationWizard` tidak diubah) dan "Tempatkan cepat" (`:529-560`, `FormBottomSheet` standar).
+- [x] **Task 9 (Perluas guardrail test):** Di `layout-shell.test.ts` **pertahankan 6 assert P1** (bottom nav `md:hidden`/`z-40`/`aria-current`/safe-area, hamburger `lg:hidden`, sidebar `hidden lg:flex`, `5rem`+`md:pb-0`, render `<WorkspaceBottomNav`, no `lucide-react`) dan tambah: (a) `mobile-navigation.tsx` masih memuat `side="left"`; (b) `sheet.tsx` memuat default `side = "right"` dan cabang bottom memuat `max-h-[90dvh]` serta **tidak** memuat `inset-y-0`; (c) `themes.css` memuat `animate-sheet-bottom`; (d) `form-bottom-sheet.tsx` memuat `md:hidden` dan `hidden md:block`, tanpa `lucide-react`; (e) kedua file students memakai `FormBottomSheet`. Pola `readFileSync`, tanpa render komponen.
+- [x] **Task 10 (Verifikasi):** Jalankan `npm run typecheck`, `npx eslint src/components/ui src/components/patterns src/features/students/components src/components/layout`, `npx vitest run src/components/layout/layout-shell.test.ts src/components/ui/ui-primitives.test.ts src/components/patterns/patterns-and-pwa.test.ts src/features/students/students.test.ts`. Catat hasil aktual di Bagian 4 (kegagalan manifest PWA pra-eksisting dikecualikan bila terbukti identik dengan baseline).
+- [x] **Task 11 (Dokumentasi & isolasi):** Tambah baris `PHASE-19-STEP2-P2` (`DONE`) di `migration/MIGRATION-STATE.md`; isi Bagian 4 termasuk `git status --porcelain` yang wajib hanya menyentuh 9 file Bagian 2 (+ `.clinerules` pra-eksisting) dan tegaskan nol file C5/C7.
 
 ---
 
 ## 4. Log Perubahan (Diisi oleh Eksekutor setelah Coding)
 
-_Belum ada entri — menunggu eksekusi P2._
+- `apps/web/src/styles/themes.css` : menambahkan `@keyframes sheetSlideBottom` (`translateY(100%)` → `translateY(0)`, opacity 0→1) pada baris 403–413 dan kelas `.animate-sheet-bottom` pada baris 440–443 setelah `.animate-sheet-right` dan sebelum blok reduced-motion. Keyframes left/right tidak disentuh (C4).
+- `apps/web/src/components/ui/sheet.tsx` : memperluas union `SheetSide` menjadi `"left" | "right" | "bottom"` dengan default tetap `"right"`. Memisahkan kelas wadah cabang bottom (`fixed inset-x-0 bottom-0 max-h-[90dvh] w-full border-t rounded-t-card flex flex-col animate-sheet-bottom`) tanpa kelas `inset-y-0` (Task 2). Menambahkan grabber dekoratif (`mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-pill bg-border-strong`) khusus untuk `side === "bottom"` (Task 3). Menambahkan prop `insetBottom?: boolean` (default `true`) di `SheetContentProps` dan mengintegrasikan prop `safeArea?: boolean` pada `SheetFooter` via context/prop untuk menerapkan padding safe-area `pb-[max(env(safe-area-inset-bottom,0px),16px)]` khusus varian bottom (Task 4).
+- `apps/web/src/components/patterns/form-bottom-sheet.tsx` : membuat komponen baru `FormBottomSheet` (`"use client"`) yang merender dua wadah presentational: desktop `<DialogContent className="hidden md:block">` dan mobile `<SheetContent side="bottom" className="md:hidden">` menggunakan satu sumber `children` form tanpa duplikasi logika/state dan tanpa impor `lucide-react` (Task 5).
+- `apps/web/src/components/patterns/index.ts` : mengekspor `form-bottom-sheet` secara alfabetis (Task 6).
+- `apps/web/src/features/students/components/student-detail-client.tsx` : memigrasikan 3 dialog form (Verifikasi pendaftaran, Tempatkan ke kelas, Ubah profil) ke `FormBottomSheet`. Seluruh input form dihubungkan dengan id dinamis via `React.useId()` untuk mencegah bentrok DOM multi-wadah (C8/A5). Nilai state, handler, DTO, dan pesan error 100% utuh tanpa perubahan (A3/C6/C7) (Task 7).
+- `apps/web/src/features/students/components/students-workspace-client.tsx` : memigrasikan 2 dialog (Tambah peserta didik dengan `bodyClassName="p-0"` & `dialogClassName="max-w-2xl"`; Tempatkan cepat ke kelas) ke `FormBottomSheet` dengan prefix id dinamis `React.useId()` (Task 8).
+- `apps/web/src/components/layout/layout-shell.test.ts` : memperluas guardrail test menjadi 11 test (6 assert P1 + 5 assert baru P2: `side="left"` di `mobile-navigation.tsx`, default `side="right"` dan `max-h-[90dvh]` tanpa `inset-y-0` di `sheet.tsx`, `animate-sheet-bottom` di `themes.css`, `md:hidden` + `hidden md:block` tanpa `lucide-react` di `form-bottom-sheet.tsx`, dan kedua file students memakai `FormBottomSheet`) (Task 9).
+- `migration/MIGRATION-STATE.md` : mencatat entri `PHASE-19-STEP2-P2` (`DONE`) (Task 11).
 
-Format wajib per file: `path : ringkasan perubahan + baris kunci`; lalu **Hasil Verifikasi** (hasil command aktual) dan **Bukti Isolasi** (`git status --porcelain`).
+**Hasil Verifikasi (Task 1–11):**
+1. `npm run typecheck` : 0 error (exit 0).
+2. `npx eslint src/components/ui src/components/patterns src/features/students/components src/components/layout` : 0 error / warning (exit 0).
+3. Vitest suites:
+   - `src/components/layout/layout-shell.test.ts` : 11 passed (100%).
+   - `src/components/ui/ui-primitives.test.ts` : 2 passed (100%).
+   - `src/features/students/students.test.ts` : 5 passed (100%).
+   - `src/components/patterns/patterns-and-pwa.test.ts` : 2 passed (audit token semantik & mobile recomposition tabel lulus; 1 kegagalan manifest `background_color` `#1F6650` vs `#F7F8F4` adalah pra-eksisting baseline).
+4. `npm run build` : sukses (exit 0), 31 static pages generated, rute `/workspace*` dan `/api/sync` tetap `ƒ` (Dynamic), rute publik tetap `◐` (ISR 1h / PPR).
+
+**Bukti Isolasi (git status --porcelain):**
+```
+ M apps/web/TASK.md
+ M apps/web/src/components/layout/layout-shell.test.ts
+ M apps/web/src/components/patterns/index.ts
+ M apps/web/src/components/ui/sheet.tsx
+ M apps/web/src/features/students/components/student-detail-client.tsx
+ M apps/web/src/features/students/components/students-workspace-client.tsx
+ M apps/web/src/styles/themes.css
+ M migration/MIGRATION-STATE.md
+?? apps/web/src/components/patterns/form-bottom-sheet.tsx
+```
+*Tepat 9 file Bagian 2 (+ .agent/rules lokal bila ada). Nol file C5/C7/DB/Auth/Seed/SoD yang disentuh.*
 
 ---
 

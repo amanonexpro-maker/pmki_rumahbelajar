@@ -3,6 +3,7 @@ export * from "./decision-history";
 export * from "./detail-tabs";
 export * from "./entity-header";
 export * from "./feedback-banner";
+export * from "./form-bottom-sheet";
 export * from "./form-section";
 export * from "./page-header";
 export * from "./review-section";

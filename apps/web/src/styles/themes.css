@@ -399,6 +399,17 @@ body {
   }
 }
 
+@keyframes sheetSlideBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 @keyframes dropdownFadeIn {
   from {
     opacity: 0;
@@ -424,6 +435,10 @@ body {
 
 .animate-sheet-right {
   animation: sheetSlideRight 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-sheet-bottom {
+  animation: sheetSlideBottom 240ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .animate-dropdown {

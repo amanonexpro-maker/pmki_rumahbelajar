@@ -7,6 +7,7 @@ import { ChevronRight, Plus, UserCheck, Users } from "lucide-react";
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
   DataTable,
+  FormBottomSheet,
   PageHeader,
   SearchToolbar,
   type DataTableColumn,
@@ -14,13 +15,6 @@ import {
 import {
   Badge,
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Icon,
 } from "@/components/ui";
 import type { AcademicYearDTO, ClassSummaryDTO } from "@/features/academic";
@@ -94,6 +88,7 @@ export function StudentsWorkspaceClient({
   );
   const [placePending, setPlacePending] = React.useState(false);
   const [placeError, setPlaceError] = React.useState<string | null>(null);
+  const quickPlaceClassId = React.useId();
 
   const updateUrlParams = React.useCallback(
     (updates: Record<string, string | null>) => {
@@ -506,78 +501,42 @@ export function StudentsWorkspaceClient({
       )}
 
       {/* Dialog: Tambah peserta didik */}
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Tambah peserta didik</DialogTitle>
-            <DialogDescription>
-              Catat pendaftaran peserta didik baru beserta persetujuan wali.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogBody>
-            <PublicRegistrationWizard
-              embedded
-              onSuccess={() => {
-                setAddDialogOpen(false);
-                router.refresh();
-              }}
-            />
-          </DialogBody>
-        </DialogContent>
-      </Dialog>
+      <FormBottomSheet
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        title="Tambah peserta didik"
+        description="Catat pendaftaran peserta didik baru beserta persetujuan wali."
+        dialogClassName="max-w-2xl"
+        bodyClassName="p-0"
+      >
+        <PublicRegistrationWizard
+          embedded
+          onSuccess={() => {
+            setAddDialogOpen(false);
+            router.refresh();
+          }}
+        />
+      </FormBottomSheet>
 
       {/* Dialog: Tempatkan ke kelas */}
-      <Dialog
+      <FormBottomSheet
         open={Boolean(quickPlaceStudent)}
         onOpenChange={(open) => {
           if (!open) setQuickPlaceStudent(null);
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Tempatkan ke kelas</DialogTitle>
-            <DialogDescription>
-              Pilih kelas untuk{" "}
-              <strong className="text-foreground">
-                {quickPlaceStudent?.fullName}
-              </strong>{" "}
-              ({quickPlaceStudent?.educationLevelLabel}). Penempatan akan
-              mengaktifkan status belajar peserta didik.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogBody className="space-y-4">
-            {placeError && (
-              <div
-                role="alert"
-                className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
-              >
-                {placeError}
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <label
-                htmlFor="quick-place-class"
-                className="block text-sm font-medium text-foreground"
-              >
-                Pilih kelas tujuan
-              </label>
-              <select
-                id="quick-place-class"
-                value={selectedClassId}
-                onChange={(e) => setSelectedClassId(e.target.value)}
-                className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-              >
-                {classes.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name} — Terisi {cls.enrolledCount}/{cls.capacity} kursi
-                    {cls.isFull ? " (Penuh)" : ` (Sisa ${cls.remainingSeats})`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </DialogBody>
-          <DialogFooter>
+        title="Tempatkan ke kelas"
+        description={
+          <>
+            Pilih kelas untuk{" "}
+            <strong className="text-foreground">
+              {quickPlaceStudent?.fullName}
+            </strong>{" "}
+            ({quickPlaceStudent?.educationLevelLabel}). Penempatan akan
+            mengaktifkan status belajar peserta didik.
+          </>
+        }
+        footer={
+          <>
             <Button
               type="button"
               variant="ghost"
@@ -595,9 +554,42 @@ export function StudentsWorkspaceClient({
             >
               {placePending ? "Menyimpan..." : "Tempatkan ke kelas"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {placeError && (
+            <div
+              role="alert"
+              className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
+            >
+              {placeError}
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <label
+              htmlFor={quickPlaceClassId}
+              className="block text-sm font-medium text-foreground"
+            >
+              Pilih kelas tujuan
+            </label>
+            <select
+              id={quickPlaceClassId}
+              value={selectedClassId}
+              onChange={(e) => setSelectedClassId(e.target.value)}
+              className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
+            >
+              {classes.map((cls) => (
+                <option key={cls.id} value={cls.id}>
+                  {cls.name} — Terisi {cls.enrolledCount}/{cls.capacity} kursi
+                  {cls.isFull ? " (Penuh)" : ` (Sisa ${cls.remainingSeats})`}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </FormBottomSheet>
     </div>
   );
 }

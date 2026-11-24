@@ -4,14 +4,14 @@ import {
   listClassesForServiceUnit,
   listTeachersForServiceUnit,
   resolveTeacherForActor,
-} from "@/features/academic";
-import { listAttendanceSessionHistory } from "@/features/attendance";
-import { listAuditLogsForWorkspace } from "@/features/audit";
-import { countRevokedConsentsForDashboard } from "@/features/consent";
-import { listGovernanceReportsForWorkspace } from "@/features/governance";
-import { countUnreviewedMediaForDashboard } from "@/features/media";
-import { countAwaitingPublicationsForDashboard } from "@/features/publishing";
-import { countStudentsForDashboard } from "@/features/students";
+} from "@/features/academic/services/academic-service";
+import { listAttendanceSessionHistory } from "@/features/attendance/services/attendance-service";
+import { listAuditLogsForWorkspace } from "@/features/audit/services/audit-service";
+import { countRevokedConsentsForDashboard } from "@/features/consent/services/consent-service";
+import { listGovernanceReportsForWorkspace } from "@/features/governance/services/governance-service";
+import { countUnreviewedMediaForDashboard } from "@/features/media/services/media-service";
+import { countAwaitingPublicationsForDashboard } from "@/features/publishing/services/publishing-service";
+import { countStudentsForDashboard } from "@/features/students/services/student-service";
 import { getRoleLabel, type SystemRole } from "@/lib/status";
 import type { SessionUser } from "@/server/auth/session";
 import { can } from "@/server/permissions/can";
@@ -286,10 +286,14 @@ export async function buildContextualDashboardViewModel(
         ])
       : [null, [], [], null];
 
-  // Chunk 2: Class Learning Contexts (Dependent on classesList, bounded by class count)
-  const classContexts = await Promise.all(
-    classesList.map((cls) => getClassLearningContext(cls.id))
-  );
+  // Chunk 2: Class Learning Contexts, limited to four concurrent classes.
+  const classContexts: Awaited<ReturnType<typeof getClassLearningContext>>[] = [];
+  for (let i = 0; i < classesList.length; i += 4) {
+    const batch = classesList.slice(i, i + 4);
+    classContexts.push(
+      ...(await Promise.all(batch.map((cls) => getClassLearningContext(cls.id))))
+    );
+  }
 
   // Chunk 3a: Operational Aggregates (Targeted students count, attendance history, governance reports)
   const [studentCounts, attendanceResult, reportsResult] = await Promise.all([

@@ -337,7 +337,7 @@ export function ConsentWorkspaceClient({
             }
             action={
               canUpdate ? (
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-3">
                   <Button
                     type="button"
                     variant="secondary"
@@ -348,15 +348,13 @@ export function ConsentWorkspaceClient({
                     Perbarui persetujuan
                   </Button>
                   {row.photoVideoConsent === "GRANTED" && (
-                    <Button
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-10 text-xs"
+                      className="min-h-10 text-xs text-danger underline-offset-4 hover:underline focus-ring px-2 py-1 rounded-control"
                       onClick={() => openEditor(row, true)}
                     >
                       Cabut persetujuan
-                    </Button>
+                    </button>
                   )}
                 </div>
               ) : null

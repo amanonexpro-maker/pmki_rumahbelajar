@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { EmptyState } from "@/components/compositions";
 import {
+  DatePicker,
   PageHeader,
   SearchToolbar,
   StatSummary,
@@ -832,20 +833,12 @@ export function MediaWorkspaceClient({
                   </select>
                 </div>
 
-                <div className="space-y-1">
-                  <label
-                    htmlFor="media-date"
-                    className="block text-xs font-medium text-foreground"
-                  >
-                    Tanggal kegiatan
-                  </label>
-                  <Input
-                    id="media-date"
-                    type="date"
-                    value={uploadDate}
-                    onChange={(e) => setUploadDate(e.target.value)}
-                  />
-                </div>
+                <DatePicker
+                  id="media-date"
+                  label="Tanggal kegiatan"
+                  value={uploadDate}
+                  onChange={(v) => setUploadDate(v)}
+                />
               </div>
 
               <div className="space-y-1">

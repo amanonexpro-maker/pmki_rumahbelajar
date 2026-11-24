@@ -1,4 +1,5 @@
 export * from "./data-table";
+export * from "./date-picker";
 export * from "./decision-history";
 export * from "./detail-tabs";
 export * from "./entity-header";

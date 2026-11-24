@@ -1,6 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
-import { Icon } from "@/components/ui";
+import { Icon, Skeleton } from "@/components/ui";
 import { ICON_MAP } from "@/config/icons";
 import { cn } from "@/lib/cn";
 
@@ -19,6 +19,9 @@ export interface SummaryStripProps {
   bordered?: boolean;
   className?: string;
 }
+
+export const summaryStripGridClass =
+  "flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-y-6 sm:gap-x-6 sm:divide-x sm:divide-border sm:pb-0";
 
 /**
  * SummaryStrip (Fase 19 Step 2 - P3, W2, UI-UX §30).
@@ -44,7 +47,7 @@ export function SummaryStrip({
         className
       )}
     >
-      <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-y-6 sm:gap-x-6 sm:divide-x sm:divide-border sm:pb-0">
+      <div className={summaryStripGridClass}>
         {items.map((item, idx) => {
           const inner = (
             <div
@@ -64,7 +67,7 @@ export function SummaryStrip({
                       icon={ICON_MAP.arrowUpRight}
                       size="sm"
                       aria-hidden="true"
-                      className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="opacity-70 text-primary group-hover:opacity-100 transition-opacity"
                     />
                   )}
                 </div>
@@ -106,3 +109,40 @@ export function SummaryStrip({
   );
 }
 
+export interface SummaryStripSkeletonProps {
+  count?: number;
+  ariaLabel?: string;
+  bordered?: boolean;
+  className?: string;
+}
+
+/**
+ * SummaryStripSkeleton (Fase 19 Step 2 - P4, R-MAJ-2).
+ * Skeleton loader dekoratif untuk strip ringkasan operasional.
+ * Menggunakan summaryStripGridClass yang sama persis agar kelas strip satu sumber kebenaran.
+ * Server-safe (komponen server murni).
+ */
+export function SummaryStripSkeleton({
+  count = 4,
+  bordered = true,
+  className,
+}: SummaryStripSkeletonProps) {
+  return (
+    <section
+      aria-hidden="true"
+      className={cn(
+        bordered && "border-y border-border py-4 sm:py-5",
+        className
+      )}
+    >
+      <div className={summaryStripGridClass}>
+        {Array.from({ length: count }).map((_, idx) => (
+          <Skeleton
+            key={idx}
+            className="min-w-[78%] sm:min-w-0 h-20 sm:h-16 rounded-card sm:rounded-none"
+          />
+        ))}
+      </div>
+    </section>
+  );
+}

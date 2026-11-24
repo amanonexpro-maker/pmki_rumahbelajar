@@ -4,6 +4,7 @@ import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
+  DatePicker,
   DetailTabs,
   FeedbackBanner,
   MobileCardList,
@@ -18,7 +19,11 @@ import { useDraftRecovery } from "@/hooks/use-draft-recovery";
 import { useOfflineQueue } from "@/hooks/use-offline-queue";
 import { cn } from "@/lib/cn";
 import { OFFLINE_MESSAGES, SUCCESS_MESSAGES } from "@/lib/messages";
-import type { AttendanceStatus, SyncStatus } from "@/lib/status";
+import {
+  ATTENDANCE_STATUS_META,
+  type AttendanceStatus,
+  type SyncStatus,
+} from "@/lib/status";
 import { recordAttendanceSessionAction } from "../actions/attendance-actions";
 import type {
   AttendanceRecordItemDTO,
@@ -36,28 +41,28 @@ interface StatusOption {
 const ATTENDANCE_OPTIONS: StatusOption[] = [
   {
     code: "PRESENT",
-    label: "Hadir",
+    label: ATTENDANCE_STATUS_META.PRESENT.label,
     pillTone: "bg-success-soft text-success border-success/30",
     selectedStyles:
       "bg-success-soft text-success border-success/50 font-semibold shadow-xs ring-1 ring-success/30",
   },
   {
     code: "SICK",
-    label: "Sakit",
+    label: ATTENDANCE_STATUS_META.SICK.label,
     pillTone: "bg-warning-soft text-warning-foreground border-warning/30",
     selectedStyles:
       "bg-warning-soft text-warning-foreground border-warning/50 font-semibold shadow-xs ring-1 ring-warning/30",
   },
   {
     code: "PERMITTED",
-    label: "Izin",
+    label: ATTENDANCE_STATUS_META.PERMITTED.label,
     pillTone: "bg-info-soft text-info border-info/30",
     selectedStyles:
       "bg-info-soft text-info border-info/50 font-semibold shadow-xs ring-1 ring-info/30",
   },
   {
     code: "ABSENT",
-    label: "Alpa",
+    label: ATTENDANCE_STATUS_META.ABSENT.label,
     pillTone: "bg-danger-soft text-danger border-danger/30",
     selectedStyles:
       "bg-danger-soft text-danger border-danger/50 font-semibold shadow-xs ring-1 ring-danger/30",
@@ -404,20 +409,13 @@ export function AttendanceWorkspaceClient({
             </select>
           </div>
 
-          <div className="space-y-1">
-            <label
-              htmlFor="attendance-date-input"
-              className="block text-xs font-medium text-secondary-foreground"
-            >
-              Tanggal sesi belajar
-            </label>
-            <Input
-              id="attendance-date-input"
-              type="date"
-              value={initialDate}
-              onChange={(e) => updateUrl({ date: e.target.value })}
-            />
-          </div>
+          <DatePicker
+            id="attendance-date-input"
+            label="Tanggal sesi belajar"
+            value={initialDate}
+            onChange={(v) => updateUrl({ date: v })}
+            containerClassName="space-y-1"
+          />
         </div>
       </div>
 
@@ -514,28 +512,28 @@ export function AttendanceWorkspaceClient({
                 {/* Realtime Recapitulation Pills */}
                 <div className="flex flex-wrap items-center gap-2">
                   <div role="status" aria-live="polite" className="sr-only">
-                    {`Rekapitulasi presensi: ${counts.presentCount} hadir, ${counts.sickCount} sakit, ${counts.permittedCount} izin, ${counts.absentCount} alpa dari total ${counts.total} peserta didik.`}
+                    {`Rekapitulasi presensi: ${counts.presentCount} hadir, ${counts.sickCount} sakit, ${counts.permittedCount} izin, ${counts.absentCount} tidak hadir dari total ${counts.total} peserta didik.`}
                   </div>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-success-soft text-success border border-success/30">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-medium bg-success-soft text-success border border-success/30">
                     Hadir:{" "}
                     <strong className="tabular-nums font-semibold">
                       {counts.presentCount}
                     </strong>
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-warning-soft text-warning-foreground border border-warning/30">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-medium bg-warning-soft text-warning-foreground border border-warning/30">
                     Sakit:{" "}
                     <strong className="tabular-nums font-semibold">
                       {counts.sickCount}
                     </strong>
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-info-soft text-info border border-info/30">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-medium bg-info-soft text-info border border-info/30">
                     Izin:{" "}
                     <strong className="tabular-nums font-semibold">
                       {counts.permittedCount}
                     </strong>
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-danger-soft text-danger border border-danger/30">
-                    Alpa:{" "}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-medium bg-danger-soft text-danger border border-danger/30">
+                    Tidak hadir:{" "}
                     <strong className="tabular-nums font-semibold">
                       {counts.absentCount}
                     </strong>
@@ -772,7 +770,7 @@ export function AttendanceWorkspaceClient({
                       </strong>
                     </span>
                     <span>
-                      Alpa:{" "}
+                      Tidak hadir:{" "}
                       <strong className="text-danger-foreground">
                         {hist.absentCount}
                       </strong>

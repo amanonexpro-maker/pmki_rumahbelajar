@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, CloudOff, RotateCcw, ShieldCheck } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { StatusBadge } from "@/components/compositions";
 import {
+  DatePicker,
   FeedbackBanner,
   FormSection,
   ReviewSection,
@@ -13,6 +14,7 @@ import {
   type StepItem,
 } from "@/components/patterns";
 import { Badge, Button, Icon, Input, Textarea } from "@/components/ui";
+import { ICON_MAP } from "@/config/icons";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
 import { submitPublicRegistrationAction } from "../actions/student-actions";
 import {
@@ -267,7 +269,10 @@ export function PublicRegistrationWizard({
                 : "h-12 w-12 rounded-pill bg-success-soft text-success flex items-center justify-center shrink-0"
             }
           >
-            <Icon icon={isQueued ? CloudOff : CheckCircle2} size="lg" />
+            <Icon
+              icon={isQueued ? ICON_MAP.cloudOff : ICON_MAP.checkCircle}
+              size="lg"
+            />
           </div>
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -434,24 +439,20 @@ export function PublicRegistrationWizard({
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="reg-birthDate"
-                  className="block text-sm font-medium text-foreground"
-                >
-                  Tanggal lahir *
-                </label>
-                <Input
-                  id="reg-birthDate"
-                  type="date"
-                  {...register("birthDate")}
-                />
-                {errors.birthDate && (
-                  <p className="text-xs text-danger">
-                    {errors.birthDate.message}
-                  </p>
+              <Controller
+                control={control}
+                name="birthDate"
+                render={({ field, fieldState }) => (
+                  <DatePicker
+                    id="reg-birthDate"
+                    label="Tanggal lahir"
+                    required
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    error={fieldState.error?.message}
+                  />
                 )}
-              </div>
+              />
 
               <div className="space-y-1.5">
                 <label
@@ -691,7 +692,7 @@ export function PublicRegistrationWizard({
 
             <div className="rounded-control border border-border bg-surface-subtle/50 p-4 space-y-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Icon icon={ShieldCheck} size="sm" className="text-primary" />
+                <Icon icon={ICON_MAP.shieldCheck} size="sm" className="text-primary" />
                 <span>Persetujuan Foto & Video (Terpisah & Sukarela)</span>
               </div>
               <p className="text-xs text-secondary-foreground leading-relaxed">

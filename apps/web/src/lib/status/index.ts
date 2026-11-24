@@ -126,3 +126,35 @@ export function getRoleLabel(role: SystemRole): string {
   return ROLE_LABELS[role];
 }
 
+export type AuditEntityType =
+  | "student"
+  | "attendance_session"
+  | "development_note"
+  | "consent"
+  | "media_asset"
+  | "publication"
+  | "report"
+  | "user"
+  | "role"
+  | "user_permission"
+  | "user_membership";
+
+export const AUDIT_ENTITY_META: Record<AuditEntityType, { label: string }> = {
+  student: { label: "Peserta didik" },
+  attendance_session: { label: "Sesi kehadiran" },
+  development_note: { label: "Catatan perkembangan" },
+  consent: { label: "Persetujuan wali" },
+  media_asset: { label: "Dokumentasi" },
+  publication: { label: "Publikasi" },
+  report: { label: "Laporan pelayanan" },
+  user: { label: "Pengguna" },
+  role: { label: "Peran" },
+  user_permission: { label: "Override hak akses" },
+  user_membership: { label: "Lingkup penugasan" },
+} as const;
+
+export function getAuditEntityLabel(code: string): string {
+  return AUDIT_ENTITY_META[code as AuditEntityType]?.label ?? code;
+}
+
+

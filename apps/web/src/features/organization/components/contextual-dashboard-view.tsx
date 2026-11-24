@@ -183,7 +183,7 @@ export function ContextualDashboardBody({
     <>
       {/*
        * Responsive Order (UI-3 Parity):
-       * Mobile (<640px): Orientation -> [Perlu perhatian & Jadwal belajar] -> Ringkasan operasional -> Aktivitas terbaru
+       * Mobile (<640px): Orientation -> Ringkasan operasional -> [Perlu perhatian & Jadwal belajar] -> Aktivitas terbaru
        * Tablet/Desktop (>=640px): Orientation -> Ringkasan operasional -> [Perlu perhatian | Jadwal belajar] -> Aktivitas terbaru
        */}
 

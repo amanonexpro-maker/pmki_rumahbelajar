@@ -1,3 +1,4 @@
+import { SummaryStripSkeleton } from "@/components/patterns";
 import { Skeleton } from "@/components/ui";
 
 export function DashboardBodySkeleton() {
@@ -7,13 +8,8 @@ export function DashboardBodySkeleton() {
       aria-label="Memuat data operasional ruang kerja"
       className="flex flex-col gap-8"
     >
-      {/* Operational Summary Strip Skeleton (Mobile snap scroll friendly) */}
-      <div className="border-y border-border py-4 sm:py-5 flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 sm:divide-x sm:divide-border sm:pb-0">
-        <Skeleton className="min-w-[78%] sm:min-w-0 h-20 sm:h-16 rounded-card sm:rounded-none" />
-        <Skeleton className="min-w-[78%] sm:min-w-0 h-20 sm:h-16 rounded-card sm:rounded-none" />
-        <Skeleton className="min-w-[78%] sm:min-w-0 h-20 sm:h-16 rounded-card sm:rounded-none" />
-        <Skeleton className="min-w-[78%] sm:min-w-0 h-20 sm:h-16 rounded-card sm:rounded-none" />
-      </div>
+      {/* Operational Summary Strip Skeleton (Mobile snap scroll friendly via pattern) */}
+      <SummaryStripSkeleton />
 
       {/* Attention & Schedule Columns Skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

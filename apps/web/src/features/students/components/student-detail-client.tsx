@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
+  DatePicker,
   DetailTabs,
   EntityHeader,
   FormBottomSheet,
@@ -525,20 +526,12 @@ export function StudentDetailClient({
             onChange={(e) => setEditNickname(e.target.value)}
           />
         </div>
-        <div className="space-y-1">
-          <label
-            htmlFor={editBirthDateId}
-            className="block text-xs font-medium text-foreground"
-          >
-            Tanggal lahir
-          </label>
-          <Input
-            id={editBirthDateId}
-            type="date"
-            value={editBirthDate}
-            onChange={(e) => setEditBirthDate(e.target.value)}
-          />
-        </div>
+        <DatePicker
+          id={editBirthDateId}
+          label="Tanggal lahir"
+          value={editBirthDate}
+          onChange={(v) => setEditBirthDate(v)}
+        />
         <div className="space-y-1">
           <label
             htmlFor={editGenderId}

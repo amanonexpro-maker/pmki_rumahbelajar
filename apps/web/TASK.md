@@ -8,190 +8,289 @@
 
 ## 1. Tujuan & Spesifikasi Fitur (Diisi oleh Gemini Pro)
 
-- **Nama Fitur:** FASE 19 — STEP 2 PRIORITAS 3 (P3): `MobileCardList` + `SummaryStrip` + Orientasi & Ringkasan Header
+- **Nama Fitur:** FASE 19 — STEP 2 PRIORITAS 4 (P4): `DatePicker` Mobile-Friendly + Normalisasi Label Status + Penutupan Backlog Audit P3
 - **Tujuan:**
-  Menghadirkan **daftar entitas mobile-first** di viewport `< 768px` lewat primitif `MobileCardList` (kartu 3–4 baris esensial, maksimal **satu** aksi primer, target sentuh `≥ 44px`) dan **strip ringkasan** lewat primitif `SummaryStrip` (scroll-snap horizontal + *peek* kartu berikutnya di mobile, grid terbagi di `≥ 640px`), lalu **mengadopsinya** di `/workspace` (dashboard) dan 4 halaman list kanonik — **tanpa** menyentuh data, auth, DTO, maupun logika bisnis.
-- **Sifat Pekerjaan:** **PRESENTATIONAL-ONLY.** Nol perubahan DB/seed/permission/sesi/DTO server/dependency. Nol perubahan signature server action & validator (hanya *wiring* presentational di client component).
-- **Ruang Lingkup STEP 2:**
+  Menghadirkan primitif **`DatePicker` mobile-friendly** untuk menggantikan `<Input type="date">` mentah di 4 titik pemakaian (Kehadiran, Dokumentasi, Pendaftaran publik, Ubah profil peserta didik), menormalkan **label kode status** menjadi label kanonik `src/lib/status` (satu sumber), mengekstrak **`SummaryStripSkeleton`** agar kelas strip hanya hidup di satu tempat, dan menutup **seluruh temuan non-blocking audit P3** — **tanpa** menyentuh data, auth, DTO, validasi, maupun logika bisnis.
+- **Sifat Pekerjaan:** **PRESENTATIONAL-ONLY.** Nol perubahan DB/seed/permission/sesi/DTO server/dependency. Nol perubahan signature server action & validator (hanya *wiring* presentational di client component). Nilai yang dikirim ke action/URL/validator tetap string `YYYY-MM-DD` — identik dengan perilaku `<input type="date">` hari ini.
+- **Ruang Lingkup STEP 2 (posisi P4):**
   | Prioritas | Isi | Status step ini |
   |---|---|---|
   | P1 | `workspace-bottom-nav` + padding `page-container` + koordinasi header | **SELESAI — `APPROVED`** (arsip §6.2) |
   | P2 | `ui/sheet.tsx` varian `side="bottom"` + primitif `form-bottom-sheet` + migrasi dialog form students | **SELESAI — `APPROVED`** (arsip §6.3, commit `35109eb`) |
-  | **P3** | `mobile-card-list` + `summary-strip` + orientasi/ringkasan header (W2, W3, M3, M10) | **DIRANCANG — belum dieksekusi** |
-  | P4 | `date-picker` + normalisasi label status | Tidak dikerjakan |
+  | P3 | `mobile-card-list` + `summary-strip` + orientasi/ringkasan header | **SELESAI — `APPROVED`** (arsip §6.4, commit `270189`) |
+  | **P4** | `date-picker` + normalisasi label status + backlog audit P3 (R-MIN-1/2, R-MAJ-1/2/3, R-DOK, R-TEST-2) | **DIISI — siap dieksekusi** |
   | P5 | Konsolidasi RBAC (R1–R5) | **DILARANG disentuh** (C5) |
 
 - **Aturan Arsitektural & Koordinasi Teknis (WAJIB):**
 
-  **A. Responsif — satu markup, dua presentasi, ambang `md` (768px)**
-  1. Guard **wajib** class-based. Breakpoint P3: **`< 768px` = kartu/mobile**, **`≥ 768px` = tabel/desktop**. Pasangan tampil/sembunyi memakai `md:`; `sm:` (640px) hanya untuk kepadatan grid di dalam satu komponen (mis. `SummaryStrip` 1 → 2 → 4 kolom).
-  2. **Dilarang** memakai `useMediaQuery`/`matchMedia`/`window.innerWidth`/`visualViewport` sebagai penentu render (hydration mismatch + flash). Tidak ada util media query di repo; **jangan** membuatnya di P3.
-  3. `DataTable` tetap satu-satunya jalur daftar utama halaman list: desktop `hidden md:block overflow-x-auto` + mobile `md:hidden` (`data-table.tsx:80-99`). P3 **wajib** memakai `renderMobileRow` yang sudah ada, **bukan** dua pemanggilan komponen terpisah per breakpoint. **Dilarang** membuat `DataTable` tandingan atau menyalin markup tabel.
-  4. `SummaryStrip` berdiri sendiri (bukan turunan `StatSummary`) tetapi **wajib** memakai kontrak visual strip dashboard yang sudah ada: `flex overflow-x-auto snap-x snap-mandatory` + `min-w-[78%]` + `sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:divide-x` + `-mx-4 px-4 sm:mx-0 sm:px-0`.
+  **A. Kontrak `DatePicker` (primitif input tanggal mobile-first)**
+  1. Lokasi `src/components/patterns/date-picker.tsx`; **wajib** `"use client"` (memegang ref/id turunan; halaman pemakainya sudah client component). Dilarang menambah dependency (`react-day-picker`, `date-fns`, dsb.).
+  2. Props **wajib** (persis): `id: string`, `value: string` (`YYYY-MM-DD` atau `""`), `onChange: (value: string) => void`, `name?: string`, `label?: string`, `hint?: string`, `error?: string`, `required?: boolean`, `disabled?: boolean`, `min?: string`, `max?: string`, `className?: string`, `containerClassName?: string`, `placeholder?: string`.
+  3. **Dua presentasi, satu nilai (ambang `md`/768px):**
+     - `< 768px`: field tampilan **`readOnly`** berlabel Indonesia via `formatToIndonesianStandard` (`@/utils/date-formatter`) + tombol kalender `Button size="icon" variant="secondary"` (`min-h-11`, `aria-label="Pilih tanggal"`, `aria-controls` → id input native). Native `Input type="date"` dipakai sebagai **lapisan sentuh fungsional** (`absolute inset-0 h-full w-full opacity-0` di dalam wadah `relative`) — tap di mana pun membuka *date picker* native OS (tanpa `useMediaQuery`/`matchMedia`, tanpa `suppressHydrationWarning` baru).
+     - `≥ 768px` (`hidden md:block`): native `Input type="date"` **terlihat normal** = perilaku hari ini; field tampilan Indonesia `md:hidden`.
+  4. **Id unik per instance (preseden P2 R1/R2):** `const generatedId = React.useId()`; id terhitung = `id` bila diberikan, jika tidak `generatedId`. Id turunan `-display` (field teks) & `-native` (input tanggal); `htmlFor`, `aria-describedby` (hint/error), `aria-invalid`, dan `aria-controls` **wajib** merujuk id terhitung itu. Dilarang id literal global berulang.
+  5. **Satu sumber kebenaran nilai:** hanya satu `onChange` dari native input; tidak ada state duplikat tanggal. Field tampilan **hanya dirender saat `value` terisi**; saat kosong hanya `placeholder` teks non-interaktif di atas lapisan transparan (hindari *flash* & hidrasi).
+  6. Aksesibilitas: `label` memakai `type-label` (pola `Input` existing); ikon via `Icon` + `ICON_MAP` `aria-hidden="true"`; target sentuh `≥ 44px` (`min-h-11` dasar `Input` + `min-h-11 sm:min-h-10` pada `Button`).
 
-  **B. Kontrak Visual `SummaryStrip` (kontrak matematis)**
-  - Root: `section[aria-label]` → `div` scroll-snap (`flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-y-6 sm:gap-x-6 sm:divide-x sm:divide-border sm:pb-0`).
-  - Item: mobile `p-4 rounded-card border border-border-subtle bg-surface`; desktop `sm:border-0 sm:bg-transparent sm:p-0` (+ `sm:pl-6` untuk item dengan `index > 0` agar angka tidak menempel garis `divide-x`).
-  - Tipografi item: nilai **`type-h1 text-foreground tabular-nums tracking-tight`**, label `text-sm font-semibold text-foreground`, konteks `type-caption text-secondary-foreground`. **Dilarang** ukuran font literal (`text-2xl`, `text-[18px]`) — wajib util `type-*`.
-  - Item ber-`href` dirender `Link` (satu-satunya elemen interaktif); item statis `div` tanpa `role="button"`. Ikon indikator `aria-hidden="true"`.
-  - Section opsional `bordered` → `border-y border-border`. **Dilarang** `shadow-*` pada item (kartu statis tanpa elevasi — preseden sub-sesi 11).
-  - Wrapper item: `snap-start shrink-0 min-w-[78%] sm:min-w-0`. **Dilarang** `snap-center` (memotong tepi kiri di 375px).
+  **B. Kontrak `SummaryStripSkeleton` (penutup R-MAJ-2)**
+  - Lokasi `src/components/patterns/summary-strip.tsx` (satu berkas, **satu sumber kelas strip**). Ekspor baru: `summaryStripGridClass` (string kelas grid/scroll strip) + `export function SummaryStripSkeleton({ count = 4, ariaLabel = "Memuat ringkasan operasional", className })`.
+  - Root `SummaryStrip` **wajib** memakai `summaryStripGridClass` (literal string kelas grid tidak boleh tersisa di JSX).
+  - Skeleton: root `section` **`aria-hidden="true"`** (dekoratif; tidak menambah landmark) + `div` ber-`summaryStripGridClass` + `count` × `<Skeleton className="min-w-[78%] sm:min-w-0 h-20 sm:h-16 rounded-card sm:rounded-none" />`. Server-safe (tanpa `"use client"`).
 
-  **C. Kontrak Visual `MobileCardList` (kartu baris untuk `DataTable.renderMobileRow`)**
-  1. **Komposisi semantik:** `DataTable` sudah memiliki `ul[role="list"]` dan setiap baris berada di dalam `li`. Karena itu `MobileCardList` **tidak boleh** membuat `ul`/`li` baru ketika dipasang sebagai `renderMobileRow`; primitif ini merender satu kartu/baris (root `div`), sedangkan list semantik dan pemisah antarkartu tetap milik `DataTable`. Ini menghindari nested list, border ganda, dan perubahan pada P2 `DataTable`.
-  2. Struktur isi 3–4 baris: **baris 1** identitas utama + status/badge; **baris 2** metadata utama (kelas/jenjang/wilayah); **baris 3** metadata sekunder (opsional); **baris 4** maksimal satu aksi primer (`min-h-10`), aksi sekunder berupa tautan teks di baris sama atau dihilangkan.
-  3. Root kartu: `div` tanpa peran list, `space-y-2`/layout internal, tidak menambah border/padding luar karena `DataTable` menyediakan `li` `p-4` + `rounded-card border border-border bg-surface overflow-hidden` + `divide-y divide-border-subtle`. **Dilarang** `<table>`/`<th>`/`<td>` atau `overflow-x-auto`.
-  4. Presentational-only; props `item` + `renderItem` (atau kontrak baris ekuivalen), tanpa state, server action, fetch, atau pengelolaan izin. Tombol/tautan aksi interior menghentikan propagasi (`e.stopPropagation()`) bila `DataTable` memakai `onRowClick`.
+  **C. Kontrak `auditEntityMeta` (penutup R-MIN-1, di `src/lib/status`)**
+  - Ekspor di `src/lib/status/index.ts`: `export type AuditEntityType = "student" | "attendance_session" | "development_note" | "consent" | "media_asset" | "publication" | "report" | "user" | "role" | "user_permission" | "user_membership"`, `export const AUDIT_ENTITY_META: Record<AuditEntityType, { label: string }>` (label kanonik **identik** dengan `ENTITY_TYPE_OPTIONS` existing), dan `export function getAuditEntityLabel(code: string): string` → `AUDIT_ENTITY_META[code as AuditEntityType]?.label ?? code`.
+  - Lookup murni: tanpa I/O, tanpa dependency baru, tanpa menyentuh login/RBAC. `src/lib/status` **bukan** artefak C5/C7 — menyentuhnya sah untuk P4.
 
-  **D. Orientasi & Ringkasan Header**
-  1. `PageHeader` (`patterns/page-header.tsx`) **tidak diubah** — `flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between pb-3` sudah menumpuk vertikal di `< 640px`; aksi primer `Button` sudah `min-h-11`.
-  2. Dashboard memakai `DashboardOrientationHeader` → `PageHeader`. P3 hanya boleh menyunting markup internal header/strip di file target §2; **dilarang** memindahkan komponen lintas folder.
-  3. `EntityHeader` **tidak** diubah (dipakai `student-detail-client.tsx` = artefak P2).
+  **D. Normalisasi label status (satu sumber `src/lib/status`)**
+  1. `ATTENDANCE_OPTIONS` di `attendance-workspace-client.tsx` **wajib** mengambil label dari `ATTENDANCE_STATUS_META[code].label`; hanya `code` + kelas visual yang dipertahankan. Label hardcoded "Hadir/Sakit/Izin/Alpa" **dilarang**. Konsekuensi **wajib dicatat di Bagian 4**: `ABSENT` berubah "Alpa" → **"Tidak hadir"** (kanonik; sejalan `attendance.test.ts`).
+  2. Label entitas audit **dilarang** diturunkan dari kode mentah (`entityType.replace(/_/g, " ")`); wajib `getAuditEntityLabel` (§1.C).
+  3. Dilarang membuat konstanta label status domain baru di level komponen; gunakan konstanta `lib/status` existing. Nol perubahan konstanta existing (kecuali **penambahan** `AUDIT_ENTITY_META`).
 
-  **E. Isolasi & Anti-Drift (C1–C8 — mengikat seluruh P3)**
-  - **C1.** Dilarang mengubah `DEFAULT_WORKSPACE_NAV`, `PRIORITY_HREFS`, dan kunci `ICON_MAP` yang sudah ada. Kunci `ICON_MAP` baru **hanya** aditif dan **hanya** bila benar-benar dipakai.
-  - **C2.** File baru P3 (`mobile-card-list.tsx`, `summary-strip.tsx`) **dilarang** mengimpor `lucide-react`; ikon lewat `Icon` (`@/components/ui`) + `ICON_MAP` (`@/config/icons`). Di file lama yang dimigrasi, import `lucide-react` **hanya** boleh dihapus bila setiap ikonnya punya kunci `ICON_MAP` setara (`chevronRight`, `arrowRight`, `arrowUpRight`, `checkCircle`, `calendarCheck`, `peserta`, `history`, `lock`, `shieldCheck`, `plus` sudah ada); bila tidak ada, tambahkan kunci **aditif**. `strokeWidth={2}` milik `ICON_MAP` **tidak** dinormalisasi.
-  - **C3.** Nol kelas palet hardcoded (`bg-*-500`, `text-gray-700`, dst.) dan nol heksadesimal warna di TSX; hanya token semantik (`bg-surface`, `text-foreground`, `text-secondary-foreground`, `text-muted-foreground`, `border-border`, `border-border-subtle`, `bg-surface-subtle`, `bg-primary-soft`, `text-primary`). **Dilarang** `rounded-full` → wajib `rounded-pill`. **Dilarang** `shadow-md`/`shadow-lg` pada kartu statis.
-  - **C4.** Nol sentuhan `src/styles/*.css` (`tokens.css`, `typography.css`, `themes.css`). Nol keyframe/animasi baru; transisi hanya util existing (`transition-colors`).
-  - **C5. Isolasi mutlak P5 RBAC:** dilarang menyentuh `db/seed/*`, `permission-resolver.ts`, `server/auth/*`, `migration/RBAC-MATRIX.md`, `rbac.integration.test.ts`, `features/students/permissions/student-policy.ts`, `app-shell.tsx`, `sidebar.tsx`. Proyeksi izin (`canVerifyStudent`, `canUpdate`, `canCreate`, `canViewAuditLog`, `vm.can*`) **dibaca apa adanya** — P3 **dilarang** menambah/menghapus/menurunkan kondisi izin; hanya boleh memindahkan letak render.
+  **E. Isolasi & Anti-Drift (C1–C8 mengikat P4)**
+  - **C1.** Dilarang mengubah `DEFAULT_WORKSPACE_NAV`, `PRIORITY_HREFS`, dan kunci `ICON_MAP` existing. Kunci baru **hanya** aditif & **hanya** bila dipakai; `ICON_MAP.calendar` sudah ada dan **dipakai ulang** oleh `DatePicker` → target **0 kunci baru**.
+  - **C2.** `date-picker.tsx` & `summary-strip.tsx` **dilarang** mengimpor `lucide-react`; ikon lewat `Icon` (`@/components/ui`) + `ICON_MAP` (`@/config/icons`). Di file pemakai lama, import `lucide-react` **boleh dihapus hanya** bila setiap ikonnya punya kunci `ICON_MAP` setara (matriks §1.F); tidak boleh menambah kebutuhan ikon baru.
+  - **C3.** Nol kelas palet hardcoded (`bg-*-500`, `text-gray-700`, dst.), nol heksadesimal; hanya token semantik (`bg-surface`, `text-foreground`, `text-secondary-foreground`, `text-muted-foreground`, `text-primary`, `border-border`, `border-border-subtle`, `*-soft`). **Dilarang** `rounded-full` → `rounded-pill`. Nol `bg-*` ganda pada satu string kelas.
+  - **C4.** Nol sentuhan `src/styles/*.css`. Nol keyframe/animasi baru (`animate-pulse` milik `Skeleton` tetap).
+  - **C5. Isolasi mutlak P5 RBAC:** dilarang menyentuh `db/seed/*`, `permission-resolver.ts`, `server/auth/*`, `migration/RBAC-MATRIX.md`, `rbac.integration.test.ts`, `features/students/permissions/student-policy.ts`, `app-shell.tsx`, `sidebar.tsx`. Proyeksi izin (`canVerifyStudent`, `canUpdate`, `canCreate`, `vm.can*`) **dibaca apa adanya**.
   - **C6.** Tanpa `any`, tanpa `eslint-disable`, tanpa mengubah `tsconfig`/`next.config`/`package.json`/`vitest.config`.
-  - **C7.** Dilarang mengubah logika domain: `features/*/actions/*`, `features/*/services/*`, `features/*/types*.ts`, `features/*/validators/*`, query loader, serta seluruh `*.test.ts` non-guardrail (`students.test.ts`, `consent.test.ts`, `audit.test.ts`, `dashboard.integration.test.ts`, dll).
-  - **C8.** Dilarang menyentuh artefak P1/P2: `workspace-bottom-nav.tsx`, `page-container.tsx`, `app-shell.tsx`, `mobile-navigation.tsx`, `workspace-header.tsx`, `layout-shell.test.ts`, `ui/sheet.tsx`, `patterns/form-bottom-sheet.tsx`, `patterns/entity-header.tsx`, `patterns/page-header.tsx`, `patterns/data-table.tsx`, `patterns/stat-summary.tsx`, `themes.css`, `student-detail-client.tsx`. Di `students-workspace-client.tsx` P2, satu-satunya area P3 yang diizinkan adalah ekspresi `renderMobileRow` daftar; dialog/sheet dan semua bagian lain tetap terlarang. Di `patterns/index.ts` hanya dua baris ekspor alfabetis baru.
-- **Spesifikasi Visual (W2 + W3):**
-  ```
-  ┌──────────────────────────────────┐  ← < 768px (375px) — SummaryStrip
-  │ [ 12      78%      ][ 8 ·peek22%]│  ← snap-x snap-mandatory, min-w-[78%]
-  └──────────────────────────────────┘
-  ┌──────────────────────────────────┐  ← MobileCardList — satu item
-  │ Nama Peserta Didik      [Status] │  ← baris 1: identitas + badge
-  │ Kelas A · SMP                    │  ← baris 2: metadata utama
-  │ No. daftar · Panggilan           │  ← baris 3: metadata sekunder (opsional)
-  │                      [ Aksi -> ] │  ← baris 4: MAKSIMAL satu aksi primer
-  └──────────────────────────────────┘
-  ┌──────────────────────────────────┐  ← ≥ 768px (md:) — tabel existing
-  │ Peserta didik │ Jenjang │ Status │  ← DataTable `hidden md:block`
-  └──────────────────────────────────┘
-  ```
-  - *Peek* kartu berikutnya ≈ 22% (`min-w-[78%]`) = petunjuk gulir tanpa teks instruksi tambahan.
-  - Nol perubahan copy: seluruh label/status memakai konstanta existing (`STATUS_META`, `AUDIT_ACTION_LABELS`, `CONSENT_STATUS_META`). Normalisasi label status = **P4**.
-  - `≥ 768px` = `DataTable` existing, tanpa perubahan visual.
+  - **C7.** Dilarang mengubah logika domain: `features/*/actions/*`, `features/*/services/*`, `features/*/validators/*`, `features/*/types*.ts` (kecuali `features/audit/types/audit-types.ts` **hanya** boleh kehilangan `ENTITY_TYPE_OPTIONS` yang pindah ke `lib/status`), query loader (`src/app/**/page.tsx`), serta seluruh `*.test.ts` non-guardrail.
+  - **C8.** Dilarang menyentuh artefak P1/P2/P3: `workspace-bottom-nav.tsx`, `page-container.tsx`, `app-shell.tsx`, `mobile-navigation.tsx`, `workspace-header.tsx`, `sidebar.tsx`, `layout-shell.test.ts`, `ui/sheet.tsx`, `patterns/form-bottom-sheet.tsx`, `patterns/entity-header.tsx`, `patterns/page-header.tsx`, `patterns/data-table.tsx`, `patterns/stat-summary.tsx`, `patterns/mobile-card-list.tsx`, `patterns/patterns-mobile.test.ts`, `patterns/stat-summary`, `themes.css`, `student-detail-client.tsx`. Di file pemakai P4, hanya area yang tercantum di kolom "Batas perubahan" §2 yang boleh berubah.
 
-- **Kriteria Selesai (STEP 2 — P3):**
-  - [ ] `src/components/patterns/summary-strip.tsx` ada, **tanpa** `"use client"`, props `{ items: SummaryStripItem[]; ariaLabel?: string; bordered?: boolean; className?: string }`, item `{ id, value, label, context?, href?, badge? }`; memuat `snap-x`, `min-w-[78%]`, `sm:grid-cols-2`, `type-h1`; **tidak** memuat `rounded-full`, `shadow-md`, `lucide-react`, angka palet.
-  - [ ] `src/components/patterns/mobile-card-list.tsx` ada sebagai kartu-baris presentational (tanpa hook/state/fetch; props item + renderer; root `div`, tanpa nested `ul`/`li`). List semantik dan border/padding luar tetap disediakan `DataTable`.
-  - [ ] Kedua komponen diekspor dari `components/patterns/index.ts` secara alfabetis (jumlah ekspor bertambah dari 14 menjadi 16).
-  - [ ] `/workspace`: `contextual-dashboard-view.tsx` memakai `SummaryStrip`; nol import langsung `lucide-react` setelah penggantian ikon memakai `Icon` + `ICON_MAP`; nol literal `min-w-[78%]`/`snap-*`/`divide-x` tersisa di file itu.
-  - [ ] Empat halaman list (Peserta Didik, Persetujuan, Jejak Audit, Kehadiran) memakai kartu-baris `MobileCardList` di dalam `renderMobileRow`; `SummaryStrip` di halaman list hanya bila agregat sudah tersedia di VM. `DataTable` tetap tidak diubah.
-  - [ ] Aksi kartu maksimal satu aksi primer (`min-h-10`); aksi interior menghentikan propagasi bila diperlukan.
-  - [ ] Nol perubahan kondisi izin (`can*`/`vm.can*`) — hanya relokasi render (C5).
-  - [ ] `layout-shell.test.ts` **tidak berubah** (11 assert hijau) + guardrail P3 `patterns-mobile.test.ts` minimal 10 assert (§3 Task 10).
-  - [ ] Nol perubahan action/service/types/validator dan test non-guardrail; nol sentuhan artefak P1/P2/P5 (C5/C8); `git status --porcelain` hanya menyentuh §2.
-  - [ ] `npm run typecheck` 0 error; eslint bersih untuk `src/components/patterns` + file dashboard dan 4 client list; `layout-shell.test.ts`, `ui-primitives.test.ts`, `patterns-and-pwa.test.ts`, `patterns-mobile.test.ts` hijau (kegagalan manifest PWA pra-eksisting dikecualikan & dicatat).
-  - [ ] Entri `PHASE-19-STEP2-P3` ditambahkan di `migration/MIGRATION-STATE.md`.
+  **F. Matriks ganti-atas-ganti ikon di file pemakai (C2 — nol kunci baru)**
+  | File | Import `lucide-react` existing | Keputusan P4 |
+  |---|---|---|
+  | `attendance-workspace-client.tsx` | *tidak ada* (sudah `Icon` + `ICON_MAP`) | hanya `DatePicker` + label `ATTENDANCE_STATUS_META` |
+  | `media-workspace-client.tsx` | dicatat di Task 1 dari kondisi aktual | ganti **hanya** bila kunci `ICON_MAP` setara ada; jika tidak, import dipertahankan (jangan tambah kunci demi migrasi) |
+  | `public-registration-wizard.tsx` | `CheckCircle2`, `CloudOff`, `RotateCcw`, `ShieldCheck` | `checkCircle` ✔, `cloudOff` ✔, `shieldCheck` ✔ → **partial migration**; `RotateCcw` **tidak ada** kuncinya → import `RotateCcw` dipertahankan & dicatat di Bagian 4 |
+  | `student-detail-client.tsx` | milik P2 | **hanya** blok input tanggal lahir (`:528‑541`) → `DatePicker`; ikon/state/dialog lain **identik** |
+  | `contextual-dashboard-view.tsx` | *tidak ada* | hanya komentar urutan mobile (§1.G.1) |
+  | `audit/consent-workspace-client.tsx` | `Eye/History/Lock`, `Lock/ShieldAlert/ShieldCheck` | tidak ada kewajiban migrasi ikon di P4 (tidak dinilai) |
+
+  **G. Penutupan backlog audit P3 (R-MIN-1/2, R-MAJ-1/2/3, R-DOK, R-TEST-2)**
+  1. **R-MAJ-1** — `contextual-dashboard-view.tsx:186‑190`: komentar urutan mobile **wajib** menyatakan `Orientation → Ringkasan operasional → [Perlu perhatian & Jadwal belajar] → Aktivitas terbaru`; komentar tablet/desktop dipertahankan. Orde visual (`order-2`/`order-3`) **tidak** diubah.
+  2. **R-MAJ-2** — kelas strip di `app/(workspace)/workspace/loading.tsx:10‑16` **wajib** diganti `<SummaryStripSkeleton />` (kelas hanya hidup di `summary-strip.tsx`). `DashboardBodySkeleton` tetap diekspor.
+  3. **R-MAJ-3** — item ber-`href` pada `SummaryStrip`: ikon `arrowUpRight` **wajib** tampak tanpa hover (`opacity-70`, bukan `opacity-0`) + `group-hover:opacity-100` + `text-primary` sebagai petunjuk afinitas tautan di layar sentuh. Hover latar boleh dipertahankan.
+  4. **R-MIN-1** — kartu Audit: baris 1 = **identitas entitas** (`getAuditEntityLabel(row.entityType)` + ID pendek `font-mono`); **tanggal** di `badge`; **pelaku** naik ke `primaryMeta`; `Badge` aksi (`row.actionLabel`) menjadi **baris tersendiri di dalam `primaryMeta`** (tepat satu `Badge`, nol nested badge); `description` tetap metadata sekunder.
+  5. **R-MIN-2** — kartu Consent: **maksimal satu `Button`** dalam wadah `action`. `Cabut persetujuan` menjadi `<button type="button">` teks (`min-h-10`, `text-danger`, `underline-offset-4 hover:underline`, `focus-ring`) di wadah `flex flex-wrap items-center justify-end gap-3`. Kondisi `canUpdate` & `photoVideoConsent === "GRANTED"` **identik**.
+  6. **R-DOK** — narasi kunci aditif P3 (3 kunci: `arrowRight` dashboard, `calendar` dashboard + `DatePicker`, `arrowUpRight` primitif) dicatat presisi di Bagian 4; **tanpa** perubahan kode.
+  7. **R-TEST-2** — assert `min-w-[78%]` **wajib** mencakup **kedua** varian wrapper (ber-`href` & statis) via `matchAll`; ditambah assert anti-duplikasi kelas strip di `loading.tsx` & dashboard.
+
+- **Spesifikasi Visual (mengikat):**
+  ```
+  < 768px — DatePicker (contoh Kehadiran: "Tanggal sesi belajar")
+  ┌──────────────────────────────────────────────────┐
+  │ Tanggal sesi belajar                             │  ← label type-label
+  │ ┌──────────────────────────────────────────────┐ │
+  │ │ 24 November 2026                      [cal]  │ │  ← readOnly display + Button size="icon"
+  │ └──────────────────────────────────────────────┘ │  ← native date input opacity-0 menutup field
+  └──────────────────────────────────────────────────┘
+
+  ≥ 768px — DatePicker
+  ┌──────────────────────────────────────────────────┐
+  │ [ 24/11/2026 ]                                   │  ← Input type="date" terlihat (perilaku hari ini)
+  └──────────────────────────────────────────────────┘
+
+  Kirim ke action/URL/validator: "2026-11-24" (identik dengan input native)
+
+  Kartu Audit (R-MIN-1 — baris 1 = identitas, bukan aksi)
+  ┌──────────────────────────────────────────────────┐
+  │ Peserta didik · a1b2c3d4e5f6        [24 Nov 2026] │  ← title + badge (tanggal)
+  │ [Status pendaftaran diperbarui]                   │  ← Badge aksi (primaryMeta)
+  │ Oleh: Bu Ratna                                    │  ← pelaku (primaryMeta)
+  │ Riwayat Audit →                                   │  ← tepat satu aksi primer min-h-10
+  └──────────────────────────────────────────────────┘
+
+  Kartu Consent (R-MIN-2 — tepat satu Button)
+  │ [Perbarui persetujuan]   Cabut persetujuan        │  ← Button + tautan teks (min-h-10)
+  ```
+  - Nol perubahan copy bisnis: label/status memakai konstanta `CONSENT_STATUS_META`, `AUDIT_ACTION_LABELS`, `AUDIT_ENTITY_META`, `ATTENDANCE_STATUS_META`.
+  - Nol `z-*` baru (lapisan transparan berada di dalam alur normal, bukan overlay).
+  - `≥ 768px` = presentasi existing tanpa perubahan visual selain tanggal native yang memang sudah ada.
+
+- **Kriteria Selesai (STEP 2 — P4):**
+  - [ ] `src/components/patterns/date-picker.tsx` ada, ber-`"use client"`, props persis §1.A.2, memuat `min-h-11` + `aria-controls` + id turunan `-display`/`-native` + `formatToIndonesianStandard` + `Icon`/`ICON_MAP.calendar`; **tidak** memuat `lucide-react`, `useMediaQuery`, `matchMedia`, `window.innerWidth`, `rounded-full`, `shadow-md`/`shadow-lg`, kelas palet, atau `#hex`.
+  - [ ] `type="date"` mentah: **0 kemunculan di luar `date-picker.tsx`** (4 titik pemakai dimigrasi; bukti `git grep` di Bagian 4).
+  - [ ] `summary-strip.tsx` mengekspor `summaryStripGridClass` + `SummaryStripSkeleton`; root `SummaryStrip` memakai `summaryStripGridClass`; indikator `arrowUpRight` `opacity-70` + `text-primary` + `group-hover:opacity-100`.
+  - [ ] `app/(workspace)/workspace/loading.tsx` **0 hit** `min-w-[78%]`/`snap-`/`divide-x`/`sm:grid-cols-2`; memakai `<SummaryStripSkeleton />`; `DashboardBodySkeleton` tetap diekspor.
+  - [ ] `audit-workspace-client.tsx`: baris 1 = `getAuditEntityLabel(row.entityType)` + ID pendek; tanggal di `badge`; `Badge` aksi & pelaku di `primaryMeta`; aksi tunggal `Riwayat Audit`; **0** definisi `ENTITY_TYPE_OPTIONS` lokal; filter tetap memakai konstanta `lib/status`.
+  - [ ] `consent-workspace-client.tsx`: wadah `action` memuat **tepat 1** `<Button` (assert guardrail) + `<button>` teks `min-h-10`; kondisi `canUpdate` identik.
+  - [ ] `contextual-dashboard-view.tsx`: komentar urutan mobile = `Orientation → Ringkasan operasional → [Perlu perhatian & Jadwal belajar] → Aktivitas terbaru`; `order-*` visual tidak berubah.
+  - [ ] `ATTENDANCE_OPTIONS` tanpa label hardcoded; perubahan "Alpa" → "Tidak hadir" dicatat di Bagian 4.
+  - [ ] `src/lib/status/index.ts` mengekspor `AuditEntityType` + `AUDIT_ENTITY_META` + `getAuditEntityLabel`; `features/audit/types/audit-types.ts` hanya kehilangan `ENTITY_TYPE_OPTIONS`.
+  - [ ] Nol perubahan kondisi izin (`can*`/`vm.can*`) — hanya relokasi/penyederhanaan markup (C5).
+  - [ ] `patterns-mobile.test.ts` **tidak berubah** (10 assert hijau); `student-detail-client.tsx` blok di luar input tanggal lahir, `data-table.tsx`, `mobile-card-list.tsx`, `layout-shell.test.ts`, `ui/sheet.tsx`, `themes.css` **0 baris** di `git diff` (C8).
+  - [ ] Nol perubahan action/service/validator/test non-guardrail (C7); `git status --porcelain` hanya menyentuh §2 (+ `TASK.md`).
+  - [ ] `npm run typecheck` 0 error; eslint bersih untuk seluruh file §2; `patterns-mobile.test.ts` (10), `layout-shell.test.ts` (11), `ui-primitives.test.ts` (2), `status.test.ts` (2), `patterns-p4.test.ts` (≥14) hijau; kegagalan baseline pra-eksisting dikecualikan & dilampirkan identik.
+  - [ ] Entri `PHASE-19-STEP2-P4` ditambahkan di `migration/MIGRATION-STATE.md` (repo root).
+
 ## 2. File Target (Diisi oleh Gemini Pro)
 
-- **Zona yang BOLEH dibuat/diubah (allow-list — 10 file):**
+- **Zona yang BOLEH dibuat/diubah (allow-list — 14 file):**
 
 | # | File | Aksi | Batas perubahan |
 |---|---|---|---|
-| 1 | `src/components/patterns/summary-strip.tsx` | **BUAT** | Primitif presentational, server-safe, kontrak §1.B |
-| 2 | `src/components/patterns/mobile-card-list.tsx` | **BUAT** | Primitif presentational kartu-baris untuk `renderMobileRow`, kontrak §1.C |
-| 3 | `src/components/patterns/index.ts` | UBAH | Hanya 2 baris ekspor baru, urutan alfabetis |
-| 4 | `src/components/patterns/patterns-mobile.test.ts` | **BUAT** | Berkas guardrail P3 (10 assert, §3 Task 10) |
-| 5 | `src/features/organization/components/contextual-dashboard-view.tsx` | UBAH | Ganti strip manual & ikon `lucide-react` → `SummaryStrip` + `Icon`; layout/tata letak boleh disesuaikan |
-| 6 | `src/features/students/components/students-workspace-client.tsx` *(render daftar)* | UBAH | **Hanya** isi `renderMobileRow` → `MobileCardList`; nol perubahan dialog/sheet P2 |
-| 7 | `src/features/consent/components/consent-workspace-client.tsx` | UBAH | `SummaryStrip` bila tersedia agregat di VM + `renderMobileRow` → `MobileCardList` |
-| 8 | `src/features/audit/components/audit-workspace-client.tsx` | UBAH | `SummaryStrip` bila tersedia agregat di VM + `renderMobileRow` → `MobileCardList` |
-| 9 | `src/features/attendance/components/attendance-workspace-client.tsx` | UBAH | `renderMobileRow` → `MobileCardList`; `SummaryStrip` hanya bila agregat sudah tersedia di VM |
-| 10 | `migration/MIGRATION-STATE.md` (repo root) | UBAH | Tambah entri `PHASE-19-STEP2-P3` |
+| 1 | `src/components/patterns/date-picker.tsx` | **BUAT** | Primitif input tanggal mobile-first, kontrak §1.A; `"use client"` |
+| 2 | `src/components/patterns/summary-strip.tsx` (P3) | UBAH | Ekspor `summaryStripGridClass` + `SummaryStripSkeleton` (§1.B) & R-MAJ-3 (`opacity-70 text-primary group-hover:opacity-100`); kelas grid tidak berubah |
+| 3 | `src/components/patterns/index.ts` | UBAH | Hanya 1 baris ekspor alfabetis baru (`./date-picker`); total 16 → 17 |
+| 4 | `src/lib/status/index.ts` | UBAH | **Hanya penambahan** `AuditEntityType` + `AUDIT_ENTITY_META` + `getAuditEntityLabel` (§1.C); konstanta existing identik |
+| 5 | `src/features/audit/types/audit-types.ts` | UBAH | **Hanya** hapus `ENTITY_TYPE_OPTIONS` (pindah ke `lib/status`); label/DTO/fungsi lain identik |
+| 6 | `src/features/audit/components/audit-workspace-client.tsx` | UBAH | Kartu `MobileCardList` (§1.G.4) + filter memakai `AUDIT_ENTITY_META`; nol perubahan action/izin |
+| 7 | `src/features/consent/components/consent-workspace-client.tsx` | UBAH | Kartu `MobileCardList` (§1.G.5): tepat satu `Button` + tautan teks cabut |
+| 8 | `src/features/attendance/components/attendance-workspace-client.tsx` | UBAH | `ATTENDANCE_OPTIONS` derivasi label (§1.D.1) + input tanggal → `<DatePicker>` (`:407‑419`) |
+| 9 | `src/features/media/components/media-workspace-client.tsx` | UBAH | Input `#media-date` → `<DatePicker>` (`:835‑848`) + migrasi ikon hanya bila kunci setara ada (§1.F) |
+| 10 | `src/features/students/components/public-registration-wizard.tsx` | UBAH | Input `#reg-birthDate` → `<DatePicker>` via `Controller` RHF (`:438‑452`) + partial migrasi ikon (§1.F) |
+| 11 | `src/features/students/components/student-detail-client.tsx` | UBAH | **Hanya** blok input tanggal lahir (`:528‑541`) → `<DatePicker>`; dialog/sheet P2 & state lain identik |
+| 12 | `src/features/organization/components/contextual-dashboard-view.tsx` | UBAH | **Hanya** komentar urutan mobile (`:184‑190`, R-MAJ-1) |
+| 13 | `src/app/(workspace)/workspace/loading.tsx` | UBAH | Skeleton strip → `<SummaryStripSkeleton />` (R-MAJ-2); `DashboardBodySkeleton` tetap diekspor |
+| 14 | `src/components/patterns/patterns-p4.test.ts` | **BUAT** | Berkas guardrail P4 (≥14 assert, §3 Task 11) |
 
-> **Batas jumlah file:** 10 file di allow-list. Scope konsumsi `SummaryStrip` pada halaman dibatasi pada dashboard `/workspace` dan empat halaman list kanonik (Students, Consent, Audit, Attendance); tidak menambah halaman Dokumentasi/Governance tanpa perubahan TASK terpisah.
+> **Batas jumlah file:** tepat **14 file** (jumlah baris tabel = jumlah header allow-list). `migration/MIGRATION-STATE.md` (repo root) dan `apps/web/TASK.md` adalah artefak dokumentasi wajib di luar hitungan allow-list (preseden P1–P3).
 
 - **DENY-LIST (mutlak — pelanggaran = `NEEDS REVISION`):**
-  - P1/P2: `workspace-bottom-nav.tsx`, `page-container.tsx`, `mobile-navigation.tsx`, `workspace-header.tsx`, `layout-shell.test.ts`, `ui/sheet.tsx`, `patterns/form-bottom-sheet.tsx`, `patterns/entity-header.tsx`, `patterns/page-header.tsx`, `patterns/data-table.tsx`, `patterns/stat-summary.tsx`, `student-detail-client.tsx`.
-  - Primitif `src/components/ui/*` (termasuk `icon.tsx`) — **read-only**.
-  - `src/config/icons.ts` — read-only kecuali penambahan kunci **aditif** yang benar-benar dipakai (C1/C2); penambahan wajib dicatat di Bagian 4.
-  - `src/styles/*.css` (C4).
-  - **P5/RBAC:** `db/seed/*`, `permission-resolver.ts`, `server/auth/*`, `RBAC-MATRIX.md`, `rbac.integration.test.ts`, `features/students/permissions/*`, `app-shell.tsx`, `sidebar.tsx`.
-  - Domain & tooling: `features/*/actions/*`, `features/*/services/*`, `features/*/validators/*`, `features/*/types*.ts`, query loader, `*.test.ts` non-guardrail, `package.json`, `tsconfig.json`, `next.config.*`, `vitest.config.*`, `middleware.ts`.
+  - **P1/P2/P3:** `workspace-bottom-nav.tsx`, `page-container.tsx`, `app-shell.tsx`, `mobile-navigation.tsx`, `workspace-header.tsx`, `sidebar.tsx`, `layout-shell.test.ts`, `ui/sheet.tsx`, `patterns/form-bottom-sheet.tsx`, `patterns/entity-header.tsx`, `patterns/page-header.tsx`, `patterns/data-table.tsx`, `patterns/stat-summary.tsx`, `patterns/mobile-card-list.tsx`, `patterns/patterns-mobile.test.ts`, `themes.css`.
+  - **Primitif `src/components/ui/*`** (termasuk `input.tsx`, `icon.tsx`, `skeleton.tsx`, `button.tsx`, `popover.tsx`) — **read-only**.
+  - `src/config/icons.ts` — read-only kecuali kunci **aditif** yang benar-benar dipakai (C1/C2); target P4 = **0 kunci baru**.
+  - `src/styles/*.css` (C4), `src/utils/date-formatter.ts` (read-only).
+  - **P5/RBAC:** `db/seed/*`, `permission-resolver.ts`, `server/auth/*`, `migration/RBAC-MATRIX.md`, `rbac.integration.test.ts`, `features/students/permissions/*`, `app-shell.tsx`, `sidebar.tsx`.
+  - Domain & tooling: `features/*/actions/*`, `features/*/services/*`, `features/*/validators/*`, `features/*/types*.ts` (selain No. 5), query loader `src/app/**/page.tsx`, `*.test.ts` non-guardrail (termasuk `attendance.test.ts`, `audit.test.ts`, `consent.test.ts`, `status.test.ts`), `package.json`, `tsconfig.json`, `next.config.*`, `vitest.config.*`, `middleware.ts`.
+  - Halaman governance/publishing/reports/development/academic/administration dan `governance-workspace-client.tsx` — di luar lingkup P4.
 
 - **Cek anti-duplikasi sebelum menulis kode (wajib dicatat di Bagian 4):**
-  1. Pemindaian strip: `min-w-[78%]`, `snap-x`, `divide-x` di file dashboard target harus **0 hit** setelah kelas dipusatkan di pattern. Jangan melarang `SummaryStrip` sendiri pada file adopsi.
-  2. `grep -n "lucide-react"` di file dashboard target → **0 hit** setelah migrasi ikon ke `Icon` + `ICON_MAP` (C2); file list lain boleh tetap memakai ikon jika tidak termasuk lingkup penggantian.
-  3. `grep -n "rounded-full\|bg-\(slate\|gray\|zinc\|blue\|green\|red\|amber\|yellow\)-" src/components/patterns/{summary-strip,mobile-card-list}.tsx` → **0 hit**.
+  1. `git grep -n 'type="date"' -- 'src/**'` → hanya boleh hit di `src/components/patterns/date-picker.tsx` (target: 1 hit).
+  2. `git grep -n 'min-w-\[78%\]\|snap-x\|divide-x\|sm:grid-cols-2' -- 'src/app/(workspace)/workspace/loading.tsx'` → **0 hit**.
+  3. `git grep -n 'Alpa' -- 'src/features/attendance'` → **0 hit**.
+  4. `grep -n "rounded-full\|bg-\(slate\|gray\|zinc\|blue\|green\|red\|amber\|yellow\)-" src/components/patterns/{date-picker,summary-strip}.tsx` → **0 hit**.
+  5. `grep -n "lucide-react" src/components/patterns/{date-picker,summary-strip}.tsx` → **0 hit** (C2).
 
 ## 3. Daftar Tugas / Micro-Tasks (Diisi oleh Gemini Pro, Dicentang oleh Claude)
 
-- [x] **Task 1 (Cek Pra-syarat):** Konfirmasi `git status --porcelain` bersih; baca `patterns/data-table.tsx` (`renderMobileRow`), `patterns/stat-summary.tsx`, `patterns/index.ts`, `config/icons.ts` (`ICON_MAP`), serta file dashboard/students/consent/audit/attendance yang tercantum di allow-list. Catat ikon `lucide-react` yang dipakai dashboard dan kunci padanannya. **Tanpa edit.**
-- [x] **Task 2 (Primitif `SummaryStrip`):** Buat `src/components/patterns/summary-strip.tsx` — `export type SummaryStripItem`, `export interface SummaryStripProps`, `export function SummaryStrip(...)`. Implementasi kontrak §1.B (scroll-snap mobile, grid `sm`/`lg`, `type-h1`, `tabular-nums`, `divide-x` desktop, `Link` bila `href`). Tanpa `"use client"`.
-- [x] **Task 3 (Primitif `MobileCardList`):** Buat `src/components/patterns/mobile-card-list.tsx` — presentational generik kartu-baris (props `item` + `renderItem`, root `div`); tanpa `ul`/`li`, list luarnya disediakan `DataTable`; tanpa hook/state/fetch/izin.
-- [x] **Task 4 (Ekspor):** Tambah 2 baris ekspor di `src/components/patterns/index.ts` secara alfabetis (total ekspor bertambah dari 14 menjadi 16).
-- [x] **Task 5 (Dashboard `/workspace`):** Refaktor `contextual-dashboard-view.tsx` — strip operasional → `<SummaryStrip items={...} ariaLabel="Ringkasan operasional" />`; ganti ikon langsung `lucide-react` yang dipakai dashboard dengan `Icon` + kunci `ICON_MAP` padanannya; hapus kelas strip yang kini dimiliki pattern. Tidak mengubah data/VM/izin.
-- [x] **Task 6 (Migrasi Students & Attendance):** Isi `renderMobileRow` pada `students-workspace-client.tsx` dan `attendance-workspace-client.tsx` dengan `<MobileCardList>` (kartu 3–4 baris, satu aksi primer). Kondisi izin yang ada dipakai apa adanya. Nol perubahan `DataTable`/dialog/sheet.
-- [x] **Task 7 (Migrasi Consent & Audit):** Isi `renderMobileRow` pada `consent-workspace-client.tsx` dan `audit-workspace-client.tsx` dengan `<MobileCardList>`. Tambahkan `<SummaryStrip>` hanya bila agregat relevan sudah tersedia di VM; tanpa agregasi baru di client.
-- [x] **Task 8 (Ikon, bila perlu):** Jika kunci ikon dashboard yang sesuai belum ada di `ICON_MAP`, tambahkan kunci **aditif** di `src/config/icons.ts` (tanpa menyentuh kunci existing atau menormalisasi `strokeWidth`); catat kunci itu di Bagian 4. Nol kunci yatim.
-- [x] **Task 9 (Guardrail — self-check manual):** Jalankan 3 pemindaian anti-duplikasi §2 dan catat hasilnya di Bagian 4.
-- [x] **Task 10 (Berkas Guardrail P3):** Buat `src/components/patterns/patterns-mobile.test.ts` mengikuti gaya `patterns-and-pwa.test.ts` (`readFileSync` + assert string) dengan **minimal 10 assert**:
-  1. `summary-strip.tsx` memuat `snap-x` + `snap-mandatory` + `min-w-[78%]`.
-  2. `summary-strip.tsx` memuat `sm:grid-cols-2` + `lg:grid-cols-4` + `sm:divide-x`.
-  3. `summary-strip.tsx` memakai `type-h1` dan **tidak** memakai `text-2xl`/`text-[`.
-  4. `summary-strip.tsx` tanpa `"use client"`.
-  5. `mobile-card-list.tsx` memuat root kartu `div` dan **tidak** memuat `<ul`, `<li`, `<table`, `<th`, `<td`, atau `overflow-x-auto`.
-  6. Kedua file pattern **tidak** mengimpor `lucide-react`.
-  7. Kedua file pattern **tidak** memuat `rounded-full`, `shadow-md`, `shadow-lg`, kelas palet hardcoded, atau heksadesimal warna.
-  8. `patterns/index.ts` mengekspor `./summary-strip` dan `./mobile-card-list`.
-  9. `contextual-dashboard-view.tsx` **tidak** memuat import `lucide-react`, `min-w-[78%]`, atau `snap-x`.
-  10. `DataTable` tetap mengandung `renderMobileRow` serta string kelas `ul`/`li` miliknya (assert berbasis source; test/komponen P2 tidak diubah).
-  > Assert wajib mengekstrak/memeriksa string kelas nyata (`content.match(/"[^"\n]*<kelas>[^"\n]*"/)`), bukan regex coarse atau boolean literal — preseden §6.3 butir 3.
-- [x] **Task 11 (Verifikasi akhir):** `npm run typecheck` → 0 error; `npx eslint src/components/patterns src/features/organization/components/contextual-dashboard-view.tsx src/features/students/components/students-workspace-client.tsx src/features/consent/components/consent-workspace-client.tsx src/features/audit/components/audit-workspace-client.tsx src/features/attendance/components/attendance-workspace-client.tsx` → 0 error/warning; `npx vitest run src/components/patterns src/components/layout src/components/ui` → semua hijau (kecuali kegagalan manifest PWA pra-eksisting—lampirkan bukti identik dengan baseline). Tempel hasil di Bagian 4.
-- [x] **Task 12 (Dokumentasi):** Tambah entri `PHASE-19-STEP2-P3` di `migration/MIGRATION-STATE.md` (status, file disentuh, assert guardrail, catatan utang). Isi Bagian 4 `TASK.md` lengkap (file, perubahan, hasil grep, test).
+- [x] **Task 1 (Cek Pra-syarat — READ-ONLY):** Konfirmasi `git status --porcelain` bersih (HEAD `270189`). Baca & catat kondisi aktual: `patterns/summary-strip.tsx`, `patterns/index.ts`, `ui/input.tsx` (kelas dasar), `ui/button.tsx` (`size="icon"`), `ui/skeleton.tsx`, `config/icons.ts` (`calendar`, `cloudOff`, `checkCircle`, `shieldCheck`), `utils/date-formatter.ts`, `lib/status/index.ts`, 4 titik `type="date"`, `audit-workspace-client.tsx` (`:18‑33`, `:260‑300`), `consent-workspace-client.tsx` (`:336‑368`), `attendance-workspace-client.tsx` (`:28‑66`, `:405‑420`), `workspace/loading.tsx`, serta pemakai lain `DashboardBodySkeleton`. Catat import `lucide-react` aktual di `media-workspace-client.tsx` & `public-registration-wizard.tsx` beserta padanan `ICON_MAP`. **Tanpa edit.**
+- [x] **Task 2 (Primitif `DatePicker`):** Buat `src/components/patterns/date-picker.tsx` (`"use client"`) — `export interface DatePickerProps` persis §1.A.2 + `export function DatePicker(...)`. Implementasi: `useId()` fallback id, wrapper `space-y-2` + label `type-label`; blok mobile (`relative` + `Input readOnly` display `md:hidden` + `Button type="button" size="icon" variant="secondary"` `min-h-11` + `Input type="date"` `opacity-0 absolute inset-0` id `-native`); blok desktop (`hidden md:block` `Input type="date"`); `hint`/`error` dengan pola id `-hint`/`-error`, `aria-invalid`, `aria-describedby`. Nilai yang dipancarkan = **string `YYYY-MM-DD` apa adanya**. Nol `lucide-react` (pakai `ICON_MAP.calendar` via `Icon`).
+- [x] **Task 3 (`summaryStripGridClass` + `SummaryStripSkeleton`):** Sunting `patterns/summary-strip.tsx` — ekstrak string grid existing ke `export const summaryStripGridClass = "..."` (nilai **identik**, nol perubahan kelas), pakai di root `SummaryStrip`; tambah `SummaryStripSkeleton` (§1.B); terapkan R-MAJ-3 pada ikon `arrowUpRight` (`opacity-70 text-primary group-hover:opacity-100`). `patterns-mobile.test.ts` **tidak boleh** berubah (assert 1–10 tetap hijau).
+- [x] **Task 4 (Ekspor pattern):** Tambah 1 baris `export * from "./date-picker";` di `patterns/index.ts` pada urutan alfabetis (setelah `./data-table`, sebelum `./decision-history`); total ekspor 16 → 17.
+- [x] **Task 5 (Kanonik status entitas audit):** Tambah `AuditEntityType`, `AUDIT_ENTITY_META`, `getAuditEntityLabel` di `src/lib/status/index.ts` dengan label **sama persis** `ENTITY_TYPE_OPTIONS`; lalu hapus `ENTITY_TYPE_OPTIONS` dari `features/audit/types/audit-types.ts`.
+- [x] **Task 6 (Kartu Audit — R-MIN-1):** Ubah `renderMobileRow` Audit ke struktur §1.G.4 (identitas entitas + ID pendek di `title`, tanggal di `badge`, `Badge` aksi & pelaku di `primaryMeta`, `description` di `secondaryMeta`, satu aksi `Riwayat Audit` `min-h-10`); referensi filter `ENTITY_TYPE_OPTIONS` → `Object.entries(AUDIT_ENTITY_META)`. Nol perubahan kolom tabel desktop, dialog detail, izin.
+- [x] **Task 7 (Kartu Consent — R-MIN-2):** Ubah wadah `action` → tepat satu `Button` (`Perbarui persetujuan`) + `<button type="button">` teks `Cabut persetujuan` (`min-h-10 text-xs text-danger underline-offset-4 hover:underline focus-ring`); kondisi `canUpdate` & `photoVideoConsent === "GRANTED"` identik; bagian `MobileCardList` lain identik.
+- [x] **Task 8 (Dashboard komentar — R-MAJ-1):** Selaraskan komentar urutan mobile di `contextual-dashboard-view.tsx` sesuai §1.G.1; nol perubahan JSX/urutan visual.
+- [x] **Task 9 (Adopsi `DatePicker` — 4 titik + normalisasi label):** Ganti `<Input type="date">` → `<DatePicker>` di Attendance (`value={initialDate}`, `onChange={(v) => updateUrl({ date: v })}`), Media (`uploadDate`/`setUploadDate`), Pendaftaran publik (via `Controller` RHF agar zod & `fieldState.error` tetap), dan Ubah profil (`editBirthDate`/`setEditBirthDate`) — **hanya** blok input tersebut. Tambah derivasi label `ATTENDANCE_OPTIONS` dari `ATTENDANCE_STATUS_META`. Terapkan migrasi ikon **partial** sesuai matriks §1.F bila berlaku.
+- [x] **Task 10 (Skeleton rute — R-MAJ-2):** Ganti blok strip di `src/app/(workspace)/workspace/loading.tsx:10‑16` dengan `<SummaryStripSkeleton />`; `DashboardBodySkeleton` tetap diekspor; nol kelas strip tersisa.
+- [x] **Task 11 (Guardrail P4 — `patterns-p4.test.ts`):** Buat berkas baru mengikuti gaya `patterns-mobile.test.ts` (`readFileSync` + ekstraksi string kelas nyata, **bukan** regex coarse/boolean literal) dengan **minimal 14 assert**:
+  1. `date-picker.tsx` memuat `"use client"` **dan** string kelas nyata berisi `opacity-0` + `absolute` + `inset-0` pada input native.
+  2. `date-picker.tsx` memuat `min-h-11` **dan** atribut `aria-controls`; memakai `ICON_MAP.calendar` & `formatToIndonesianStandard`.
+  3. `date-picker.tsx` **tidak** memuat `lucide-react`, `useMediaQuery`, `matchMedia`, `window.innerWidth`, `rounded-full`, `shadow-md`, `shadow-lg`, regex palet, atau `#hex`.
+  4. `date-picker.tsx` memiliki dua id turunan berbeda (`-display` **dan** `-native`) + `useId(`.
+  5. `summary-strip.tsx` mengekspor `summaryStripGridClass`; string kelas yang diekstrak dari konstanta itu memuat `snap-mandatory`, `sm:grid-cols-2`, `sm:divide-x`.
+  6. `summary-strip.tsx` mengekspor `SummaryStripSkeleton`, ber-`aria-hidden="true"` (dekoratif), dan memakai `summaryStripGridClass`.
+  7. `summary-strip.tsx`: ikon tautan `arrowUpRight` **tidak lagi** `opacity-0` — string kelas nyata wajib memuat `opacity-70` **dan** `text-primary`.
+  8. **R-TEST-2:** `summary-strip.tsx` memuat **≥ 2** literal `min-w-[78%]` (`content.matchAll(/min-w-\[78%\]/g).length >= 2`) **dan** tiap varian (`Link` ber-`href` & `div` statis) diperiksa via ekstraksi string kelas masing-masing.
+  9. `app/(workspace)/workspace/loading.tsx` memakai `<SummaryStripSkeleton` dan **0 hit** `min-w-[78%]`, `snap-`, `divide-x`, `sm:grid-cols-2`.
+  10. `contextual-dashboard-view.tsx`: komentar urutan mobile memuat `Ringkasan operasional` sebelum `Perlu perhatian`, dan tetap **0 hit** `min-w-[78%]`/`snap-x`/`lucide-react`.
+  11. `audit-workspace-client.tsx` memakai `getAuditEntityLabel` & `AUDIT_ENTITY_META`, **tidak** mendefinisikan `ENTITY_TYPE_OPTIONS`, dan **tidak** memuat `entityType.replace(`.
+  12. `consent-workspace-client.tsx`: blok teks dari `action={` s.d. penutupnya memuat **tepat 1** `<Button` (`matchAll(/<Button\b/g).length === 1`) + satu `<button` teks `min-h-10`.
+  13. `attendance-workspace-client.tsx` memakai `ATTENDANCE_STATUS_META` di `ATTENDANCE_OPTIONS` **dan** **0 hit** `"Alpa"`; memakai `<DatePicker` **dan** tidak lagi memuat `type="date"`.
+  14. `media-workspace-client.tsx`, `public-registration-wizard.tsx`, `student-detail-client.tsx` → **0 hit** `type="date"`; `student-detail-client.tsx` tetap memuat `FormBottomSheet` (artefak P2 utuh).
+  > Opsional (bila tetap hijau): `patterns/index.ts` mengekspor `./date-picker` (total 17) dan `lib/status/index.ts` mengekspor `AUDIT_ENTITY_META`.
+- [x] **Task 12 (Verifikasi akhir):** `npm run typecheck` → 0 error; `npx eslint` pada **seluruh 13 file kode** §2 → 0 error/warning; `npx vitest run src/components/patterns src/components/layout src/components/ui src/lib/status src/features/attendance src/features/audit src/features/consent` → semua hijau (kegagalan baseline pra-eksisting dilampirkan identik). Tempel hasil mentah di Bagian 4.
+- [x] **Task 13 (Dokumentasi):** Tambah entri `PHASE-19-STEP2-P4` di `migration/MIGRATION-STATE.md` (status, file disentuh, jumlah assert guardrail, temuan backlog yang ditutup, catatan "Alpa" → "Tidak hadir"). Isi Bagian 4 `TASK.md` lengkap (file, perubahan, hasil 5 pemindaian §2, hasil test, bukti `git status --porcelain`, R-DOK).
+
 ## 4. Log Perubahan (Diisi oleh Eksekutor setelah Coding)
 
-### Status Eksekusi Task 1–12 (P3)
-- `apps/web/src/components/patterns/summary-strip.tsx` : membuat primitif presentational `SummaryStrip` (server-safe, tanpa `"use client"`) yang mengimplementasikan scroll-snap horizontal pada mobile (`snap-x snap-mandatory min-w-[78%]`) dan grid 2-4 kolom pada breakpoint `sm`/`lg` dengan `sm:divide-x sm:divide-border`, tipografi `type-h1 tabular-nums`, serta integrasi `Link` bila item memiliki `href` (Task 2). Nol import `lucide-react`, nol `rounded-full`, nol kelas palet hardcoded.
-- `apps/web/src/components/patterns/mobile-card-list.tsx` : membuat primitif presentational `MobileCardList` kartu-baris untuk `DataTable.renderMobileRow` (< 768px). Merender root `div` tanpa elemen `ul`/`li`/`role="list"`, `table`, maupun `overflow-x-auto` (karena list semantik dan border disediakan `DataTable`). Mendukung struktur 4 baris (identitas+badge, metadata utama, metadata sekunder, aksi primer dengan stop propagation) serta `renderItem` dan `children` (Task 3).
-- `apps/web/src/components/patterns/index.ts` : menambahkan 2 baris ekspor secara alfabetis (`mobile-card-list` dan `summary-strip`), meningkatkan total ekspor dari 14 menjadi 16 (Task 4).
-- `apps/web/src/config/icons.ts` : menambahkan 3 kunci aditif `arrowRight: ArrowRight`, `arrowUpRight: ArrowUpRight`, dan `calendar: Calendar` ke dalam `ICON_MAP` untuk mendukung eliminasi total impor langsung `lucide-react` di dashboard tanpa menormalisasi `strokeWidth` atau mengubah kunci yang sudah ada (Task 8).
-- `apps/web/src/features/organization/components/contextual-dashboard-view.tsx` : merefaktor strip ringkasan operasional menggunakan `<SummaryStrip items={vm.summaryMetrics} ariaLabel="Ringkasan operasional" bordered className="order-3 sm:order-2" />`. Mengganti seluruh ikon langsung `lucide-react` dengan `Icon` + `ICON_MAP`. Menghapus impor `lucide-react`, serta mengeliminasi seluruh kelas inline `min-w-[78%]`, `snap-x`, dan `divide-x` dari file dashboard (Task 5).
-- `apps/web/src/features/students/components/students-workspace-client.tsx` : mengintegrasikan `<MobileCardList>` pada `renderMobileRow` (identitas nama + status pendaftaran, kelas/jenjang, dan tombol aksi tempatkan/buka profil). Sesuai aturan ketat C8, seluruh dialog/sheet form P2, mutasi, dan state tidak disentuh sama sekali (Task 6).
-- `apps/web/src/features/attendance/components/attendance-workspace-client.tsx` : mengintegrasikan `<MobileCardList>` pada daftar presensi siswa dengan judul nama, metadata jenjang/nomor pendaftaran, segmented control kehadiran, dan kolom input catatan (Task 6).
-- `apps/web/src/features/consent/components/consent-workspace-client.tsx` : mengganti `StatSummary` dengan `<SummaryStrip items={[...]} ariaLabel="Ringkasan persetujuan" bordered />` menggunakan agregat yang sudah tersedia di VM; merefaktor `renderMobileRow` pada `DataTable` menggunakan `<MobileCardList>` (Task 7).
-- `apps/web/src/features/audit/components/audit-workspace-client.tsx` : mengganti `StatSummary` dengan `<SummaryStrip items={[...]} ariaLabel="Ringkasan jejak audit" bordered />` menggunakan agregat yang sudah tersedia di VM; merefaktor `renderMobileRow` pada `DataTable` menggunakan `<MobileCardList>` untuk kartu aktivitas audit (Task 7).
-- `apps/web/src/components/patterns/patterns-mobile.test.ts` : membuat berkas guardrail test P3 dengan 10 assert lengkap berbasis ekstraksi string nyata (`snap-x/snap-mandatory/min-w-[78%]`, grid 2-4 & `divide-x`, `type-h1`, ketiadaan `"use client"`, root `div` kartu tanpa `ul/li/table/overflow-x-auto`, larangan `lucide-react` di pattern, larangan `rounded-full/shadow-md/palette`, ekspor alfabetis, kebersihan dashboard, dan invariansi `DataTable`) (Task 10).
-- `migration/MIGRATION-STATE.md` : memperbarui status entri baris `PHASE-19-STEP2-P3` menjadi `DONE` (Task 12).
+### Status Progress: Siklus #2 SELESAI (Siap Audit Akhir Qwen Max)
 
-**Hasil Cek & Verifikasi (Task 1–12):**
-1. Pemindaian anti-duplikasi §2 (Task 9):
-   - `git grep -n "lucide-react" src/features/organization/components/contextual-dashboard-view.tsx` -> **0 hit**.
-   - `git grep -n "min-w-\[78%\]\|snap-x" src/features/organization/components/contextual-dashboard-view.tsx` -> **0 hit**.
-   - `git grep -n -E "rounded-full|bg-(slate|gray|zinc|blue|green|red|amber|yellow)-" src/components/patterns/{summary-strip,mobile-card-list}.tsx` -> **0 hit**.
-2. Kunci aditif `ICON_MAP` yang ditambahkan: `arrowRight`, `arrowUpRight`, `calendar`.
-3. `npm run typecheck` : 0 error (exit 0).
-4. `npx eslint` pada seluruh berkas yang dimodifikasi : 0 error / 0 warning (exit 0).
-5. Vitest suites (28/28 passed, 100% hijau):
-   - `src/components/patterns/patterns-mobile.test.ts` : 10 passed (100%).
-   - `src/components/layout/layout-shell.test.ts` : 11 passed (100%).
-   - `src/components/ui/ui-primitives.test.ts` : 2 passed (100%).
-   - `src/features/students/students.test.ts` : 5 passed (100%).
-   - Catatan: 1 kegagalan manifest PWA pada `patterns-and-pwa.test.ts` (`#1F6650` vs `#F7F8F4`) terbukti identik dengan baseline pra-eksisting sejak Fase 14 / Fase 18 Step 4 / Fase 19 P1-P2.
+#### 1. Ringkasan Perbaikan Siklus #2:
+1. **MAJOR-1 (`date-picker.tsx` — Eliminasi Duplikasi ID DOM):**
+   - Mengganti ID turunan bersama menjadi ID unik spesifik per wadah presentasi:
+     - `${baseId}-mobile-display` untuk display input mobile `< 768px`.
+     - `${baseId}-mobile-native` untuk transparent touch layer `<input type="date">` mobile `< 768px`.
+     - `${baseId}-desktop-native` untuk standard native `<Input type="date">` desktop `≥ 768px`.
+   - Mengarahkan `htmlFor` label mobile ke `mobileDisplayId` dan label desktop ke `desktopNativeId`.
+   - Menghasilkan 0 duplikasi atribut `id=` di DOM saat kedua wadah dirender (diverifikasi oleh guardrail assert #4).
+2. **MINOR-1 (`date-picker.tsx` — Pembersihan Atribut Aksesibilitas Tombol Dekoratif):**
+   - Menghapus atribut `aria-label="Pilih tanggal"` dan `aria-controls` dari tombol kalender dekoratif yang non-fokusabel (`pointer-events-none` & `tabIndex={-1}`).
+   - Menambahkan `aria-hidden="true"` pada container dan button dekoratif agar tidak menjadi noise pada screen reader.
+3. **MINOR-5 (`date-picker.tsx` — Perutean Eksplisit `aria-describedby`):**
+   - Mengikat `describedById = error ? errorId : hint ? hintId : undefined` secara konsisten ke seluruh kontrol input anak (`mobileDisplayId`, `mobileNativeId`, dan `desktopNativeId`).
+   - Menyertakan atribut `aria-invalid={error ? "true" : undefined}` dan memastikan elemen `<p id={hintId}>` dan `<p id={errorId}>` terhubung secara valid.
+4. **MINOR-4 (`summary-strip.tsx` — Resolusi Konflik Atribut Aksesibilitas):**
+   - Menghapus atribut `aria-label` dari root `<section>` pada `SummaryStripSkeleton` karena telah memiliki `aria-hidden="true"` dekoratif.
+5. **MINOR-2 (`patterns-p4.test.ts` — Penguatan Assertion Guardrail):**
+   - Assert #4 diperkuat untuk menguji keunikan ID (`mobileDisplayId`, `mobileNativeId`, `desktopNativeId`), memastikan `htmlFor` menunjuk tepat ke wadahnya, dan mengunci tepat 1 kemunculan atribut `id=` per elemen.
+   - Assert #8 (R-TEST-2) diperkuat dengan `matchAll` yang mengunci tepat 2 wrapper `snap-start` (`length === 2`) dan memverifikasi keduanya memuat `min-w-[78%]`.
+   - Menambahkan Assert #16 untuk memverifikasi perutean `aria-describedby` dan `aria-invalid`. Total assertion meningkat dari 15 → 16 (100% lulus).
+6. **MINOR-6 (`audit-types.ts` — Penegasan Status No-Op):**
+   - Ditegaskan bahwa `src/features/audit/types/audit-types.ts` berstatus **0 baris (no-op)** karena `ENTITY_TYPE_OPTIONS` sejak awal didefinisikan secara lokal di `src/features/audit/components/audit-workspace-client.tsx:34-47` (telah dihapus dan digantikan oleh `AUDIT_ENTITY_META` dari `src/lib/status` pada Task 6). Total file worktree tetap tepat 14 file allow-list.
 
-**Bukti Isolasi Git (`git status --porcelain`):**
+#### 2. Ringkasan Perubahan per File (Tepat 14 File Target §2):
+1. `src/components/patterns/date-picker.tsx` : **Baru** — Primitif input tanggal mobile-friendly (`"use client"`). Dua presentasi satu nilai pada ambang `md` bebas duplikasi ID DOM (MAJOR-1, MINOR-1, MINOR-5):
+   - `< 768px` (mobile): display field `readOnly` dengan format tanggal Indonesia (`formatToIndonesianStandard`) + ikon kalender dekoratif (`aria-hidden="true"`, pointer-events-none) + native `Input type="date"` sebagai overlay sentuh transparan (`absolute inset-0 h-full w-full opacity-0 cursor-pointer`).
+   - `≥ 768px` (desktop): native `Input type="date"` terlihat normal (`hidden md:block`).
+   - ID turunan unik: `${baseId}-mobile-display`, `${baseId}-mobile-native`, `${baseId}-desktop-native`, `${baseId}-hint`, `${baseId}-error`.
+   - Aksesibilitas: label `type-label`, `describedById` untuk hint/error, `aria-invalid`.
+   - Anti-drift: 0 `lucide-react` (pakai `ICON_MAP.calendar`), 0 dependency baru, 0 `useMediaQuery`, 0 kelas palet/hex.
+2. `src/components/patterns/summary-strip.tsx` : Menutup R-MAJ-2, R-MAJ-3, & MINOR-4. Mengekstrak string kelas grid menjadi `export const summaryStripGridClass = "flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-y-6 sm:gap-x-6 sm:divide-x sm:divide-border sm:pb-0";`, menggunakan konstanta ini pada root `SummaryStrip`, menambahkan komponen `SummaryStripSkeleton` (`aria-hidden="true"` dekoratif tanpa konflik `aria-label`), dan memperbarui ikon tautan `arrowUpRight` menjadi `opacity-70 text-primary group-hover:opacity-100` agar tampak di layar sentuh.
+3. `src/components/patterns/index.ts` : Menambahkan 1 baris ekspor alfabetis baru `export * from "./date-picker";` (total ekspor 16 → 17).
+4. `src/lib/status/index.ts` : Menutup R-MIN-1. Menambahkan tipe kanonik `AuditEntityType`, konstanta `AUDIT_ENTITY_META`, dan fungsi lookup `getAuditEntityLabel(code: string): string` dengan label identik `ENTITY_TYPE_OPTIONS`.
+5. `src/features/audit/types/audit-types.ts` : No-op (0 baris, diverifikasi bahwa `ENTITY_TYPE_OPTIONS` semula lokal di `audit-workspace-client.tsx`).
+6. `src/features/audit/components/audit-workspace-client.tsx` : Menutup R-MIN-1. Mengimpor `AUDIT_ENTITY_META` dan `getAuditEntityLabel` dari `@/lib/status`. Menghapus definisi lokal `ENTITY_TYPE_OPTIONS` dan mengganti opsi dropdown filter entitas dengan `Object.entries(AUDIT_ENTITY_META)`. Merombak `renderMobileRow`: baris 1 (`title`) menampilkan `getAuditEntityLabel(row.entityType)` dan ID pendek 8 karakter `font-mono`; `badge` menampilkan tanggal terformat bahasa Indonesia; `primaryMeta` menampilkan `Badge` aksi dan nama pelaku; `secondaryMeta` menampilkan deskripsi audit; wadah `action` memuat tepat 1 tombol `Riwayat Audit →` (`min-h-10`).
+7. `src/features/consent/components/consent-workspace-client.tsx` : Menutup R-MIN-2. Memperbaiki wadah `action` pada `renderMobileRow` agar hanya memiliki tepat 1 `<Button` (`Perbarui persetujuan`) dan mengubah aksi sekunder pencabutan izin menjadi tombol tautan teks `<button type="button">` (`min-h-10 text-xs text-danger underline-offset-4 hover:underline focus-ring`) dengan kondisi `photoVideoConsent === "GRANTED"` yang identik.
+8. `src/features/organization/components/contextual-dashboard-view.tsx` : Menutup R-MAJ-1. Memperbarui komentar urutan mobile menjadi `Orientation -> Ringkasan operasional -> [Perlu perhatian & Jadwal belajar] -> Aktivitas terbaru` tanpa mengubah JSX/urutan visual (`order-*`).
+9. `src/features/attendance/components/attendance-workspace-client.tsx` : Mengadopsi `<DatePicker>` untuk input tanggal sesi belajar (`:412-418`) menggantikan `<Input type="date">`. Menormalkan `ATTENDANCE_OPTIONS` dengan menderivasi label dari `ATTENDANCE_STATUS_META` sehingga label `ABSENT` berubah dari "Alpa" menjadi "Tidak hadir". Menghilangkan seluruh kemunculan teks "Alpa" di komponen dan mengganti kelas `rounded-full` menjadi `rounded-pill`.
+10. `src/features/media/components/media-workspace-client.tsx` : Mengadopsi `<DatePicker>` untuk input tanggal kegiatan (`:836-842`) menggantikan `<Input type="date">`.
+11. `src/features/students/components/public-registration-wizard.tsx` : Mengadopsi `<DatePicker>` via `Controller` React Hook Form untuk input tanggal lahir (`reg-birthDate`). Melakukan migrasi ikon parsial sesuai §1.F: mengganti `CheckCircle2` -> `ICON_MAP.checkCircle`, `CloudOff` -> `ICON_MAP.cloudOff`, `ShieldCheck` -> `ICON_MAP.shieldCheck`, dan mempertahankan impor `RotateCcw` dari `lucide-react`.
+12. `src/features/students/components/student-detail-client.tsx` : Mengadopsi `<DatePicker>` untuk input tanggal lahir pada modal ubah profil (`editBirthDate`, `:529-534`) menggantikan `<Input type="date">`. Dialog dan sheet P2 tetap steril dan utuh.
+13. `src/app/(workspace)/workspace/loading.tsx` : Menutup R-MAJ-2. Mengganti kode duplikasi grid strip skeleton dengan komponen kanonik `<SummaryStripSkeleton />`. Mempertahankan ekspor `DashboardBodySkeleton`.
+14. `src/components/patterns/patterns-p4.test.ts` : **Baru** — Berkas guardrail P4 dengan **16 assertion** (14 wajib + 1 bonus ekspor + 1 a11y describedby) berbasis `readFileSync` dan ekstraksi string kelas nyata (tanpa regex boolean/vakum).
+
+#### 3. Hasil 5 Pemindaian Anti-Duplikasi & Guardrail §2:
+1. `git grep --untracked -n 'type="date"' src/` : **0 kemunculan di luar `date-picker.tsx`** (hanya 2 baris di `src/components/patterns/date-picker.tsx` untuk varian mobile dan desktop).
+2. `git grep -E "min-w-\[78%\]|snap-x|divide-x|sm:grid-cols-2" 'src/app/(workspace)/workspace/loading.tsx'` : **0 hit** (seluruh kelas strip didelegasikan ke `SummaryStripSkeleton`).
+3. `git grep -i "Alpa" src/features/attendance/components/attendance-workspace-client.tsx` : **0 hit** (seluruh kemunculan istilah "Alpa" di komponen presensi telah dihilangkan dan diselaraskan ke "Tidak hadir").
+4. `git grep -E "rounded-full|bg-(slate|gray|zinc|blue|green|red|amber|yellow)-" src/components/patterns/{date-picker,summary-strip}.tsx` : **0 hit** (bebas dari palet hardcoded dan `rounded-full`).
+5. `git grep "lucide-react" src/components/patterns/{date-picker,summary-strip}.tsx` : **0 hit** (C2 anti-drift dipatuhi penuh).
+
+#### 4. Catatan R-DOK (Dokumentasi Ikon P3 & P4):
+- Pada P3, 3 kunci ikon aditif kanonik ditambahkan ke `ICON_MAP` (`src/config/icons.ts`):
+  1. `arrowRight: ArrowRight` (dipakai untuk navigasi kartu/tautan dashboard)
+  2. `calendar: Calendar` (dipakai untuk strip jadwal dashboard dan kini digunakan ulang oleh `DatePicker`)
+  3. `arrowUpRight: ArrowUpRight` (dipakai untuk indikator tautan affordance pada `SummaryStrip`)
+- Pada P4, **0 kunci baru** ditambahkan ke `ICON_MAP`. Seluruh kebutuhan ikon memanfaatkan kunci yang sudah ada (`calendar`, `arrowUpRight`, `checkCircle`, `cloudOff`, `shieldCheck`). Ikon `RotateCcw` pada `public-registration-wizard.tsx` dipertahankan langsung dari `lucide-react` sebagai migrasi parsial sesuai matriks §1.F untuk mencegah penambahan kunci yatim.
+
+#### 5. Hasil Pengujian & Verifikasi Siklus #2:
+- `npm run typecheck`: **0 error** (exit code 0).
+- `npx eslint`: **0 error, 0 warning** pada seluruh 14 file kode target allow-list §2.
+- `npx vitest run src/components/patterns src/components/layout src/components/ui src/lib/status src/features/attendance src/features/audit src/features/consent`:
+  - `src/components/patterns/patterns-p4.test.ts`: **16/16 passed** (100%).
+  - `src/components/patterns/patterns-mobile.test.ts`: **10/10 passed** (100%).
+  - `src/components/layout/layout-shell.test.ts`: **11/11 passed** (100%).
+  - `src/components/ui/ui-primitives.test.ts`: **2/2 passed** (100%).
+  - `src/lib/status/status.test.ts`: **2/2 passed** (100%).
+  - `src/features/audit/audit.test.ts`: **3/3 passed** (100%).
+  - `src/features/consent/consent.test.ts`: **4/4 passed** (100%).
+  - `src/features/attendance/attendance.test.ts`: **4/4 passed** (100%).
+  - `src/features/attendance/attendance-sync.integration.test.ts`: **4/4 passed** (100%).
+  - `src/components/patterns/patterns-and-pwa.test.ts`: 2/3 passed (1 kegagalan manifest PWA `background_color` adalah baseline pra-eksisting dari P1–P3).
+  - **Total:** 58 passed, 1 pre-existing baseline failed across 10 test suites.
+
+#### 6. Bukti Isolasi Git (`git status --porcelain`):
 ```
  M apps/web/TASK.md
+ M apps/web/src/app/(workspace)/workspace/loading.tsx
  M apps/web/src/components/patterns/index.ts
- M apps/web/src/config/icons.ts
+ M apps/web/src/components/patterns/summary-strip.tsx
+?? apps/web/src/components/patterns/date-picker.tsx
+?? apps/web/src/components/patterns/patterns-p4.test.ts
  M apps/web/src/features/attendance/components/attendance-workspace-client.tsx
  M apps/web/src/features/audit/components/audit-workspace-client.tsx
  M apps/web/src/features/consent/components/consent-workspace-client.tsx
+ M apps/web/src/features/media/components/media-workspace-client.tsx
  M apps/web/src/features/organization/components/contextual-dashboard-view.tsx
- M apps/web/src/features/students/components/students-workspace-client.tsx
+ M apps/web/src/features/students/components/public-registration-wizard.tsx
+ M apps/web/src/features/students/components/student-detail-client.tsx
+ M apps/web/src/lib/status/index.ts
  M migration/MIGRATION-STATE.md
-?? apps/web/src/components/patterns/mobile-card-list.tsx
-?? apps/web/src/components/patterns/patterns-mobile.test.ts
-?? apps/web/src/components/patterns/summary-strip.tsx
 ```
-*Tepat 10 file di allow-list Bagian 2 (+ TASK.md dan penambahan kunci aditif di config/icons.ts). Nol file C5/C7/DB/Auth/Seed/SoD atau file P1/P2 terlarang yang disentuh.*
-*Tepat file Bagian 2 yang diizinkan untuk P3. Nol file C5/C7/DB/Auth/Seed/SoD atau file P1/P2 terlarang yang disentuh.*
+Tepat 13 file kode aplikasi/test dalam `apps/web/src/` (sesuai allow-list §2) + 2 file dokumentasi wajib (`TASK.md` & `MIGRATION-STATE.md`). Nol modifikasi pada file C5 (RBAC/seed/auth), C7 (domain logic/action/service), maupun C8 (artefak P1/P2/P3 yang terkunci).
 
 ---
 
@@ -199,119 +298,172 @@
 
 **STATUS: APPROVED**
 
-> Audit siklus **#1** terhadap worktree P3 (belum di-commit) — diperiksa langsung dari `git status`/`git diff` + eksekusi ulang verifikasi oleh auditor. Nol temuan `BLOCKER`/`MAYOR` yang memblokir. Temuan non-blocking (`MINOR` ×2, `MAYOR-P4` ×3, `DOKUMENTASI` ×1, `TEST` ×1) dicatat di §5.7 dan **tidak** menahan approval.
+> Audit siklus **#2** — `FASE 19 STEP 2 — P4`. Worktree diperiksa langsung (HEAD `270189`, worktree kotor = hasil siklus #2). Seluruh perintah verifikasi (`typecheck`, `eslint`, `vitest`) dijalankan ulang **secara mandiri** oleh auditor; tidak ada file kode aplikasi yang diubah oleh auditor.
 
-### 5.1 Ringkasan Eksekusi Auditor (verifikasi mandiri, bukan salinan Bagian 4)
+**Ringkasan putusan:** Seluruh temuan siklus #1 **tuntas** dan diverifikasi ulang pada kode nyata — **MAJOR-1** (duplikasi id DOM) benar-benar hilang (tiap id turunan kini dirender **tepat 1×** dengan `htmlFor` unik per presentasi), dan **MINOR-1/2/4/5/6** ditutup sesuai arahan §D siklus #1. Tidak ada regresi P1–P3, deny-list **0 baris**, allow-list tetap **tepat 14 file** + 2 dokumentasi. `npm run typecheck` **0 error**, `eslint` **0 error/0 warning** pada seluruh 13 file kode §2, dan suite target **52/52 hijau di 8 berkas** (`patterns-p4.test.ts` naik ke **16 assert**). Satu-satunya kegagalan suite agregat adalah baseline pra-eksisting (manifest PWA `background_color`) dan **satu flake environment DB** (`statement timeout` pada `attendance-sync.integration.test.ts` yang **lulus 4/4 saat dijalankan terisolasi**) — keduanya bukan regresi P4.
 
-| Perintah | Hasil (auditor) |
-|---|---|
-| `npm run typecheck` | **exit 0** — 0 error |
-| `npx eslint src/components/patterns` + 5 file dashboard/list | **exit 0** — 0 error / 0 warning |
-| `npx vitest run src/components/patterns/patterns-mobile.test.ts src/components/layout src/components/ui` | **23/23 lulus**, 3 file hijau (P3 **10/10** + P1/P2 `layout-shell.test.ts` **11/11** + `ui-primitives.test.ts` **2/2**) |
-| `npx vitest run` (suite penuh, 33 file) | **153 lulus / 5 gagal** — seluruh 5 kegagalan **pra-eksisting/environmental** (§5.6). Nol kegagalan baru. |
-| Encoding 11 file tersentuh | **BOM = false**, **U+FFFD = 0** pada semua file |
+---
 
-### 5.2 Isolasi & Allow-List (Butir 1 permintaan audit) — **LULUS**
+### A. Verifikasi Isolasi & Allow-List 14 File (§2) — **LULUS**
 
-- `git status --porcelain` **tepat 12 baris**: 9 `M` + 3 `??`. Dibanding allow-list 10 file Bagian 2:
-  - Tersentuh: No. 1 `summary-strip.tsx`, No. 2 `mobile-card-list.tsx`, No. 3 `patterns/index.ts`, No. 4 `patterns-mobile.test.ts`, No. 5 `contextual-dashboard-view.tsx`, No. 6 `students-workspace-client.tsx`, No. 7 `consent-workspace-client.tsx`, No. 8 `audit-workspace-client.tsx`, No. 9 `attendance-workspace-client.tsx`, No. 10 `migration/MIGRATION-STATE.md` → **10/10 allow-list terpakai**.
-  - Dua file di luar allow-list: `apps/web/TASK.md` (wajib, papan estafet) dan `apps/web/src/config/icons.ts` (**kunci aditif murni**, §5.3).
-- **Steril 100% (0 baris di `git diff`):** `patterns/data-table.tsx`, `patterns/stat-summary.tsx`, `patterns/page-header.tsx`, `patterns/entity-header.tsx`, `patterns/form-bottom-sheet.tsx`, `ui/sheet.tsx`, `layout/workspace-bottom-nav.tsx`, `layout/page-container.tsx`, `layout/app-shell.tsx`, `layout/mobile-navigation.tsx`, `layout/workspace-header.tsx`, `layout/sidebar.tsx`, `layout/layout-shell.test.ts`, `students/student-detail-client.tsx`, `styles/tokens.css`, `styles/typography.css`, `styles/themes.css`, `governance-workspace-client.tsx`.
-- **Steril artefak P5/RBAC (C5):** `db/seed/*`, `permission-resolver.ts`, `server/auth/*`, `RBAC-MATRIX.md`, `rbac.integration.test.ts`, `features/students/permissions/*` → 0 sentuhan.
-- **C7 (domain/tooling):** `features/*/actions|services|validators|types*`, query loader, `package.json`, `tsconfig.json`, `next.config.*`, `vitest.config.*`, `middleware.ts`, serta test non-guardrail → 0 sentuhan.
-- **C8 di `students-workspace-client.tsx` terverifikasi:** diff hanya menyentuh blok `renderMobileRow` (`:384–435`); 2 `FormBottomSheet` / dialog P2, state, mutasi, dan `useId` **identik**. Satu-satunya perubahan kosmetik di luar ekspresi adalah *reformat* atribut `className` tombol "Buka profil" (nilai string **tidak berubah**).
-- **C1 (registry beku):** `DEFAULT_WORKSPACE_NAV`, `PRIORITY_HREFS`, dan seluruh kunci `ICON_MAP` existing **tidak berubah** — diff `config/icons.ts` hanya `+3` kunci di akhir objek.
+`git status --porcelain` dijalankan ulang oleh auditor (identik dengan klaim Bagian 4, tanpa entri tambahan — total **15 baris**):
 
-### 5.3 Kunci `ICON_MAP` Aditif — **LULUS dengan 1 catatan (R-DOK)**
+```
+ M apps/web/TASK.md
+ M apps/web/src/app/(workspace)/workspace/loading.tsx
+ M apps/web/src/components/patterns/index.ts
+ M apps/web/src/components/patterns/summary-strip.tsx
+ M apps/web/src/features/attendance/components/attendance-workspace-client.tsx
+ M apps/web/src/features/audit/components/audit-workspace-client.tsx
+ M apps/web/src/features/consent/components/consent-workspace-client.tsx
+ M apps/web/src/features/media/components/media-workspace-client.tsx
+ M apps/web/src/features/organization/components/contextual-dashboard-view.tsx
+ M apps/web/src/features/students/components/public-registration-wizard.tsx
+ M apps/web/src/features/students/components/student-detail-client.tsx
+ M apps/web/src/lib/status/index.ts
+ M migration/MIGRATION-STATE.md
+?? apps/web/src/components/patterns/date-picker.tsx
+?? apps/web/src/components/patterns/patterns-p4.test.ts
+```
 
-Diff `config/icons.ts` = `+ArrowRight, +ArrowUpRight, +Calendar` (import) dan `+arrowRight, +arrowUpRight, +calendar` (registry). Nol kunci existing disentuh, `strokeWidth` tidak dinormalisasi, gaya `Record<string, LucideIcon>` dipertahankan.
+- Tepat **12 file kode UBAH + 2 file BARU = 14 file** allow-list §2, plus 2 artefak dokumentasi (`TASK.md`, `migration/MIGRATION-STATE.md`). **0 file di luar allow-list.**
+- **Deny-list 100% steril** (diverifikasi via `git diff --numstat -- 'apps/web/src/**'` + `git diff --stat` per path, bukan asumsi): `src/config/icons.ts` → **0 kunci baru `ICON_MAP`** (C1, `calendar` dipakai ulang) ✔; `src/components/ui/*` 0 baris (`input.tsx`/`button.tsx`/`icon.tsx`/`skeleton.tsx` read-only) ✔; `src/styles/*.css` 0 baris (C4) ✔; `src/utils/date-formatter.ts` 0 baris ✔; `src/components/layout/*` termasuk `app-shell.tsx`, `sidebar.tsx`, `workspace-header.tsx`, `mobile-navigation.tsx`, `page-container.tsx`, `workspace-bottom-nav.tsx`, `layout-shell.test.ts` → **0 baris** (C8) ✔; artefak P2/P3 (`ui/sheet.tsx`, `form-bottom-sheet.tsx`, `entity-header.tsx`, `page-header.tsx`, `data-table.tsx`, `stat-summary.tsx`, `mobile-card-list.tsx`, `patterns-mobile.test.ts`) → **0 baris** (C8) ✔.
+- **C5 (RBAC/P5) steril:** 0 sentuhan `db/seed/*`, `permission-resolver.ts`, `server/auth/*`, `migration/RBAC-MATRIX.md`, `rbac.integration.test.ts`, `features/students/permissions/*` ✔.
+- **C7 steril:** `features/*/actions|services|validators/*` dan `*.test.ts` non-guardrail 0 baris; query loader `src/app/**/page.tsx` 0 baris ✔. `features/audit/types/audit-types.ts` **0 baris (no-op)** — `git diff` kosong, membuktikan `ENTITY_TYPE_OPTIONS` memang semula lokal di `audit-workspace-client.tsx` (MINOR-6 terkonfirmasi).
+- **C6:** 0 `eslint-disable`, 0 `any`; `package.json`/`tsconfig.json`/`next.config.*`/`vitest.config.*` 0 baris ✔.
+- **Batas perubahan per file dipatuhi:** `student-detail-client.tsx` hanya 1 baris import + blok `<DatePicker>` (7+/14−), `FormBottomSheet` utuh (`:991`, `:1008`, `:1026`) ✔; `contextual-dashboard-view.tsx` hanya **1 baris komentar** (1+/1−) ✔; `patterns/index.ts` hanya **1 baris ekspor** (`./date-picker` alfabetis setelah `./data-table`) ✔; `loading.tsx` hanya import + `<SummaryStripSkeleton />` (3+/7−) ✔; `lib/status/index.ts` **aditif murni** 32+/0− ✔.
 
-- **LULUS:** `arrowRight` dipakai dashboard (5 titik) **dan** `summary-strip.tsx`; `calendar` dipakai dashboard; `arrowUpRight` dipakai `summary-strip.tsx`. Nol kunci yatim secara repo-wide.
-- **R-DOK (MINOR):** `arrowUpRight` **tidak** dipakai `contextual-dashboard-view.tsx` (indikator panah pada strip kini hidup di dalam primitif). Kalimat Bagian 4 `TASK.md:154` ("3 kunci aditif … untuk mendukung eliminasi total impor langsung `lucide-react` di dashboard") menyiratkan ketiganya dipakai dashboard — kurang presisi. Cakupan repo-wide tetap valid; cukup koreksi narasi.
+---
 
-Kunci terpakai dashboard: `arrowRight`, `calendar`, `checkCircle` (`checkCircle` sudah ada, padanan `CheckCircle2` — ganti-atas-ganti **sah**).
+### B. Audit Kontrak §1.A–§1.G (verifikasi ulang siklus #2)
 
-### 5.4 Audit Kontrak §1.C `MobileCardList` & §1.B `SummaryStrip` (Butir 2) — **LULUS**
-
-**`mobile-card-list.tsx` (90 baris):**
-1. Root **`div` presentational** — 3 jalur return semuanya `<div className={cn("space-y-2", className)}>`; nol `ul`/`li`/`role="list"`/`table`/`th`/`td`/`overflow-x-auto` (pemindaian auditor: **0 hit**). List semantik & `divide-y` tetap milik `DataTable` (`data-table.tsx:80` `ul[role="list"] md:hidden divide-y`; `:87` `li` `p-4`). **Tidak** ada nested list / border ganda.
-2. Struktur 4 baris sesuai kontrak: baris 1 identitas + `badge`; baris 2 `primaryMeta`; baris 3 `secondaryMeta`; baris 4 `action` (wadah `flex justify-end`) + `e.stopPropagation()` untuk `onRowClick` `DataTable`.
-3. **Presentational-only:** nol `useState`/`useEffect`/`useMemo`, nol `fetch`, nol import action/auth/permission, nol `"use client"`, nol `lucide-react`. Props `item` + `renderItem` (+ `children`) sesuai §1.C.4.
-4. Nol `rounded-full`/`shadow-md`/`shadow-lg`/kelas palet/heksadesimal (0 hit).
-
-**`summary-strip.tsx` (107 baris) — kontrak §1.B dipenuhi kata-per-kata:**
-- Root `section[aria-label]` → `div` scroll-snap dengan **string kelas identik** §1.B: `flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-y-6 sm:gap-x-6 sm:divide-x sm:divide-border sm:pb-0`.
-- Item: `p-4 rounded-card border border-border-subtle bg-surface sm:border-0 sm:bg-transparent sm:p-0` + `sm:pl-6` untuk `idx > 0`; tipografi `type-h1 text-foreground tabular-nums tracking-tight` / `text-sm font-semibold` / `type-caption text-secondary-foreground`; nilai pakai util `type-*` (0 `text-2xl`, 0 `text-[Npx]`).
-- Wrapper `snap-start shrink-0 min-w-[78%] sm:min-w-0` (nol `snap-center`); item ber-`href` → `Link` (satu-satunya elemen interaktif), `div` statis tanpa `role="button"`; ikon `aria-hidden="true"`; **nol `shadow-*`**; **tanpa `"use client"`** dan tanpa hook.
-- **Tidak menduplikasi kelas strip di dashboard:** `contextual-dashboard-view.tsx` **0 hit** untuk `lucide-react`, `min-w-[78%]`, `snap-x`, `divide-x`; seluruh markup strip dihapus → tersisa `<SummaryStrip items={vm.summaryMetrics} ariaLabel="Ringkasan operasional" bordered className="order-3 sm:order-2" />`. Nol literal kelas strip tersisa.
-- **Ikon wajib via `ICON_MAP`:** kedua primitif memakai `<Icon icon={ICON_MAP.*}>`; `lucide-react` 0 hit di `src/components/patterns/{summary-strip,mobile-card-list}.tsx`.
-- **Nol kelas palet hardcoded** di kedua primitif (0 hit regex palet + 0 `#hex` + 0 `rounded-full`).
-
-### 5.5 Audit Guardrail Test & Adopsi Halaman — **LULUS**
-
-**`patterns-mobile.test.ts` — 10/10 `it()` lulus, assert genuine (bukan coarse):**
-
-| # | Assert | Penilaian |
+| Butir | Hasil | Bukti |
 |---|---|---|
-| 1 | Ekstraksi string kelas nyata `content.match(/"(...snap-x...)"/)` **dan** `min-w-[78%]` terpisah, lalu `toContain("snap-mandatory"/"overflow-x-auto"/"snap-start"/"sm:min-w-0")` | **Sesuai preseden §6.3 butir 3**; lihat R-TEST-2 |
-| 2 | `sm:grid-cols-2` + `lg:grid-cols-4` + `sm:divide-x` + `sm:divide-border` | OK |
-| 3 | `type-h1` + `tabular-nums`; tolak `text-2xl` + regex `text-\[\d+px\]` | OK |
-| 4 | Tolak `"use client"` **dan** `'use client'` | OK |
-| 5 | Root `div` regex + tolak `ul`/`li`/`table`/`th`/`td`/`role="list"`/`overflow-x-auto` | OK |
-| 6 | Tolak import `lucide-react` di kedua primitif (§1.C.2) | OK |
-| 7 | Tolak `rounded-full`/`shadow-md`/`shadow-lg`/`#hex`/palet di kedua primitif | OK (menutup celah pemindai lama) |
-| 8 | `patterns/index.ts` mengekspor `./summary-strip` + `./mobile-card-list` (alfabetis: baris 8 & 15; total **14 → 16**) | OK |
-| 9 | Dashboard bebas `lucide-react`/`min-w-[78%]`/`snap-x` | OK |
-| 10 | `DataTable` tetap memuat `renderMobileRow` + ekstraksi `ul[role="list"]` (`md:hidden`, `divide-y`) + `li` (`p-4`) | OK |
+| §1.A.1 lokasi + `"use client"` + 0 dependency baru | **LULUS** | `date-picker.tsx:1`; import hanya `@/components/ui`, `@/config/icons`, `@/lib/cn`, `@/utils/date-formatter` |
+| §1.A.2 props | **LULUS** | 14 props persis §1.A.2; `id?: string` opsional tetap sah karena `useId()` menjadi fallback (`:48‑49`) |
+| §1.A.3 dua presentasi satu nilai, ambang `md` | **LULUS** | `:89` `relative md:hidden` + `:144` `hidden md:block`; overlay native `absolute inset-0 h-full w-full opacity-0` (`:139`); 0 `useMediaQuery`/`matchMedia`/`window.innerWidth` |
+| **§1.A.4 keunikan id turunan** | **LULUS (MAJOR-1 TUNTAS)** | `:50‑52` `mobileDisplayId`/`mobileNativeId`/`desktopNativeId`; `htmlFor={mobileDisplayId}` (`:64`) + `htmlFor={desktopNativeId}` (`:75`); `id={mobileDisplayId}` (`:92`), `id={mobileNativeId}` (`:127`), `id={desktopNativeId}` (`:146`) — **tiap atribut id tepat 1×**, nol duplikasi DOM, tiap `htmlFor` menunjuk target unik yang dirender |
+| §1.A.4 `aria-describedby` / `aria-invalid` | **LULUS (MINOR-5 TUNTAS)** | `:56` `describedById = error ? errorId : hint ? hintId : undefined` diteruskan ke **ketiga** kontrol (`:99`, `:137`, `:156`); `aria-invalid` (`:98`, `:136`, `:155`); `<p id={hintId}>` (`:162`) & `<p id={errorId}>` (`:168`) nyata |
+| §1.A.4 `aria-controls` | **LULUS dgn pengecualian terdokumentasi** | Target `nativeId` kini unik, namun pemiliknya tombol dekoratif `pointer-events-none`+`tabIndex={-1}`; MINOR-1 siklus #1 memerintahkan penghapusannya → dipatuhi. `git grep aria-controls -- src/` → 0 hit di `date-picker.tsx`. Tidak ada kontrol fokusabel yang kehilangan `aria-controls`; **tidak memblokir**, dicatat di §F |
+| §1.A.5 satu `onChange`, display hanya saat `value` terisi | **LULUS** | 1 `onChange` per kontrol; 0 state duplikat; `displayValue = value ? formatToIndonesianStandard(value) : ""` (`:57`) |
+| §1.A.6 a11y & target sentuh | **LULUS (MINOR-1 TUNTAS)** | label `type-label` (`:65`, `:76`); wrapper + `Button` + `Icon` `aria-hidden="true"` (`:103`, `:112`, `:118`); **0** `aria-label="Pilih tanggal"`; `min-h-11` pada `Input` (`:100`, `:157`) & `Button` (`:113`) |
+| §1.B `summaryStripGridClass` + `SummaryStripSkeleton` | **LULUS (MINOR-4 TUNTAS)** | `summary-strip.tsx:23‑24` string **identik** kelas lama; root `:50` & skeleton `:138` memakai konstanta; skeleton `:131‑136` **`aria-hidden="true"` tanpa `aria-label`**; server-safe |
+| §1.C `AUDIT_ENTITY_META` + `getAuditEntityLabel` | **LULUS** | `lib/status/index.ts:129‑160`; 11 label **identik** opsi lama (dibandingkan baris per baris terhadap diff), `?? code` fallback, 0 I/O, konstanta existing 0 baris berubah |
+| §1.D.1 `ATTENDANCE_OPTIONS` dari `ATTENDANCE_STATUS_META` | **LULUS** | 4 entri memakai `ATTENDANCE_STATUS_META.{PRESENT,SICK,PERMITTED,ABSENT}.label`; `ABSENT` = `"Tidak hadir"` (`lib/status/index.ts:71`); `git grep -i "Alpa" -- src/features/attendance` → **0 hit** |
+| §1.D.2 / §1.D.3 | **LULUS** | `entityType.replace(` 0 hit; 0 konstanta label domain baru di level komponen |
+| §1.E C1–C8 | **LULUS** | lihat §A |
+| §1.F migrasi ikon parsial | **LULUS** | `public-registration-wizard.tsx`: `CheckCircle2`/`CloudOff`/`ShieldCheck` → `ICON_MAP.checkCircle`/`cloudOff`/`shieldCheck`; `RotateCcw` dipertahankan & dicatat ✔; `media-workspace-client.tsx` import `lucide-react` dipertahankan ✔ |
+| §1.G.1 R-MAJ-1 | **LULUS** | `contextual-dashboard-view.tsx:186` komentar = `Orientation -> Ringkasan operasional -> [Perlu perhatian & Jadwal belajar] -> Aktivitas terbaru`; `order-*` 0 perubahan (diff 1+/1−) |
+| §1.G.2 R-MAJ-2 | **LULUS** | `loading.tsx`: import + `<SummaryStripSkeleton />`; **0 hit** `min-w-[78%]`/`snap-`/`divide-x`/`sm:grid-cols-2`; `DashboardBodySkeleton` tetap diekspor |
+| §1.G.3 R-MAJ-3 | **LULUS** | `summary-strip.tsx:70` = `opacity-70 text-primary group-hover:opacity-100 transition-opacity` |
+| §1.G.4 R-MIN-1 | **LULUS** | `audit-workspace-client.tsx`: baris 1 = `getAuditEntityLabel(row.entityType)` + ID 8 char `font-mono`; tanggal di `badge`; tepat **1** `Badge` aksi + `Oleh: {actorName}` di `primaryMeta`; satu aksi `Riwayat Audit` `min-h-10`; 0 `ENTITY_TYPE_OPTIONS` lokal (filter `<option value="ALL">` + `Object.entries(AUDIT_ENTITY_META)`) |
+| §1.G.5 R-MIN-2 | **LULUS** | `consent-workspace-client.tsx`: tepat **1** `<Button>` + `<button>` teks (`min-h-10 text-xs text-danger underline-offset-4 hover:underline focus-ring`); kondisi `canUpdate` & `=== "GRANTED"` identik |
+| §1.G.6 R-DOK | **LULUS** | Bagian 4 §4 mencatat 3 kunci aditif P3 presisi; **0 kunci baru P4** |
+| §1.G.7 R-TEST-2 | **LULUS (MINOR-2 TUNTAS)** | assert #8 memakai `matchAll(/min-w-\[78%\]/g).length >= 2` **dan** mengunci `/className="([^"]*snap-start[^"]*)"/g` → **`length === 2`** dengan verifikasi `min-w-[78%]` pada **kedua** varian (`Link` ber-`href` & `div` statis) |
 
-**Adopsi 4 halaman list (kartu 3–4 baris, satu aksi primer `min-h-10`):**
+**Penutupan backlog P3:** R-MIN-1 ✔ · R-MIN-2 ✔ · R-MAJ-1 ✔ · R-MAJ-2 ✔ · R-MAJ-3 ✔ · R-DOK ✔ · R-TEST-2 ✔. **Nol backlog P3 tersisa.**
 
-| Halaman | `renderMobileRow` | `SummaryStrip` | Izin (C5) | Verdict |
+
+### C. Audit Guardrail `patterns-p4.test.ts` & Verifikasi Eksekusi (independen)
+
+**Jumlah assert:** **16 `it()`** (14 wajib §3 Task 11 + #15 ekspor + #16 a11y `aria-describedby`) — tanpa `it.each`/loop tersembunyi; tiap `it` memakai `readFileSync` + ekstraksi string kelas nyata (`match`/`matchAll`), bukan regex boolean vakum ✔ (preseden P2 #3 / P3 #6). Assert #4 diperkuat menjadi pengunci **keunikan** (`id={x}` tepat 1× per id) dan assert #8 menjadi pengunci **2 wrapper** — keduanya kini benar-benar menangkap cacat siklus #1.
+
+| Perintah (dijalankan ulang auditor) | Hasil |
+|---|---|
+| `npx tsc --noEmit -p tsconfig.json` (= `npm run typecheck`) | **exit 0**, 0 error |
+| `npx eslint` pada 13 file kode §2 (+ `patterns-p4.test.ts`) | **exit 0**, 0 error + 0 warning (tanpa output) |
+| `npx vitest run` pada 8 berkas suite target | **8/8 berkas, 52/52 test hijau** |
+| `npx vitest run src/components/patterns src/components/layout src/components/ui src/lib/status src/features/attendance src/features/audit src/features/consent` | `Test Files 2 failed \| 8 passed (10)` · `Tests 1 failed \| 54 passed \| 4 skipped (59)` — lihat catatan baseline |
+| `npx vitest run src/features/attendance/attendance-sync.integration.test.ts` (terisolasi) | **1/1 berkas, 4/4 test hijau** (8.97s) |
+
+**Rincian suite target hijau:** `patterns-p4` **16**, `layout-shell` **11**, `patterns-mobile` **10**, `attendance` **4**, `consent` **4**, `audit` **3**, `status` **2**, `ui-primitives` **2** = **52**.
+
+**Dua kegagalan pada suite agregat — keduanya BUKAN regresi P4:**
+1. `patterns-and-pwa.test.ts:62` — `expect(manifest.background_color).toBe("#F7F8F4")` menerima `"#1F6650"`. **Pra-eksisting/environmental**: manifest & `public/` **0 baris** di worktree (tidak mungkin disebabkan P4); kegagalan sama tercatat identik di arsip P1/P2/P3.
+2. `attendance-sync.integration.test.ts` — `PostgresError` **`code: '57014'` (statement timeout)** saat berjalan paralel bersama 9 berkas lain; **lulus 4/4 (8.97s) saat dijalankan terisolasi**. Murni flake beban environment DB, bukan kegagalan logika; berkas uji ini **0 baris** di worktree (C7).
+
+**Regresi P1–P3:** **0.** `patterns-mobile.test.ts` (10) & `layout-shell.test.ts` (11) hijau **tanpa perubahan berkas**; seluruh artefak P1/P2/P3 **0 baris** di `git diff`.
+
+
+### D. Verifikasi Penutupan Temuan Siklus #1 — semua TUNTAS
+
+| # | Prioritas | Temuan siklus #1 | Status | Bukti verifikasi auditor |
 |---|---|---|---|---|
-| Students | `MobileCardList` (nama + `StatusBadge`, kelas·jenjang, aksi `Tempatkan`/`Buka profil`) | tidak (tak ada agregat ringkas di VM) | `canVerifyStudent` identik, hanya relokasi | LULUS |
-| Consent | `MobileCardList` (nama + badge, `No:`, `Data:` via `CONSENT_STATUS_META`, aksi `Perbarui`/`Cabut`) | ✔ agregat VM existing (`totalCount`/`photoGrantedCount`/`revokedCount`) | `canUpdate` identik | LULUS (R-MIN-2) |
-| Audit | `MobileCardList` (badge aksi + tanggal, deskripsi, pelaku, `Riwayat Audit`) | ✔ agregat VM existing (`totalCount` + 2 label statis) | read-only, tanpa `can*` baru | R-MIN-1 (hierarki) |
-| Attendance | `MobileCardList` **di dalam** `ul[role="list"]` + `li p-4` miliknya sendiri (`:583–664`), segmented control + catatan | tidak (agregat client-side) | `canRecord` identik | LULUS (0 nested `ul`/`li`) |
+| MAJOR-1 | MAJOR | id DOM duplikat (`-display`/`-native` dipakai 2 elemen), `htmlFor` ambigu | **TUNTAS** | 3 id turunan unik per presentasi (`-mobile-display`, `-mobile-native`, `-desktop-native`); tiap `id=` tepat 1×; `htmlFor` mobile→display (`:64`), desktop→desktop-native (`:75`); guardrail #4 mengunci keunikan |
+| MINOR-1 | MINOR | tombol kalender dekoratif membawa `aria-label`/`aria-controls` meski non-fokusabel | **TUNTAS** | wrapper `aria-hidden="true"` (`:103`), `Button` `aria-hidden="true"` + `tabIndex={-1}` (`:111‑112`); 0 `aria-label="Pilih tanggal"` (guardrail #2) |
+| MINOR-2 | TEST | assert #8 hanya mengambil `className` pertama, varian statis tak terkunci | **TUNTAS** | `matchAll` + `length === 2` untuk wrapper `snap-start`, keduanya diperiksa `min-w-[78%]` |
+| MINOR-4 | MINOR | `aria-label` + `aria-hidden="true"` pada root skeleton yang sama | **TUNTAS** | `summary-strip.tsx:131‑136` hanya `aria-hidden="true"`; guardrail #6 mengunci ketiadaan `aria-label` |
+| MINOR-5 | MINOR | id `-hint`/`-error` dihitung tapi tak pernah dirujuk | **TUNTAS** | `describedById` (`:56`) diteruskan ke 3 kontrol (`:99`, `:137`, `:156`) + `aria-invalid`; guardrail #16 mengunci perutean |
+| MINOR-6 | DOK | ketidakjelasan status `audit-types.ts` | **TUNTAS** | Bagian 4 butir 5 menegaskan no-op; `git diff -- audit-types.ts` → **kosong** |
+| MINOR-3 | opsional | prop aditif `bordered` pada skeleton | **DITERIMA (non-blokir)** | default kompatibel (`bordered = true`), tidak mengubah API wajib §1.B — cukup dicatat |
 
-- **Nol perubahan kondisi izin:** `canVerifyStudent`, `canUpdate`, `canRecord`, `vm.canViewAuditLog` dibaca apa adanya; nol penambahan/penghapusan kondisi.
-- **Nol perubahan copy bisnis, data, action, service, validator, DTO, dan `DataTable`.**
-- **Target sentuh:** seluruh aksi kartu memakai `min-h-10`; nol `shadow-*` baru; nol `z-*` baru.
+**Kriteria lulus siklus #2 (§E siklus #1) — semuanya terpenuhi:** (1) tiap id turunan **tepat 1×** dan tiap `htmlFor` menunjuk id yang dirender ✔; (2) `typecheck` 0 error · `eslint` 0 error/0 warning · `patterns-p4.test.ts` **16** assert hijau · suite target **52/52** ✔; (3) `git status` tepat 14 file allow-list + 2 dokumentasi, deny-list **0 baris** ✔.
 
-### 5.6 Bukti Baseline Kegagalan Pra-eksisting (dikecualikan & dicatat)
+### E. Catatan arsitektural final (preseden mengikat untuk P5/backlog)
 
-Suite penuh: `5 failed | 28 passed (33 files)` — identik dengan baseline terdokumentasi (§6.2/§6.3: PWA manifest + `rbac.integration` + `public-experience.integration` + `db/client`):
-1. `patterns-and-pwa.test.ts` — `manifest.background_color` (`#1F6650` vs `#F7F8F4`). **Bukti:** `public/manifest.webmanifest` & `patterns-and-pwa.test.ts` **0 baris di `git diff`** → murni pra-eksisting.
-2. `administration/rbac.integration.test.ts` — Mailpit `ECONNREFUSED 127.0.0.1` (environmental; artefak P5 steril).
-3. `public/public-experience.integration.test.ts` — slug seed vs assertion (pra-eksisting).
-4. `db/client.test.ts` + `db/schema.integration.test.ts` — `TypeError: fetch failed` (DB/pooler environmental; `db/*` steril).
+1. **`DatePicker` adalah primitif tanggal kanonik** — `type="date"` mentah **0 hit** di luar `date-picker.tsx` (bukti `git grep --untracked -n 'type="date"' -- src/`). Pemakaian baru wajib lewat primitif ini.
+2. **Pola dua-presentasi-satu-`onChange` kini baku:** ketika dua wadah dirender bersamaan (CSS-hide, bukan render kondisional), id turunan **wajib berbeda per wadah** dan `htmlFor` wajib menunjuk wadah yang tepat. Cacat siklus #1 adalah contoh kanonik pelanggaran ini.
+3. **Elemen dekoratif `pointer-events-none`/`tabIndex={-1}` tidak boleh membawa affordance a11y aktif** (`aria-label`, `aria-controls`) — gunakan `aria-hidden="true"`. Preseden ini **mengalahkan** pembacaan literal §1.A.4 soal `aria-controls` (lihat §B baris `aria-controls`).
+4. **Guardrail harus mengunci ketiadaan, bukan hanya keberadaan** — assert #4/#8 siklus #2 membuktikan `toContain` saja tidak cukup.
+5. **Flake DB pada suite agregat wajib diverifikasi terisolasi** sebelum dinyatakan gagal — `57014 statement timeout` di bawah paralelisme bukan regresi kode.
+6. **`AUDIT_ENTITY_META` di `lib/status` adalah satu-satunya sumber label entitas audit** — `entityType.replace(` dilarang (0 hit).
 
-Nol kegagalan pada file yang disentuh P3. `layout-shell.test.ts` **tidak berubah** dan 11/11 hijau.
 
-### 5.7 Matriks Temuan (semua non-blocking — tidak menahan approval)
+### F. Yang tetap terbuka setelah P4 (backlog jangka panjang, bukan blokir)
 
-| # | Prioritas | Lokasi | Temuan | Tuntutan |
-|---|---|---|---|---|
-| R-MIN-1 | MINOR | `audit-workspace-client.tsx:266–299` | `title` diisi `<Badge>{row.actionLabel}</Badge>` sehingga *identitas* entitas tidak tampil; `title` dirender `type-body font-semibold` hanya bila `string` — sebagai `ReactNode` ia jatuh ke cabang tanpa kelas tipografi, sementara `actorName` turun ke `secondaryMeta` (teks sekunder terlemah). Hierarki 4 baris §1.C.2 jadi terbalik. | Baris 1 = identitas/kode entitas + tanggal; pindahkan `Badge` aksi ke `badge`; naikkan pelaku ke `primaryMeta`. |
-| R-MIN-2 | MINOR | `consent-workspace-client.tsx:338–363` | Wadah `action` berisi **dua** `Button` (`Perbarui` + `Cabut`) dalam satu `div` → bertentangan dengan "maksimal satu aksi primer" §1.C.2; pada 375px berisiko > 2 baris. | Turunkan `Cabut persetujuan` menjadi tautan teks (`min-h-10` tetap) atau pindahkan ke sheet editor. |
-| R-MAJ-1 | MAYOR (P4) | `contextual-dashboard-view.tsx:190` | Komentar masih `Mobile (<640px): Orientation -> [Perlu perhatian & Jadwal belajar] -> Ringkasan operasional`, padahal P3 menetapkan urutan mobile = ringkasan **sebelum** perlu-perhatian. Orde via `order-3 sm:order-2` berfungsi; hanya komentar menyesatkan. | Selaraskan komentar dengan §1.D pada P4. Bukan diskualifikasi P3. |
-| R-MAJ-2 | MAYOR (P4) | `app/(workspace)/workspace/loading.tsx:11–15` | Skeleton strip **menduplikasi** kelas strip (`min-w-[78%]`, `sm:grid-cols-2 lg:grid-cols-4`, `divide-x`) — 0 hit guardrail karena di luar cakupan. Bukan drift baru (pra-eksisting), tetapi kelas kini dimiliki `SummaryStrip`. | Ekstrak ke `SummaryStripSkeleton` / ekspor kelas strip dari pattern pada P4. |
-| R-MAJ-3 | MAYOR (P4) | `summary-strip.tsx:62–69` | Perilaku visual baru: item ber-`href` kini `hover:bg-surface-subtle/70` pada `<Link>` (`rounded-control`) + ikon `arrowUpRight` `opacity-0 group-hover:opacity-100`. Di dashboard pra-P3 ikon **selalu** tampak & tanpa hover background. Ikon tidak hilang permanen (hover + focus `group` bekerja; kunci tetap terpakai), tetapi petunjuk "dapat diklik" pada perangkat sentuh melemah. | Putuskan di P4: tampilkan ikon `sm:` dan/atau `text-primary` agar bukan satu-satunya petunjuk. Bukan pelanggaran kontrak §1.B; menyimpang dari paritas visual dashboard. |
-| R-DOK | DOKUMENTASI | `TASK.md:154` | Narasi klaim "3 kunci aditif … untuk eliminasi `lucide-react` di dashboard"; faktanya hanya `arrowRight` + `calendar` dipakai dashboard, `arrowUpRight` dipakai primitif. | Koreksi narasi (cakupan repo-wide sudah benar). |
-| R-TEST-2 | TEST | `patterns-mobile.test.ts:26–32` | Assert `min-w-[78%]` hanya mengenai string item ber-`href`; varian item statis (`summary-strip.tsx:98`) tidak di-assert. | Tambah `content.matchAll(/min-w-\[78%\]/g).length >= 2` atau assert kedua string wrapper pada P4. |
+- **R6 (warisan P2):** nested `Dialog.Root` di `FormBottomSheet` — butuh TASK tersendiri.
+- **`RotateCcw` tanpa kunci `ICON_MAP`:** migrasi `public-registration-wizard.tsx` tetap **partial** (sesuai §1.F; kunci yatim dilarang).
+- **`aria-controls` pada `DatePicker`:** tidak ada kontrol fokusabel yang membawa `aria-controls` setelah MINOR-1. Bila kelak tombol kalender dijadikan kontrol fokusabel sungguhan (bukan dekoratif), `aria-controls={mobileNativeId}` wajib dikembalikan bersamaan dengan `aria-label` — kandidat perbaikan a11y P5+.
+- **`rgba()`/`oklch()` inline di `features/**`** belum dipindai guardrail mana pun — kandidat audit P5+.
 
-### 5.8 Evaluasi Arsitektural & Putusan
-
-- **Satu sumber, banyak pemakai terwujud:** kelas strip tidak lagi hidup di `features/**`; seluruh konsumen memakai satu string dari primitif (kata-per-kata sama dengan kontrak §1.B).
-- **C8 & P1/P2 utuh:** migrasi `renderMobileRow` tidak menyentuh `DataTable`, dialog/sheet, maupun artefak layout; Attendance membuktikan primitif kompatibel di dalam `ul`/`li` milik pemanggil (0 nested list).
-- **Anti-drift tumbuh, bukan tumpang tindih:** 10 guardrail baru menambah assert kualitatif (ekstraksi string nyata; termasuk `rounded-full`/palet/shadow yang tidak tertangkap pemindai lama) tanpa menambah keyframe, `z-*`, util media query, atau kelas CSS baru.
-- **Zero-risk terhadap data/auth/RBAC/BL:** nol sentuhan seed, session, permission, DTO, action, service, validator.
-- **Tidak ada regresi:** P1/P2 (`layout-shell.test.ts` 11/11) dan `ui-primitives.test.ts` (2/2) tetap hijau; `typecheck`/`eslint` exit 0.
-
-**Putusan: `STATUS: APPROVED`.** Pintu ke **P4** (`date-picker` + normalisasi label status + backlog R-MAJ-1/R-MAJ-2/R-MAJ-3/R-MIN-1/R-MIN-2/R-DOK/R-TEST-2) terbuka. R-MIN-1/R-MIN-2 wajib dieksekusi **bersamaan** dengan backlog P4 dalam TASK terpisah — bukan koreksi retroaktif pada P3.
+---
+<!-- Auditor: Cline (VS Code), siklus #2. Metode: pembacaan diff per-file + `git status`/`git grep`/`git diff --numstat` ulang + typecheck/eslint/vitest independen (termasuk isolasi berkas integrasi DB). Tidak ada file kode aplikasi yang diubah oleh auditor. -->
+---
 
 ## 6. Arsip
 
 > Jejak keputusan lintas fase. Detail lengkap: riwayat git `apps/web/TASK.md`.
+
+### 6.4 FASE 19 STEP 2 — P3 `MobileCardList` + `SummaryStrip` + Orientasi/Ringkasan Header (`APPROVED`)
+
+> Ringkasan status akhir P3. Detail lengkap: §5 (Bagian 5, audit siklus **#1**) pada commit `270189` + riwayat git `apps/web/TASK.md`.
+
+**Siklus:** Audit #1 **`APPROVED`** (nol temuan `BLOCKER`/`MAYOR` pemblokir; 7 temuan non-blocking diturunkan ke P4). Baris dasar: worktree bersih di `270189`, `patterns-mobile.test.ts` + `layout-shell.test.ts` + `ui-primitives.test.ts` = **23/23 hijau**.
+
+**Deliverable (ringkas):**
+
+| File | Perubahan |
+|---|---|
+| `src/components/patterns/mobile-card-list.tsx` | **Baru** — primitif kartu mobile (`title`/`description`/`badge`/`primaryMeta`/`secondaryMeta`/`action`), tanpa nested list |
+| `src/components/patterns/summary-strip.tsx` | **Baru** — strip ringkasan horizontal `min-w-[78%]` (snap) → grid `sm:grid-cols-2 lg:grid-cols-4` |
+| `src/components/patterns/index.ts` | Ekspor 2 primitif baru |
+| `src/features/{audit,consent,attendance,...}/components/*-workspace-client.tsx` | Migrasi `renderMobileRow` → `MobileCardList`; ringkasan → `SummaryStrip` |
+| `src/features/organization/components/contextual-dashboard-view.tsx` | Ringkasan operasional + orde mobile `order-*` |
+| `src/config/icons.ts` | +3 kunci aditif `ICON_MAP` (`arrowRight`, `calendar`, `arrowUpRight`) |
+| `src/components/patterns/patterns-mobile.test.ts` | **Baru** — 10 guardrail `readFileSync` + ekstraksi string kelas nyata |
+| `apps/web/TASK.md`, `migration/MIGRATION-STATE.md` | Dokumentasi + entri `PHASE-19-STEP2-P3` |
+
+**Verifikasi yang dilaporkan & diverifikasi auditor:** `typecheck` 0 error · `eslint` 0 error/warning · `patterns-mobile.test.ts` 10/10 + `layout-shell.test.ts` 11/11 + `ui-primitives.test.ts` 2/2 = **23/23 hijau**. Kegagalan suite penuh (manifest PWA `background_color`, Mailpit, public slug, `db/client`) terbukti **pra-eksisting/environmental** — daftar identik dengan P1/P2.
+
+**Isolasi:** seluruh file *modified* berada di Bagian 2 P3 (+ `TASK.md`, `MIGRATION-STATE.md`, dan `icons.ts` kunci aditif). Nol file C5 (RBAC/seed/auth), nol file C7 (action/service/validator/test domain), artefak P1/P2 (`sheet.tsx`, `form-bottom-sheet.tsx`, `layout-shell.test.ts`, `themes.css`, `data-table.tsx`) **bersih total**.
+
+**Preseden mengikat untuk P4 (8 butir):**
+
+1. **`MobileCardList` adalah markup final, bukan draft** — hierarki 4 baris (`title` → `description` → `primaryMeta` → `secondaryMeta`) + satu wadah `action`. P4 **dilarang** mengubah primitif ini; perbaikan hierarki dilakukan di **data yang dioper** pemanggil (kasus R-MIN-1).
+2. **Maksimal satu aksi primer per kartu** — turunan langsung §1.C P3. Aksi destruktif sekunder wajib turun menjadi tautan `<button>` teks `min-h-10` (kasus R-MIN-2), bukan `Button` kedua.
+3. **`SummaryStrip` = pemilik tunggal kelas strip** — setiap konsumen (termasuk skeleton rute) wajib mengambil kelas dari primitif. Duplikasi di `loading.tsx` adalah **utang yang harus ditutup P4** (R-MAJ-2), bukan preseden.
+4. **Affordance tautan wajib tampak di layar sentuh** — ikon `opacity-0 group-hover:opacity-100` hanya sah di perangkat berpointer; P4 wajib menaikkan ke `opacity-70` + `text-primary` (R-MAJ-3).
+5. **Komentar orde visual = dokumentasi kontrak** — komentar yang tidak sinkron dengan `order-*` adalah temuan `MAYOR` (R-MAJ-1). Setiap perubahan orde wajib memperbarui komentar di commit yang sama.
+6. **Ekstraksi string kelas nyata adalah baku** — regex coarse dilarang (preseden P2 #3 diperkuat P3). Guardrail P4 **wajib** memakai `matchAll` dan memeriksa **setiap** varian wrapper, bukan satu contoh (R-TEST-2).
+7. **Label domain wajib dari `src/lib/status`** — label hardcoded di `features/*/components` adalah sumber drift (ditemukan pada `ATTENDANCE_OPTIONS`). Normalisasi label = scope P4.
+8. **Utang non-blocking P3 terbuka semua di P4** — R-MIN-1, R-MIN-2, R-MAJ-1, R-MAJ-2, R-MAJ-3, R-DOK, R-TEST-2 dipindahkan **utuh** ke §1.G TASK P4. Tidak ada yang boleh diselesaikan sebagai "koreksi retroaktif" pada file P3 di luar allow-list P4; `summary-strip.tsx` & `loading.tsx` **masuk** allow-list P4 dengan batas perubahan eksplisit.
+
+**Catatan non-blocking yang tetap terbuka setelah P4 (backlog jangka panjang):**
+
+- **R6 (warisan P2):** nested `Dialog.Root` di `FormBottomSheet` — utang a11y, tidak boleh disentuh sampai ada TASK tersendiri.
+- **Cakupan assert P2:** `id="*-dialog-form"` hanya menyentuh satu file.
+- **`RotateCcw` tanpa kunci `ICON_MAP`:** migrasi ikon `public-registration-wizard.tsx` bersifat **partial** di P4 (lihat §1.F). Menambah kunci demi migrasi parsial **dilarang** (C1: kunci baru hanya bila benar-benar dipakai).
+- **`rgba()`/`oklch()` inline** di `features/**` belum dipindai guardrail mana pun — kandidat audit P5+ (bukan P4).
 
 ### 6.1 FASE 19 STEP 1 — Audit Mobile-First & RBAC (SELESAI, `APPROVED`, REPORT-ONLY)
 

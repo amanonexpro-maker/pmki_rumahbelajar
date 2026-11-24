@@ -26,25 +26,14 @@ import {
   Icon,
 } from "@/components/ui";
 import {
+  AUDIT_ENTITY_META,
+  getAuditEntityLabel,
+} from "@/lib/status";
+import {
   AUDIT_ACTION_LABELS,
   type AuditLogItemDTO,
   type AuditLogListResultDTO,
 } from "../types/audit-types";
-
-const ENTITY_TYPE_OPTIONS = [
-  { value: "ALL", label: "Semua entitas" },
-  { value: "student", label: "Peserta didik" },
-  { value: "attendance_session", label: "Sesi kehadiran" },
-  { value: "development_note", label: "Catatan perkembangan" },
-  { value: "consent", label: "Persetujuan wali" },
-  { value: "media_asset", label: "Dokumentasi" },
-  { value: "publication", label: "Publikasi" },
-  { value: "report", label: "Laporan pelayanan" },
-  { value: "user", label: "Pengguna" },
-  { value: "role", label: "Peran" },
-  { value: "user_permission", label: "Override hak akses" },
-  { value: "user_membership", label: "Lingkup penugasan" },
-];
 
 export interface AuditWorkspaceClientProps {
   listResult: AuditLogListResultDTO;
@@ -248,9 +237,10 @@ export function AuditWorkspaceClient({
               }
               className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
             >
-              {ENTITY_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
+              <option value="ALL">Semua entitas</option>
+              {Object.entries(AUDIT_ENTITY_META).map(([code, meta]) => (
+                <option key={code} value={code}>
+                  {meta.label}
                 </option>
               ))}
             </select>
@@ -266,24 +256,38 @@ export function AuditWorkspaceClient({
         renderMobileRow={(row) => (
           <MobileCardList
             title={
-              <Badge variant="neutral" size="sm">
-                {row.actionLabel}
-              </Badge>
+              <span className="text-sm font-semibold text-foreground">
+                {getAuditEntityLabel(row.entityType)} ·{" "}
+                <span className="font-mono text-xs text-muted-foreground">
+                  {row.entityId ? row.entityId.slice(0, 8) : ""}
+                </span>
+              </span>
             }
             badge={
               <span className="text-[11px] font-mono text-muted-foreground">
-                {new Date(row.createdAt).toLocaleDateString("id-ID")}
+                {new Date(row.createdAt).toLocaleDateString("id-ID", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
               </span>
             }
             primaryMeta={
+              <div className="space-y-1">
+                <div>
+                  <Badge variant="neutral" size="sm">
+                    {row.actionLabel}
+                  </Badge>
+                </div>
+                <p className="text-xs text-secondary-foreground">
+                  Oleh: <strong className="text-foreground">{row.actorName}</strong>
+                </p>
+              </div>
+            }
+            secondaryMeta={
               <p className="text-xs text-foreground leading-relaxed">
                 {row.description}
               </p>
-            }
-            secondaryMeta={
-              <span className="text-secondary-foreground">
-                Oleh: <strong className="text-foreground">{row.actorName}</strong>
-              </span>
             }
             action={
               <Button

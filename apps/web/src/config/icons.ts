@@ -22,9 +22,12 @@
 
 import {
   AlertTriangle,
+  ArrowRight,
+  ArrowUpRight,
   BookOpen,
   BookText,
   Calculator,
+  Calendar,
   CalendarCheck,
   Check,
   CheckCircle2,
@@ -131,5 +134,8 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   kehadiran: CalendarCheck,
   tataKelola: FileCheck2,
   lainnya: Menu,
+  arrowRight: ArrowRight,
+  arrowUpRight: ArrowUpRight,
+  calendar: Calendar,
 } as const;
 

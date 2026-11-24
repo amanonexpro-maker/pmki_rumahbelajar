@@ -7,9 +7,10 @@ import { EmptyState } from "@/components/compositions";
 import {
   DataTable,
   DecisionHistory,
+  MobileCardList,
   PageHeader,
   SearchToolbar,
-  StatSummary,
+  SummaryStrip,
   type DataTableColumn,
 } from "@/components/patterns";
 import {
@@ -178,7 +179,7 @@ export function AuditWorkspaceClient({
         description="Catatan peristiwa sistem yang bersifat baca-saja (read-only) dan tidak dapat diubah maupun dihapus oleh peran manapun."
       />
 
-      <StatSummary
+      <SummaryStrip
         items={[
           {
             id: "total-logs",
@@ -196,6 +197,8 @@ export function AuditWorkspaceClient({
             value: "Baca-saja (Online Tier C)",
           },
         ]}
+        ariaLabel="Ringkasan jejak audit"
+        bordered
       />
 
       <div className="rounded-control border border-border bg-surface-subtle/60 px-4 py-3 text-xs text-secondary-foreground flex items-center gap-2.5">
@@ -261,32 +264,39 @@ export function AuditWorkspaceClient({
         getRowKey={(row) => row.id}
         caption="Tabel jejak audit sistem PMKI"
         renderMobileRow={(row) => (
-          <div className="space-y-2.5">
-            <div className="flex items-start justify-between gap-2">
+          <MobileCardList
+            title={
               <Badge variant="neutral" size="sm">
                 {row.actionLabel}
               </Badge>
+            }
+            badge={
               <span className="text-[11px] font-mono text-muted-foreground">
                 {new Date(row.createdAt).toLocaleDateString("id-ID")}
               </span>
-            </div>
-            <p className="text-xs text-foreground leading-relaxed">
-              {row.description}
-            </p>
-            <div className="flex items-center justify-between gap-2 pt-2 border-t border-border-subtle text-xs">
+            }
+            primaryMeta={
+              <p className="text-xs text-foreground leading-relaxed">
+                {row.description}
+              </p>
+            }
+            secondaryMeta={
               <span className="text-secondary-foreground">
                 Oleh: <strong className="text-foreground">{row.actorName}</strong>
               </span>
+            }
+            action={
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
+                className="min-h-10 text-xs text-secondary-foreground hover:text-foreground"
                 onClick={() => setSelectedLog(row)}
               >
-                Riwayat Audit
+                Riwayat Audit →
               </Button>
-            </div>
-          </div>
+            }
+          />
         )}
         emptyState={
           <EmptyState

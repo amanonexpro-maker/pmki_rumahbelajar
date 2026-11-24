@@ -8,6 +8,7 @@ import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
   DataTable,
   FormBottomSheet,
+  MobileCardList,
   PageHeader,
   SearchToolbar,
   type DataTableColumn,
@@ -381,32 +382,24 @@ export function StudentsWorkspaceClient({
         caption="Daftar peserta didik Rumah Belajar"
         onRowClick={(row) => router.push(`/workspace/students/${row.id}`)}
         renderMobileRow={(row) => (
-          <div className="space-y-2">
-            {/* Baris 1: Identitas Utama (Nama Peserta Didik) & Status */}
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-base font-semibold text-foreground leading-snug">
-                {row.fullName}
-              </p>
+          <MobileCardList
+            title={row.fullName}
+            badge={
               <StatusBadge
                 domain="registration"
                 status={row.registrationStatus}
               />
-            </div>
-
-            {/* Baris 2 & 3: Metadata Kunci (Kelas & Jenjang Pendidikan) */}
-            <p className="text-xs text-secondary-foreground leading-normal">
-              <span className="font-medium text-foreground">
-                {row.assignedClassName ?? "Belum ditempatkan"}
-              </span>{" "}
-              · {row.educationLevelLabel}
-            </p>
-
-            {/* Baris 4: Aksi Primer Tunggal */}
-            <div
-              className="pt-1 flex items-center justify-end"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {canVerifyStudent &&
+            }
+            primaryMeta={
+              <>
+                <span className="font-medium text-foreground">
+                  {row.assignedClassName ?? "Belum ditempatkan"}
+                </span>{" "}
+                · {row.educationLevelLabel}
+              </>
+            }
+            action={
+              canVerifyStudent &&
               (row.registrationStatus === "VERIFIED" ||
                 row.registrationStatus === "WAITLIST") &&
               !row.assignedClassId ? (
@@ -423,7 +416,12 @@ export function StudentsWorkspaceClient({
                   Tempatkan ke kelas
                 </Button>
               ) : (
-                <Button asChild variant="ghost" size="sm" className="min-h-10 text-xs text-secondary-foreground hover:text-foreground">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-10 text-xs text-secondary-foreground hover:text-foreground"
+                >
                   <Link
                     href={`/workspace/students/${row.id}`}
                     aria-label={`Buka profil peserta didik ${row.fullName}`}
@@ -431,9 +429,9 @@ export function StudentsWorkspaceClient({
                     Buka profil →
                   </Link>
                 </Button>
-              )}
-            </div>
-          </div>
+              )
+            }
+          />
         )}
         emptyState={
           <EmptyState

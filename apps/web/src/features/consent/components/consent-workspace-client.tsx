@@ -6,9 +6,10 @@ import { Lock, ShieldAlert, ShieldCheck } from "lucide-react";
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
   DataTable,
+  MobileCardList,
   PageHeader,
   SearchToolbar,
-  StatSummary,
+  SummaryStrip,
   type DataTableColumn,
 } from "@/components/patterns";
 import {
@@ -234,7 +235,7 @@ export function ConsentWorkspaceClient({
         description="Kelola Persetujuan Data dan Persetujuan Foto & Video peserta didik secara terpisah. Perubahan status persetujuan membutuhkan koneksi online aktif (Tier C) dan langsung dicatat dalam jejak audit."
       />
 
-      <StatSummary
+      <SummaryStrip
         items={[
           {
             id: "total",
@@ -252,6 +253,8 @@ export function ConsentWorkspaceClient({
             value: `${revokedCount} catatan`,
           },
         ]}
+        ariaLabel="Ringkasan persetujuan"
+        bordered
       />
 
       <div className="rounded-control border border-border bg-surface-subtle/60 px-4 py-3 text-xs text-secondary-foreground flex items-center gap-2.5">
@@ -314,31 +317,32 @@ export function ConsentWorkspaceClient({
         getRowKey={(row) => row.id}
         caption="Daftar persetujuan data dan foto/video peserta didik"
         renderMobileRow={(row) => (
-          <div className="space-y-3">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="font-semibold text-foreground">
-                  {row.studentFullName}
-                </p>
-                <p className="text-xs text-muted-foreground font-mono">
-                  {row.studentRegistrationNumber}
-                </p>
-              </div>
+          <MobileCardList
+            title={row.studentFullName}
+            badge={
               <StatusBadge domain="consent" status={row.photoVideoConsent} />
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border-subtle text-xs">
+            }
+            primaryMeta={
+              <span className="font-mono">
+                No: {row.studentRegistrationNumber}
+              </span>
+            }
+            secondaryMeta={
               <span>
                 Data:{" "}
                 <strong>
                   {CONSENT_STATUS_META[row.personalDataConsent].label}
                 </strong>
               </span>
-              {canUpdate && (
-                <div className="flex items-center gap-2">
+            }
+            action={
+              canUpdate ? (
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     type="button"
                     variant="secondary"
                     size="sm"
+                    className="min-h-10 text-xs"
                     onClick={() => openEditor(row, false)}
                   >
                     Perbarui persetujuan
@@ -348,15 +352,16 @@ export function ConsentWorkspaceClient({
                       type="button"
                       variant="ghost"
                       size="sm"
+                      className="min-h-10 text-xs"
                       onClick={() => openEditor(row, true)}
                     >
                       Cabut persetujuan
                     </Button>
                   )}
                 </div>
-              )}
-            </div>
-          </div>
+              ) : null
+            }
+          />
         )}
         emptyState={
           <EmptyState

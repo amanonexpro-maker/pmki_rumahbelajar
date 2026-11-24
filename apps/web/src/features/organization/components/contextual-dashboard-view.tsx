@@ -1,13 +1,7 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Calendar,
-  CheckCircle2,
-} from "lucide-react";
-import { PageHeader } from "@/components/patterns";
-import { Badge, type BadgeProps } from "@/components/ui";
-import { cn } from "@/lib/cn";
+import { PageHeader, SummaryStrip } from "@/components/patterns";
+import { Badge, Icon, type BadgeProps } from "@/components/ui";
+import { ICON_MAP } from "@/config/icons";
 import { getRoleLabel, type SystemRole } from "@/lib/status";
 import type { SessionUser } from "@/server/auth/session";
 import {
@@ -122,7 +116,7 @@ export function DashboardOrientationHeader(props: DashboardOrientationHeaderProp
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-primary hover:bg-primary-hover text-primary-foreground px-4 py-2 text-sm font-semibold shadow-xs transition-colors active:scale-[0.985] focus-ring"
           >
             <span>{data.primaryAction.label}</span>
-            <ArrowRight aria-hidden="true" className="w-4 h-4" />
+            <Icon icon={ICON_MAP.arrowRight} size="sm" aria-hidden="true" />
           </Link>
         ) : undefined
       }
@@ -194,62 +188,12 @@ export function ContextualDashboardBody({
        */}
 
       {/* 2. OPERATIONAL SUMMARY STRIP (Horizontal Snap Scroll on mobile — zero KPI cards) */}
-      <section
-        aria-label="Ringkasan operasional"
-        className="order-3 sm:order-2 border-y border-border py-4 sm:py-5"
-      >
-        <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-y-6 sm:gap-x-6 sm:divide-x sm:divide-border sm:pb-0">
-          {vm.summaryMetrics.map((item, idx) => {
-            const inner = (
-              <div
-                className={cn(
-                  "p-4 rounded-card border border-border-subtle bg-surface sm:border-0 sm:bg-transparent sm:p-0",
-                  idx > 0 && "sm:pl-6"
-                )}
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="type-h1 text-foreground tabular-nums tracking-tight">
-                    {item.value}
-                  </span>
-                  {item.href && (
-                    <ArrowUpRight
-                      aria-hidden="true"
-                      className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
-                  )}
-                </div>
-                <p className="mt-1 text-sm font-semibold text-foreground">
-                  {item.label}
-                </p>
-                <p className="mt-0.5 type-caption text-secondary-foreground">
-                  {item.context}
-                </p>
-              </div>
-            );
-
-            if (item.href) {
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className="snap-start shrink-0 min-w-[78%] sm:min-w-0 group block text-left rounded-control transition-colors hover:bg-surface-subtle/70 focus-ring"
-                >
-                  {inner}
-                </Link>
-              );
-            }
-
-            return (
-              <div
-                key={item.id}
-                className="snap-start shrink-0 min-w-[78%] sm:min-w-0"
-              >
-                {inner}
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <SummaryStrip
+        items={vm.summaryMetrics}
+        ariaLabel="Ringkasan operasional"
+        bordered
+        className="order-3 sm:order-2"
+      />
 
       {/* 3. NEEDS ATTENTION ("Perlu perhatian") & UPCOMING WORK ("Jadwal belajar") */}
       <div className="order-2 sm:order-3 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -281,7 +225,7 @@ export function ContextualDashboardBody({
           {vm.attentionItems.length === 0 ? (
             <div className="rounded-card bg-surface border border-border px-5 py-6 flex items-start gap-3.5">
               <div className="w-8 h-8 rounded-pill bg-success-soft text-success flex items-center justify-center shrink-0 mt-0.5">
-                <CheckCircle2 aria-hidden="true" className="w-4 h-4" />
+                <Icon icon={ICON_MAP.checkCircle} size="sm" aria-hidden="true" />
               </div>
               <div className="space-y-0.5">
                 <p className="text-sm font-semibold text-foreground">
@@ -323,9 +267,11 @@ export function ContextualDashboardBody({
 
                     <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary shrink-0 self-start sm:self-center bg-surface px-3 py-1.5 rounded-control border border-border-subtle">
                       <span>{item.actionLabel}</span>
-                      <ArrowRight
+                      <Icon
+                        icon={ICON_MAP.arrowRight}
+                        size="xs"
                         aria-hidden="true"
-                        className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5"
+                        className="transition-transform group-hover:translate-x-0.5"
                       />
                     </span>
                   </Link>
@@ -359,7 +305,7 @@ export function ContextualDashboardBody({
                 className="inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-primary hover:underline focus-ring rounded-xs px-1"
               >
                 <span>Buku presensi</span>
-                <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
+                <Icon icon={ICON_MAP.arrowRight} size="xs" aria-hidden="true" />
               </Link>
             )}
           </div>
@@ -403,7 +349,7 @@ export function ContextualDashboardBody({
                       className="inline-flex min-h-9 items-center gap-1 rounded-control px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-surface-subtle focus-ring"
                     >
                       <span>Catat presensi</span>
-                      <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
+                      <Icon icon={ICON_MAP.arrowRight} size="xs" aria-hidden="true" />
                     </Link>
                   </div>
                 )}
@@ -413,9 +359,11 @@ export function ContextualDashboardBody({
             {/* Footer context strip showing latest attendance completion status */}
             <div className="px-4 sm:px-5 py-3 bg-surface-subtle/60 flex flex-wrap items-center justify-between gap-2 type-caption text-secondary-foreground">
               <span className="inline-flex items-center gap-1.5">
-                <Calendar
+                <Icon
+                  icon={ICON_MAP.calendar}
+                  size="xs"
                   aria-hidden="true"
-                  className="w-3.5 h-3.5 text-primary"
+                  className="text-primary"
                 />
                 <span>
                   Rekap sesi terakhir (
@@ -465,7 +413,7 @@ export function ContextualDashboardBody({
                 className="inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-primary hover:underline focus-ring rounded-xs px-1"
               >
                 <span>Lihat jejak audit</span>
-                <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
+                <Icon icon={ICON_MAP.arrowRight} size="xs" aria-hidden="true" />
               </Link>
             )}
           </div>
@@ -519,7 +467,7 @@ export function ContextualDashboardBody({
                   className="inline-flex min-h-9 items-center gap-1.5 text-xs font-semibold text-primary hover:underline focus-ring rounded-xs"
                 >
                   <span>Lihat semua aktivitas di jejak audit</span>
-                  <ArrowRight aria-hidden="true" className="w-3.5 h-3.5" />
+                  <Icon icon={ICON_MAP.arrowRight} size="xs" aria-hidden="true" />
                 </Link>
               </div>
             )}

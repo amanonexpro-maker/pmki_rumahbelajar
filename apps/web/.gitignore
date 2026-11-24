@@ -44,3 +44,4 @@ next-env.d.ts
 
 # antigravity rules
 .agent/rules/architect-reviewer.md
+.clinerules

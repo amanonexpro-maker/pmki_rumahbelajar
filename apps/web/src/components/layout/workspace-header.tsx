@@ -20,7 +20,7 @@ export interface WorkspaceHeaderProps {
 
 export function WorkspaceHeader({
   currentViewLabel,
-  serviceUnitName = "Rumah Belajar Griya Asih Lawang",
+  serviceUnitName = "Rumah Belajar Griya Asih",
   academicYearLabel = "TA 2026/2027",
   user,
 }: WorkspaceHeaderProps) {

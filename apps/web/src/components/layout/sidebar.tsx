@@ -171,8 +171,8 @@ export function Sidebar({
   currentPath,
   userPermissions,
   userPersona,
-  serviceUnitName = "Griya Asih Lawang",
-  organizationName = "PMKI Mupel Jawa Timur",
+  serviceUnitName = "RBGA",
+  organizationName = "Lawang - Jawa Timur",
   isCollapsed = false,
   onToggle,
   footerActionSlot,
@@ -189,7 +189,7 @@ export function Sidebar({
       <div
         className={cn(
           "h-16 border-b border-border flex items-center shrink-0",
-          isCollapsed ? "justify-center px-2" : "justify-between px-4 gap-2"
+          isCollapsed ? "justify-center px-2" : "justify-between px-3 gap-1.5"
         )}
       >
         {isCollapsed && onToggle ? (
@@ -220,13 +220,13 @@ export function Sidebar({
           </button>
         ) : (
           <>
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               <div className="h-9 w-9 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden">
                 <picture className="flex items-center justify-center">
                   <source srcSet="/pmki_app_icon.svg" type="image/svg+xml" />
                   <img
                     src="/pmki_app_icon.png"
-                    alt="App Icon PMKI - Rumah Belajar Griya Asih Lawang"
+                    alt="App Icon PMKI - Rumah Belajar Griya Asih"
                     width={32}
                     height={32}
                     className="h-8 w-8 object-contain"
@@ -235,7 +235,10 @@ export function Sidebar({
                 </picture>
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-foreground truncate leading-tight">
+                <p
+                  title="Rumah Belajar Griya Asih"
+                  className="text-sm font-bold tracking-tight text-foreground truncate leading-tight"
+                >
                   {serviceUnitName}
                 </p>
                 <p className="text-[11px] font-medium text-secondary-foreground truncate">

@@ -37,8 +37,8 @@ export function MobileNavigation({
   currentPath,
   userPermissions,
   userPersona,
-  serviceUnitName = "Griya Asih Lawang",
-  organizationName = "PMKI Mupel Jawa Timur",
+  serviceUnitName = "RBGA",
+  organizationName = "Lawang - Jawa Timur",
   footerActionSlot,
 }: MobileNavigationProps) {
   return (
@@ -60,7 +60,9 @@ export function MobileNavigation({
               </picture>
             </div>
             <div className="min-w-0 text-left">
-              <SheetTitle>{serviceUnitName}</SheetTitle>
+              <SheetTitle title="Rumah Belajar Griya Asih">
+                {serviceUnitName}
+              </SheetTitle>
               <SheetDescription>{organizationName}</SheetDescription>
             </div>
           </div>

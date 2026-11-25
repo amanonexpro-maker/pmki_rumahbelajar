@@ -33,6 +33,7 @@ export default async function WorkspaceLayout({
       userPermissions={session.permissions}
       userPersona={session.persona}
       headerRightSlot={<LogoutButton />}
+      mobileFooterActionSlot={<LogoutButton showLabelOnMobile />}
     >
       {children}
     </AppShell>

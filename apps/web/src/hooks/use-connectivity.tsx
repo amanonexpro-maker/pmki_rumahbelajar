@@ -217,7 +217,7 @@ export function ConnectivityTopBanner({ className }: { className?: string }) {
       role="status"
       aria-live="polite"
       className={cn(
-        "sticky top-0 z-30 w-full py-1.5 px-4 text-center text-xs font-medium border-b transition-all duration-150",
+        "sticky top-16 z-20 w-full py-1.5 px-4 text-center text-xs font-medium border-b transition-all duration-150",
         status === "OFFLINE"
           ? "bg-warning-soft text-warning-foreground border-warning-border"
           : "bg-info-soft text-info-foreground border-info-border",

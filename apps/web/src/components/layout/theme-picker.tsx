@@ -53,7 +53,7 @@ export function ThemePicker({ className }: ThemePickerProps) {
             setTheme(value);
           }
         }}
-        className="min-h-10 sm:min-h-9 min-w-24 rounded-sm border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors focus-ring cursor-pointer disabled:opacity-80"
+        className="min-h-11 sm:min-h-9 min-w-24 rounded-sm border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors focus-ring cursor-pointer disabled:opacity-80"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

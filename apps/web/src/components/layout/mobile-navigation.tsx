@@ -78,23 +78,16 @@ export function MobileNavigation({
         </SheetBody>
 
         <SheetFooter className="flex-col items-stretch gap-3">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-medium text-secondary-foreground">
-              Tema tampilan
-            </span>
+          <div className="flex items-center justify-between gap-3">
             <ThemePicker />
+            {footerActionSlot}
           </div>
           <Button asChild variant="secondary" size="md" fullWidth>
             <Link href="/" onClick={() => onOpenChange(false)}>
               <Icon icon={ArrowLeft} size="sm" />
-              <span>Kembali ke website publik</span>
+              <span>Halaman publik</span>
             </Link>
           </Button>
-          {footerActionSlot && (
-            <div className="pt-1 border-t border-border-subtle flex items-center justify-center">
-              {footerActionSlot}
-            </div>
-          )}
         </SheetFooter>
       </SheetContent>
     </Sheet>

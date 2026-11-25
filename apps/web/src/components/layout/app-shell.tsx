@@ -140,6 +140,7 @@ export interface AppShellProps {
   userPersona?: UserPersona;
   contentWidth?: ContainerWidth;
   headerRightSlot?: React.ReactNode;
+  mobileFooterActionSlot?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -150,6 +151,7 @@ export function AppShell({
   userPersona,
   contentWidth = "default",
   headerRightSlot,
+  mobileFooterActionSlot,
   children,
 }: AppShellProps) {
   const pathname = usePathname() || "/workspace";
@@ -170,7 +172,7 @@ export function AppShell({
   const currentViewLabel = activeItem?.label ?? "Dashboard";
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground flex flex-col overflow-x-clip">
       <div className="flex-1 flex min-h-screen">
         <Sidebar
           groups={navGroups}
@@ -195,7 +197,7 @@ export function AppShell({
             userPermissions={userPermissions}
             userPersona={userPersona}
             currentPath={pathname}
-            footerActionSlot={headerRightSlot}
+            footerActionSlot={mobileFooterActionSlot ?? headerRightSlot}
           />
 
           <main className="flex-1 py-6 sm:py-8">

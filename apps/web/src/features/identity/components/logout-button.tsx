@@ -6,7 +6,15 @@ import { LogOut } from "lucide-react";
 import { Button, Icon } from "@/components/ui";
 import { logoutAction } from "../actions/auth-actions";
 
-export function LogoutButton() {
+export interface LogoutButtonProps {
+  showLabelOnMobile?: boolean;
+  className?: string;
+}
+
+export function LogoutButton({
+  showLabelOnMobile = false,
+  className,
+}: LogoutButtonProps) {
   const router = useRouter();
   const [pending, setPending] = React.useState(false);
 
@@ -24,14 +32,19 @@ export function LogoutButton() {
   return (
     <Button
       type="button"
-      variant="ghost"
-      size="sm"
+      variant={showLabelOnMobile ? "soft" : "ghost"}
+      size={showLabelOnMobile ? "md" : "sm"}
       onClick={handleLogout}
       disabled={pending}
       aria-label="Keluar dari ruang kerja"
+      className={
+        showLabelOnMobile
+          ? `text-danger bg-danger-soft hover:bg-danger-soft/80 ${className ?? ""}`.trim()
+          : className
+      }
     >
       <Icon icon={LogOut} size="xs" />
-      <span className="hidden sm:inline">
+      <span className={showLabelOnMobile ? "inline" : "hidden sm:inline"}>
         {pending ? "Keluar..." : "Keluar"}
       </span>
     </Button>

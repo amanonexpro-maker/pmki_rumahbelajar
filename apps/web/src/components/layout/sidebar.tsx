@@ -238,11 +238,11 @@ export function Sidebar({
         >
           <Link
             href="/"
-            aria-label={isCollapsed ? "Kembali ke website publik" : undefined}
-            title={isCollapsed ? "Kembali ke website publik" : undefined}
+            aria-label={isCollapsed ? "Halaman publik" : undefined}
+            title={isCollapsed ? "Halaman publik" : undefined}
           >
             <Icon icon={ArrowLeft} size="xs" />
-            {!isCollapsed && <span>Kembali ke website publik</span>}
+            {!isCollapsed && <span>Halaman publik</span>}
           </Link>
         </Button>
 

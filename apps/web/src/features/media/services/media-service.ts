@@ -279,16 +279,20 @@ export async function reviewMediaAssetPrivacy(
  * - If `subjectStudentIds` are supplied, live consent is re-verified; if any consent was
  *   REVOKED/DENIED, public eligibility is immediately blocked and revoked in DB.
  */
-function resolveFallbackGalleryPath(
-  filePath: string,
-  mediaId: string,
-  ttlSeconds: number
-): string {
+function resolveFallbackGalleryPath(filePath: string): string | null {
   const galleryMatch = filePath.match(/(griya_asih_\d+\.jpg)$/i);
   if (galleryMatch?.[1]) {
     return `/images/gallery/${galleryMatch[1]}`;
   }
-  return `/api/media-preview/${mediaId}?ttl=${ttlSeconds}&exp=${Date.now() + ttlSeconds * 1000}`;
+  return null;
+}
+
+async function resolveMediaReadUrl(
+  filePath: string,
+  ttlSeconds: number
+): Promise<string | null> {
+  const signed = await createPrivateStorageSignedReadUrl(filePath, ttlSeconds);
+  return signed?.signedUrl ?? resolveFallbackGalleryPath(filePath);
 }
 
 export async function getSignedMediaReadUrl(
@@ -352,8 +356,13 @@ export async function getSignedMediaReadUrl(
   // If the file object exists in storage, return its Supabase signed URL;
   // for seeded gallery paths before physical file upload, return the verified gallery asset path
   const resolvedUrl =
-    signed?.signedUrl ??
-    resolveFallbackGalleryPath(asset.filePath, asset.id, ttlSeconds);
+    signed?.signedUrl ?? resolveFallbackGalleryPath(asset.filePath);
+  if (!resolvedUrl) {
+    return fail(
+      "RESOURCE_NOT_FOUND",
+      "Berkas dokumentasi belum tersedia di penyimpanan."
+    );
+  }
   const expiresAt =
     signed?.expiresAt ??
     new Date(Date.now() + ttlSeconds * 1000).toISOString();
@@ -413,38 +422,40 @@ export async function listMediaAssetsForWorkspace(
   const searchLower = filters.search?.trim().toLowerCase() ?? "";
   const ttlSeconds = getMediaSignedUrlTtlSeconds();
 
-  const items: MediaAssetDTO[] = [];
-  for (const row of rows) {
-    if (
-      searchLower &&
-      !row.title.toLowerCase().includes(searchLower) &&
-      !(row.description ?? "").toLowerCase().includes(searchLower)
-    ) {
-      continue;
-    }
-    const cat = row.category as MediaCategoryCode;
-    items.push({
-      id: row.id,
-      organizationId: row.organizationId,
-      serviceUnitId: row.serviceUnitId,
-      title: row.title,
-      description: row.description,
-      filePath: row.filePath,
-      mimeType: row.mimeType,
-      fileSize: row.fileSize,
-      category: cat,
-      categoryLabel: MEDIA_CATEGORY_LABELS[cat] ?? cat,
-      privacyReviewed: row.privacyReviewed,
-      eligibleForPublic: row.eligibleForPublic,
-      reviewedBy: row.reviewedBy,
-      reviewedAt: row.reviewedAt ? row.reviewedAt.toISOString() : null,
-      capturedDate: row.capturedDate,
-      uploadedBy: row.createdBy,
-      createdAt: row.createdAt.toISOString(),
-      signedReadUrl: `/api/media-preview/${row.id}?ttl=${ttlSeconds}`,
-      signedUrlTtlSeconds: ttlSeconds,
-    });
-  }
+  const filteredRows = rows.filter(
+    (row) =>
+      !searchLower ||
+      row.title.toLowerCase().includes(searchLower) ||
+      (row.description ?? "").toLowerCase().includes(searchLower)
+  );
+
+  const items: MediaAssetDTO[] = await Promise.all(
+    filteredRows.map(async (row) => {
+      const cat = row.category as MediaCategoryCode;
+      const signedReadUrl = await resolveMediaReadUrl(row.filePath, ttlSeconds);
+      return {
+        id: row.id,
+        organizationId: row.organizationId,
+        serviceUnitId: row.serviceUnitId,
+        title: row.title,
+        description: row.description,
+        filePath: row.filePath,
+        mimeType: row.mimeType,
+        fileSize: row.fileSize,
+        category: cat,
+        categoryLabel: MEDIA_CATEGORY_LABELS[cat] ?? cat,
+        privacyReviewed: row.privacyReviewed,
+        eligibleForPublic: row.eligibleForPublic,
+        reviewedBy: row.reviewedBy,
+        reviewedAt: row.reviewedAt ? row.reviewedAt.toISOString() : null,
+        capturedDate: row.capturedDate,
+        uploadedBy: row.createdBy,
+        createdAt: row.createdAt.toISOString(),
+        signedReadUrl,
+        signedUrlTtlSeconds: ttlSeconds,
+      };
+    })
+  );
 
   return ok(items);
 }
@@ -464,13 +475,7 @@ export async function listPublicGalleryMedia(
   const items = await Promise.all(
     rows.map(async (row) => {
       const cat = row.category as MediaCategoryCode;
-      const signed = await createPrivateStorageSignedReadUrl(
-        row.filePath,
-        ttlSeconds
-      );
-      const signedReadUrl =
-        signed?.signedUrl ??
-        resolveFallbackGalleryPath(row.filePath, row.id, ttlSeconds);
+      const signedReadUrl = await resolveMediaReadUrl(row.filePath, ttlSeconds);
 
       return {
         id: row.id,

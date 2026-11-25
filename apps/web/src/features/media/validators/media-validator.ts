@@ -79,3 +79,51 @@ export const reviewMediaAssetSchema = z.object({
 
 export type ReviewMediaAssetInput = z.infer<typeof reviewMediaAssetSchema>;
 
+export const mediaReviewFormSchema = reviewMediaAssetSchema.omit({
+  mediaId: true,
+});
+
+export type MediaReviewFormValues = z.infer<typeof mediaReviewFormSchema>;
+
+export const mediaUploadFormSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(3, "Masukkan judul dokumentasi (minimal 3 karakter).")
+    .max(160, "Judul dokumentasi maksimal 160 karakter."),
+  description: z
+    .string()
+    .trim()
+    .max(1000, "Keterangan dokumentasi maksimal 1000 karakter.")
+    .optional(),
+  category: z.enum(MEDIA_CATEGORY_VALUES, {
+    message: "Pilih kategori dokumentasi.",
+  }),
+  capturedDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal kegiatan tidak valid."),
+  file: z
+    .custom<File>(
+      (val) => typeof File !== "undefined" && val instanceof File,
+      {
+        message: "Pilih berkas foto dokumentasi.",
+      }
+    )
+    .refine(
+      (file) =>
+        (ALLOWED_MEDIA_MIME_TYPES as readonly string[]).includes(file.type),
+      {
+        message: "Format berkas harus berupa gambar JPEG, PNG, atau WebP.",
+      }
+    )
+    .refine(
+      (file) => file.size > 0 && file.size <= MAX_MEDIA_FILE_SIZE_BYTES,
+      {
+        message: "Ukuran berkas dokumentasi maksimal 10 MB.",
+      }
+    ),
+});
+
+export type MediaUploadFormValues = z.infer<typeof mediaUploadFormSchema>;
+

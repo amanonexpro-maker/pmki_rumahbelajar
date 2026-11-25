@@ -38,14 +38,26 @@ export interface DialogContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   size?: DialogSize;
   showClose?: boolean;
+  overlayClassName?: string;
 }
 
 export const DialogContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, size = "md", showClose = true, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
+>(
+  (
+    {
+      className,
+      overlayClassName,
+      children,
+      size = "md",
+      showClose = true,
+      ...props
+    },
+    ref
+  ) => (
+    <DialogPortal>
+      <DialogOverlay className={overlayClassName} />
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 pointer-events-none">
       <DialogPrimitive.Content
         ref={ref}

@@ -3,9 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { ChevronRight, Plus, UserCheck, Users } from "lucide-react";
-import { EmptyState, StatusBadge } from "@/components/compositions";
+import {
+  EmptyState,
+  GenericFilterSelect,
+  StatusBadge,
+} from "@/components/compositions";
 import {
   DataTable,
+  FeedbackBanner,
+  FloatingFeedbackToast,
   FormBottomSheet,
   MobileCardList,
   PageHeader,
@@ -16,6 +22,11 @@ import {
   Badge,
   Button,
   Icon,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui";
 import type { AcademicYearDTO, ClassSummaryDTO } from "@/features/academic";
 import { useUrlQueryParams } from "@/hooks/use-url-query-params";
@@ -68,6 +79,18 @@ const LEVEL_FILTER_OPTIONS = [
   { value: "SMP_ALL", label: "Semua SMP (Kelas 7–8)" },
 ];
 
+type EducationLevelFilterGroup = "TK" | "SD_ALL" | "SMP_ALL";
+
+function inferClassEducationLevelGroup(
+  cls: Pick<ClassSummaryDTO, "category" | "name">
+): EducationLevelFilterGroup | null {
+  const source = `${cls.category} ${cls.name}`.toUpperCase();
+  if (/\bTK\b/.test(source)) return "TK";
+  if (/\bSMP\b/.test(source)) return "SMP_ALL";
+  if (/\bSD\b/.test(source)) return "SD_ALL";
+  return null;
+}
+
 export function StudentsWorkspaceClient({
   listResult,
   classes,
@@ -87,7 +110,9 @@ export function StudentsWorkspaceClient({
   );
   const [placePending, setPlacePending] = React.useState(false);
   const [placeError, setPlaceError] = React.useState<string | null>(null);
+  const [feedbackToast, setFeedbackToast] = React.useState<string | null>(null);
   const quickPlaceClassId = React.useId();
+  const filterIdPrefix = React.useId();
 
   // Sync debounced search input to URL `?search=`
   React.useEffect(() => {
@@ -116,7 +141,11 @@ export function StudentsWorkspaceClient({
         setPlaceError(res.error.message);
         return;
       }
+      const placedStudentName = quickPlaceStudent.fullName;
       setQuickPlaceStudent(null);
+      setFeedbackToast(
+        `${placedStudentName} berhasil ditempatkan ke kelas.`
+      );
       router.refresh();
     } finally {
       setPlacePending(false);
@@ -130,73 +159,155 @@ export function StudentsWorkspaceClient({
     initialFilters.educationLevel !== "ALL",
   ].filter(Boolean).length;
 
-  const filterSelectControls = (
-    <>
-      <select
-        aria-label="Filter status pendaftaran"
-        value={initialFilters.status}
-        onChange={(e) =>
-          updateUrlParams({ status: e.target.value, page: "1" })
-        }
-        className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-      >
-        {STATUS_FILTER_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-      <select
-        aria-label="Filter kelas"
-        value={initialFilters.classId}
-        onChange={(e) =>
-          updateUrlParams({ classId: e.target.value, page: "1" })
-        }
-        className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-      >
-        <option value="ALL">Semua kelas</option>
-        <option value="UNASSIGNED">Belum ditempatkan</option>
-        {classes.map((cls) => (
-          <option key={cls.id} value={cls.id}>
-            {cls.name} ({cls.enrolledCount}/{cls.capacity})
-          </option>
-        ))}
-      </select>
-
-      <select
-        aria-label="Filter jenjang pendidikan"
-        value={initialFilters.educationLevel}
-        onChange={(e) =>
-          updateUrlParams({ level: e.target.value, page: "1" })
-        }
-        className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-      >
-        {LEVEL_FILTER_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-      <select
-        aria-label="Filter tahun ajaran"
-        value={initialFilters.academicYearId}
-        onChange={(e) =>
-          updateUrlParams({ year: e.target.value, page: "1" })
-        }
-        className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-      >
-        <option value="ALL">Semua tahun ajaran</option>
-        {academicYears.map((ay) => (
-          <option key={ay.id} value={ay.id}>
-            TA {ay.name}
-            {ay.active ? " (Aktif)" : ""}
-          </option>
-        ))}
-      </select>
-    </>
+  const selectedClassObj = React.useMemo(
+    () => classes.find((c) => c.id === initialFilters.classId) ?? null,
+    [classes, initialFilters.classId]
   );
+
+  const selectedClassLevelGroup = React.useMemo(
+    () =>
+      selectedClassObj
+        ? inferClassEducationLevelGroup(selectedClassObj)
+        : null,
+    [selectedClassObj]
+  );
+
+  const availableLevelOptions = React.useMemo(() => {
+    if (!selectedClassLevelGroup) return LEVEL_FILTER_OPTIONS;
+    return LEVEL_FILTER_OPTIONS.filter(
+      (opt) => opt.value === "ALL" || opt.value === selectedClassLevelGroup
+    );
+  }, [selectedClassLevelGroup]);
+
+  const filteredClasses = React.useMemo(() => {
+    return classes.filter((cls) => {
+      if (
+        initialFilters.academicYearId !== "ALL" &&
+        cls.academicYearId !== initialFilters.academicYearId
+      ) {
+        return false;
+      }
+      if (initialFilters.educationLevel !== "ALL") {
+        const clsLevel = inferClassEducationLevelGroup(cls);
+        if (clsLevel && clsLevel !== initialFilters.educationLevel) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [classes, initialFilters.academicYearId, initialFilters.educationLevel]);
+
+  const classOptions = React.useMemo(
+    () => [
+      { value: "ALL", label: "Semua kelas" },
+      { value: "UNASSIGNED", label: "Belum ditempatkan" },
+      ...filteredClasses.map((cls) => ({
+        value: cls.id,
+        label: `${cls.name} (${cls.enrolledCount}/${cls.capacity})`,
+      })),
+    ],
+    [filteredClasses]
+  );
+
+  const yearOptions = React.useMemo(
+    () => [
+      { value: "ALL", label: "Semua tahun ajaran" },
+      ...academicYears.map((ay) => ({
+        value: ay.id,
+        label: `TA ${ay.name}${ay.active ? " (Aktif)" : ""}`,
+      })),
+    ],
+    [academicYears]
+  );
+
+  const handleClassFilterChange = React.useCallback(
+    (nextClassId: string) => {
+      if (nextClassId === "ALL" || nextClassId === "UNASSIGNED") {
+        updateUrlParams({ classId: nextClassId, page: "1" });
+        return;
+      }
+      const targetClass = classes.find((c) => c.id === nextClassId);
+      const inferredLevel = targetClass
+        ? inferClassEducationLevelGroup(targetClass)
+        : null;
+      updateUrlParams({
+        classId: nextClassId,
+        ...(inferredLevel ? { level: inferredLevel } : {}),
+        ...(targetClass?.academicYearId
+          ? { year: targetClass.academicYearId }
+          : {}),
+        page: "1",
+      });
+    },
+    [classes, updateUrlParams]
+  );
+
+  const handleLevelFilterChange = React.useCallback(
+    (nextLevel: string) => {
+      const updates: Record<string, string | null> = {
+        level: nextLevel,
+        page: "1",
+      };
+      if (
+        nextLevel !== "ALL" &&
+        selectedClassLevelGroup &&
+        selectedClassLevelGroup !== nextLevel
+      ) {
+        updates.classId = "ALL";
+      }
+      updateUrlParams(updates);
+    },
+    [selectedClassLevelGroup, updateUrlParams]
+  );
+
+  const handleYearFilterChange = React.useCallback(
+    (nextYear: string) => {
+      const updates: Record<string, string | null> = {
+        year: nextYear,
+        page: "1",
+      };
+      if (
+        nextYear !== "ALL" &&
+        selectedClassObj &&
+        selectedClassObj.academicYearId !== nextYear
+      ) {
+        updates.classId = "ALL";
+      }
+      updateUrlParams(updates);
+    },
+    [selectedClassObj, updateUrlParams]
+  );
+
+  const filterConfigs = [
+    {
+      key: "status",
+      label: "Status pendaftaran",
+      value: initialFilters.status,
+      options: STATUS_FILTER_OPTIONS,
+      onChange: (value: string) => updateUrlParams({ status: value, page: "1" }),
+    },
+    {
+      key: "classId",
+      label: "Kelas",
+      value: initialFilters.classId,
+      options: classOptions,
+      onChange: handleClassFilterChange,
+    },
+    {
+      key: "level",
+      label: "Jenjang pendidikan",
+      value: initialFilters.educationLevel,
+      options: availableLevelOptions,
+      onChange: handleLevelFilterChange,
+    },
+    {
+      key: "year",
+      label: "Tahun ajaran",
+      value: initialFilters.academicYearId,
+      options: yearOptions,
+      onChange: handleYearFilterChange,
+    },
+  ];
 
   const columns: DataTableColumn<StudentListItemDTO>[] = [
     {
@@ -328,13 +439,47 @@ export function StudentsWorkspaceClient({
         onSearchChange={setSearchInput}
         searchPlaceholder="Cari peserta didik..."
         filterCount={activeFilterCount}
-        desktopFilters={filterSelectControls}
+        desktopFilters={
+          <>
+            {filterConfigs.map((filter) => (
+              <GenericFilterSelect
+                key={filter.key}
+                label={filter.label}
+                value={filter.value}
+                options={filter.options}
+                onChange={filter.onChange}
+              />
+            ))}
+          </>
+        }
         mobileFilterContent={
-          <div className="flex flex-col gap-3">{filterSelectControls}</div>
+          <div className="space-y-4">
+            {filterConfigs.map((filter) => {
+              const selectId = `${filterIdPrefix}-${filter.key}`;
+              return (
+                <div key={filter.key} className="space-y-1.5">
+                  <label
+                    htmlFor={selectId}
+                    className="type-label block text-foreground"
+                  >
+                    {filter.label}
+                  </label>
+                  <GenericFilterSelect
+                    id={selectId}
+                    label={filter.label}
+                    value={filter.value}
+                    options={filter.options}
+                    onChange={filter.onChange}
+                    className="w-full min-h-11 text-sm"
+                  />
+                </div>
+              );
+            })}
+          </div>
         }
         onResetAll={handleResetFilters}
         resultSummary={
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <span>
               Menampilkan{" "}
               <strong className="text-foreground">
@@ -343,14 +488,44 @@ export function StudentsWorkspaceClient({
               peserta didik
             </span>
             {listResult.pendingVerificationCount > 0 && (
-              <span className="text-warning-foreground font-medium">
-                · {listResult.pendingVerificationCount} menunggu verifikasi
-              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  updateUrlParams({
+                    status:
+                      initialFilters.status === "PENDING_VERIFICATION"
+                        ? "ALL"
+                        : "PENDING_VERIFICATION",
+                    page: "1",
+                  })
+                }
+                className={
+                  initialFilters.status === "PENDING_VERIFICATION"
+                    ? "inline-flex items-center rounded-pill border border-warning bg-warning-soft px-2.5 py-1 font-semibold text-warning-foreground cursor-pointer focus-ring"
+                    : "inline-flex items-center rounded-pill border border-warning/40 bg-warning-soft/60 px-2.5 py-1 font-medium text-warning-foreground hover:bg-warning-soft cursor-pointer focus-ring"
+                }
+              >
+                {listResult.pendingVerificationCount} menunggu verifikasi
+              </button>
             )}
             {listResult.awaitingPlacementCount > 0 && (
-              <span className="text-primary font-medium">
-                · {listResult.awaitingPlacementCount} siap ditempatkan ke kelas
-              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  updateUrlParams({
+                    status:
+                      initialFilters.status === "VERIFIED" ? "ALL" : "VERIFIED",
+                    page: "1",
+                  })
+                }
+                className={
+                  initialFilters.status === "VERIFIED"
+                    ? "inline-flex items-center rounded-pill border border-primary bg-primary-soft px-2.5 py-1 font-semibold text-primary cursor-pointer focus-ring"
+                    : "inline-flex items-center rounded-pill border border-primary/30 bg-primary-soft/60 px-2.5 py-1 font-medium text-primary hover:bg-primary-soft cursor-pointer focus-ring"
+                }
+              >
+                {listResult.awaitingPlacementCount} siap ditempatkan ke kelas
+              </button>
             )}
           </div>
         }
@@ -380,9 +555,21 @@ export function StudentsWorkspaceClient({
                 · {row.educationLevelLabel}
               </>
             }
+            secondaryMeta={
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="font-mono">{row.registrationNumber}</span>
+                <span>· Panggilan: {row.nickname}</span>
+                {row.isRaalResident && (
+                  <Badge variant="info" size="sm">
+                    RAAL
+                  </Badge>
+                )}
+              </div>
+            }
             action={
               canVerifyStudent &&
               (row.registrationStatus === "VERIFIED" ||
+                row.registrationStatus === "CLASS_PLACEMENT" ||
                 row.registrationStatus === "WAITLIST") &&
               !row.assignedClassId ? (
                 <Button
@@ -393,7 +580,7 @@ export function StudentsWorkspaceClient({
                     setQuickPlaceStudent(row);
                     setPlaceError(null);
                   }}
-                  className="min-h-10 text-xs"
+                  className="min-h-11 sm:min-h-8 text-xs"
                 >
                   Tempatkan ke kelas
                 </Button>
@@ -402,7 +589,7 @@ export function StudentsWorkspaceClient({
                   asChild
                   variant="ghost"
                   size="sm"
-                  className="min-h-10 text-xs text-secondary-foreground hover:text-foreground"
+                  className="min-h-11 sm:min-h-8 text-xs text-secondary-foreground hover:text-foreground"
                 >
                   <Link
                     href={`/workspace/students/${row.id}`}
@@ -462,6 +649,7 @@ export function StudentsWorkspaceClient({
               onClick={() =>
                 updateUrlParams({ page: String(listResult.page - 1) })
               }
+              className="min-h-11 sm:min-h-8"
             >
               Sebelumnya
             </Button>
@@ -473,6 +661,7 @@ export function StudentsWorkspaceClient({
               onClick={() =>
                 updateUrlParams({ page: String(listResult.page + 1) })
               }
+              className="min-h-11 sm:min-h-8"
             >
               Berikutnya
             </Button>
@@ -541,12 +730,11 @@ export function StudentsWorkspaceClient({
       >
         <div className="space-y-4">
           {placeError && (
-            <div
-              role="alert"
-              className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
-            >
-              {placeError}
-            </div>
+            <FeedbackBanner
+              tone="danger"
+              message={placeError}
+              onDismiss={() => setPlaceError(null)}
+            />
           )}
 
           <div className="space-y-1.5">
@@ -556,23 +744,30 @@ export function StudentsWorkspaceClient({
             >
               Pilih kelas tujuan
             </label>
-            <select
-              id={quickPlaceClassId}
-              autoFocus
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-            >
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.name} — Terisi {cls.enrolledCount}/{cls.capacity} kursi
-                  {cls.isFull ? " (Penuh)" : ` (Sisa ${cls.remainingSeats})`}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+              <SelectTrigger id={quickPlaceClassId} autoFocus>
+                <SelectValue placeholder="Pilih kelas tujuan" />
+              </SelectTrigger>
+              <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                {classes.map((cls) => (
+                  <SelectItem key={cls.id} value={cls.id}>
+                    {cls.name} · {cls.enrolledCount}/{cls.capacity} (
+                    {cls.isFull ? "Penuh" : `Sisa ${cls.remainingSeats}`})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </FormBottomSheet>
+
+      {feedbackToast && (
+        <FloatingFeedbackToast
+          tone="success"
+          message={feedbackToast}
+          onDismiss={() => setFeedbackToast(null)}
+        />
+      )}
     </div>
   );
 }

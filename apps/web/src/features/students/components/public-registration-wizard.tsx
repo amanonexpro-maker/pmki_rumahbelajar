@@ -338,7 +338,7 @@ export function PublicRegistrationWizard({
     <div
       className={
         embedded
-          ? "space-y-6"
+          ? "p-4 sm:p-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-6 space-y-5"
           : "rounded-card border border-border bg-surface p-5 sm:p-8 space-y-6"
       }
     >

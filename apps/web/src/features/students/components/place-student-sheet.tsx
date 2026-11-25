@@ -2,9 +2,17 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
-import { FormBottomSheet } from "@/components/patterns";
-import { Button, Textarea } from "@/components/ui";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { FeedbackBanner, FormBottomSheet } from "@/components/patterns";
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from "@/components/ui";
 import type { ClassSummaryDTO } from "@/features/academic";
 import {
   placeStudentFormSchema,
@@ -96,12 +104,11 @@ export function PlaceStudentSheet({
       noValidate
     >
       {submitError && (
-        <div
-          role="alert"
-          className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
-        >
-          {submitError}
-        </div>
+        <FeedbackBanner
+          tone="danger"
+          message={submitError}
+          onDismiss={() => setSubmitError(null)}
+        />
       )}
 
       <div className="space-y-1.5">
@@ -111,21 +118,25 @@ export function PlaceStudentSheet({
         >
           Kelas tujuan
         </label>
-        <select
-          id={classIdFieldId}
-          autoFocus
-          {...register("classId")}
-          className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-        >
-          {classes.map((cls) => (
-            <option key={cls.id} value={cls.id}>
-              {cls.name} — {cls.enrolledCount}/{cls.capacity} peserta didik
-              {cls.isFull
-                ? " (Penuh)"
-                : ` (Sisa ${cls.remainingSeats} kursi)`}
-            </option>
-          ))}
-        </select>
+        <Controller
+          control={control}
+          name="classId"
+          render={({ field }) => (
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger id={classIdFieldId} autoFocus>
+                <SelectValue placeholder="Pilih kelas tujuan" />
+              </SelectTrigger>
+              <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                {classes.map((cls) => (
+                  <SelectItem key={cls.id} value={cls.id}>
+                    {cls.name} · {cls.enrolledCount}/{cls.capacity} (
+                    {cls.isFull ? "Penuh" : `Sisa ${cls.remainingSeats}`})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
         {errors.classId && (
           <p className="text-xs text-danger">{errors.classId.message}</p>
         )}

@@ -32,6 +32,7 @@ export interface SheetContentProps
   side?: SheetSide;
   /** Khusus side="bottom": padding safe-area bawah pada footer. Default true. */
   insetBottom?: boolean;
+  overlayClassName?: string;
 }
 
 interface SheetContextValue {
@@ -47,9 +48,20 @@ const SheetContext = React.createContext<SheetContextValue>({
 export const SheetContent = React.forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
   SheetContentProps
->(({ side = "right", insetBottom = true, className, children, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
+>(
+  (
+    {
+      side = "right",
+      insetBottom = true,
+      overlayClassName,
+      className,
+      children,
+      ...props
+    },
+    ref
+  ) => (
+    <SheetPortal>
+      <SheetOverlay className={overlayClassName} />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(

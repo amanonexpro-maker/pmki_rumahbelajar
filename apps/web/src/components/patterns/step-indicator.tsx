@@ -32,7 +32,7 @@ export function StepIndicator({
           const pill = (
             <span
               className={cn(
-                "inline-flex items-center gap-2 rounded-pill border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
+                "inline-flex items-center gap-1.5 sm:gap-2 rounded-pill border px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
                 isCurrent &&
                   "border-primary bg-primary-soft text-primary font-semibold",
                 isCompleted &&
@@ -59,7 +59,9 @@ export function StepIndicator({
                 )}
               </span>
               <span className="hidden sm:inline">{step.label}</span>
-              <span className="sm:hidden">{step.shortLabel ?? step.label}</span>
+              <span className={cn("sm:hidden", !isCurrent && "sr-only")}>
+                {step.shortLabel ?? step.label}
+              </span>
             </span>
           );
 

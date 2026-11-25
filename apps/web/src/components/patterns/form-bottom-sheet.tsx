@@ -79,7 +79,10 @@ export function FormBottomSheet({
     <>
       {/* Desktop Dialog (>= 768px) */}
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className={cn("hidden md:block", dialogClassName)}>
+        <DialogContent
+          overlayClassName="hidden md:block"
+          className={cn("hidden md:block", dialogClassName)}
+        >
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             {description && <DialogDescription>{description}</DialogDescription>}
@@ -95,7 +98,11 @@ export function FormBottomSheet({
 
       {/* Mobile Bottom Sheet (< 768px) */}
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="md:hidden">
+        <SheetContent
+          side="bottom"
+          overlayClassName="md:hidden"
+          className="md:hidden"
+        >
           <SheetHeader>
             <SheetTitle>{title}</SheetTitle>
             {description && <SheetDescription>{description}</SheetDescription>}

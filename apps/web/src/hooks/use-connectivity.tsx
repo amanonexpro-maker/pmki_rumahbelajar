@@ -115,23 +115,27 @@ export function useConnectivity(): ConnectivityContextValue {
 
 const STATE_UI: Record<
   ConnectivityState,
-  { label: string; tone: string }
+  { label: string; tone: string; dotTone: string }
 > = {
   ONLINE: {
     label: "Terhubung",
     tone: "bg-success-soft text-success-foreground border-success-border",
+    dotTone: "bg-success ring-success/25",
   },
   OFFLINE: {
     label: "Offline",
     tone: "bg-warning-soft text-warning-foreground border-warning-border",
+    dotTone: "bg-warning ring-warning/30",
   },
   RECONNECTING: {
     label: "Menyambung ulang...",
     tone: "bg-info-soft text-info-foreground border-info-border",
+    dotTone: "bg-info ring-info/30",
   },
   SYNCING: {
     label: "Menyinkronkan...",
     tone: "bg-info-soft text-info-foreground border-info-border",
+    dotTone: "bg-info ring-info/30",
   },
 };
 
@@ -154,11 +158,29 @@ export function ConnectivityIndicator({ className }: { className?: string }) {
 
   return (
     <div className={cn("inline-flex items-center gap-2", className)}>
+      {/* Mobile (< md): clean status dot without text clutter */}
+      <span
+        role="status"
+        aria-live="polite"
+        title={meta.label}
+        className="md:hidden inline-flex items-center justify-center p-1"
+      >
+        <span
+          aria-hidden="true"
+          className={cn(
+            "h-2.5 w-2.5 rounded-full ring-4",
+            meta.dotTone
+          )}
+        />
+        <span className="sr-only">{meta.label}</span>
+      </span>
+
+      {/* Tablet & Desktop (>= md): full semantic status pill */}
       <span
         role="status"
         aria-live="polite"
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap",
+          "hidden md:inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap",
           meta.tone
         )}
       >

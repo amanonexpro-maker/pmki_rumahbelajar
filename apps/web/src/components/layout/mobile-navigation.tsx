@@ -27,6 +27,7 @@ export interface MobileNavigationProps {
   userPersona?: UserPersona;
   serviceUnitName?: string;
   organizationName?: string;
+  footerActionSlot?: React.ReactNode;
 }
 
 export function MobileNavigation({
@@ -38,6 +39,7 @@ export function MobileNavigation({
   userPersona,
   serviceUnitName = "Griya Asih Lawang",
   organizationName = "PMKI Mupel Jawa Timur",
+  footerActionSlot,
 }: MobileNavigationProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -88,6 +90,11 @@ export function MobileNavigation({
               <span>Kembali ke website publik</span>
             </Link>
           </Button>
+          {footerActionSlot && (
+            <div className="pt-1 border-t border-border-subtle flex items-center justify-center">
+              {footerActionSlot}
+            </div>
+          )}
         </SheetFooter>
       </SheetContent>
     </Sheet>

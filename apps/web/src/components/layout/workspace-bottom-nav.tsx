@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { ICON_MAP } from "@/config/icons";
+import type { UserPersona } from "@/lib/auth/personas";
 import { cn } from "@/lib/cn";
 import { MobileNavigation } from "./mobile-navigation";
 import { type SidebarNavGroup, type SidebarNavItem } from "./sidebar";
@@ -12,8 +13,12 @@ export interface WorkspaceBottomNavProps {
   groups: SidebarNavGroup[];
   /** Daftar izin user; dipakai filter yang sama dengan SidebarNavigation. */
   userPermissions?: string[];
+  /** Persona user untuk filter grup menu di drawer "Lainnya". */
+  userPersona?: UserPersona;
   /** Path aktif dari usePathname() (dioper dari AppShell agar tidak dobel hook). */
   currentPath: string;
+  /** Aksi footer tambahan di drawer "Lainnya" (mis. tombol Keluar di mobile). */
+  footerActionSlot?: React.ReactNode;
 }
 
 const PRIORITY_HREFS: readonly string[] = [
@@ -34,7 +39,9 @@ const PRIORITY_HREFS: readonly string[] = [
 export function WorkspaceBottomNav({
   groups,
   userPermissions,
+  userPersona,
   currentPath,
+  footerActionSlot,
 }: WorkspaceBottomNavProps) {
   const [moreOpen, setMoreOpen] = React.useState(false);
 
@@ -137,6 +144,8 @@ export function WorkspaceBottomNav({
         groups={groups}
         currentPath={currentPath}
         userPermissions={userPermissions}
+        userPersona={userPersona}
+        footerActionSlot={footerActionSlot}
       />
     </>
   );

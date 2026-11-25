@@ -16,17 +16,25 @@ export interface StatSummaryProps {
 }
 
 export function StatSummary({ items, className }: StatSummaryProps) {
+  const isThreeItems = items.length === 3;
+
   return (
     <section
       aria-label="Ringkasan indikator operasional"
       className={cn(
-        "rounded-card bg-surface border border-border grid grid-cols-2 lg:grid-cols-4 overflow-hidden",
+        "rounded-card bg-surface border border-border grid grid-cols-2 overflow-hidden",
+        isThreeItems ? "lg:grid-cols-3" : "lg:grid-cols-4",
         className
       )}
     >
       {items.map((item, index) => {
+        const isLastOddMobile = isThreeItems && index === 2;
         const borderClasses = cn(
-          index % 2 === 0 ? "border-r border-border" : "",
+          isLastOddMobile
+            ? "col-span-2 lg:col-span-1"
+            : index % 2 === 0
+              ? "border-r border-border"
+              : "",
           index < 2 && items.length > 2
             ? "border-b border-border lg:border-b-0"
             : "",

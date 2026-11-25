@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Menu } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Avatar, Button, Icon } from "@/components/ui";
 import { ConnectivityIndicator } from "@/hooks/use-connectivity";
 import { ThemePicker } from "./theme-picker";
@@ -18,7 +18,7 @@ export interface WorkspaceHeaderProps {
   serviceUnitName?: string;
   academicYearLabel?: string;
   user?: WorkspaceHeaderUser;
-  onOpenMobileMenu: () => void;
+  onOpenMobileMenu?: () => void;
   rightSlot?: React.ReactNode;
 }
 
@@ -27,21 +27,29 @@ export function WorkspaceHeader({
   serviceUnitName = "Rumah Belajar Griya Asih Lawang",
   academicYearLabel = "TA 2026/2027",
   user,
-  onOpenMobileMenu,
   rightSlot,
 }: WorkspaceHeaderProps) {
   return (
     <header className="sticky top-0 z-30 h-16 bg-surface/95 backdrop-blur-md border-b border-border px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
-      <div className="flex items-center gap-3 min-w-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Buka menu navigasi"
-          onClick={onOpenMobileMenu}
-          className="md:hidden h-11 w-11 shrink-0"
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        {/* Mobile (< md): PMKI brand logo matching public navbar (navigation lives in bottom nav "Lainnya") */}
+        <Link
+          href="/workspace"
+          aria-label="Beranda Workspace PMKI"
+          className="md:hidden h-9 w-9 rounded-control bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden focus-ring"
         >
-          <Icon icon={Menu} size="md" />
-        </Button>
+          <picture className="flex items-center justify-center">
+            <source srcSet="/pmki_app_icon.svg" type="image/svg+xml" />
+            <img
+              src="/pmki_app_icon.png"
+              alt="Logo PMKI - Rumah Belajar Griya Asih Lawang"
+              width={32}
+              height={32}
+              className="h-7 w-7 object-contain"
+              loading="eager"
+            />
+          </picture>
+        </Link>
 
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-[11px] text-secondary-foreground">
@@ -62,7 +70,7 @@ export function WorkspaceHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <ConnectivityIndicator />
 
         <div className="hidden md:flex items-center">
@@ -81,10 +89,12 @@ export function WorkspaceHeader({
           </Link>
         </Button>
 
-        {rightSlot}
+        {rightSlot && (
+          <div className="hidden md:flex items-center">{rightSlot}</div>
+        )}
 
         {user && (
-          <div className="flex items-center gap-2.5 pl-2 border-l border-border">
+          <div className="flex items-center gap-2.5 md:pl-2 md:border-l md:border-border">
             <Avatar name={user.name} src={user.avatarUrl} size="sm" />
             <div className="hidden sm:block text-left leading-tight min-w-0">
               <p className="text-xs font-semibold text-foreground truncate max-w-36">

@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { ConnectivityTopBanner } from "@/hooks/use-connectivity";
 import type { UserPersona } from "@/lib/auth/personas";
-import { MobileNavigation } from "./mobile-navigation";
 import { PageContainer, type ContainerWidth } from "./page-container";
 import { Sidebar, type SidebarNavGroup } from "./sidebar";
 import { WorkspaceBottomNav } from "./workspace-bottom-nav";
@@ -154,7 +153,6 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const pathname = usePathname() || "/workspace";
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
 
   const toggleSidebar = React.useCallback(() => {
@@ -187,25 +185,17 @@ export function AppShell({
           <WorkspaceHeader
             currentViewLabel={currentViewLabel}
             user={user}
-            onOpenMobileMenu={() => setMobileMenuOpen(true)}
             rightSlot={headerRightSlot}
           />
 
           <ConnectivityTopBanner />
 
-          <MobileNavigation
-            open={mobileMenuOpen}
-            onOpenChange={setMobileMenuOpen}
-            groups={navGroups}
-            currentPath={pathname}
-            userPermissions={userPermissions}
-            userPersona={userPersona}
-          />
-
           <WorkspaceBottomNav
             groups={navGroups}
             userPermissions={userPermissions}
+            userPersona={userPersona}
             currentPath={pathname}
+            footerActionSlot={headerRightSlot}
           />
 
           <main className="flex-1 py-6 sm:py-8">

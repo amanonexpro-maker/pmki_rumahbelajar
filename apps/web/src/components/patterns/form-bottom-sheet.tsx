@@ -56,6 +56,24 @@ export interface FormBottomSheetProps {
  * - Menghasilkan ID form unik via React.useId() untuk masing-masing wadah (desktop vs mobile)
  *   untuk mencegah tabrakan id DOM dan menjaga asosiasi button form={formId} tetap presisi.
  */
+const DESKTOP_MEDIA_QUERY = "(min-width: 768px)";
+
+function subscribeDesktopMedia(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const mql = window.matchMedia(DESKTOP_MEDIA_QUERY);
+  mql.addEventListener("change", callback);
+  return () => mql.removeEventListener("change", callback);
+}
+
+function getDesktopSnapshot(): boolean {
+  if (typeof window === "undefined") return true;
+  return window.matchMedia(DESKTOP_MEDIA_QUERY).matches;
+}
+
+function getDesktopServerSnapshot(): boolean {
+  return true;
+}
+
 export function FormBottomSheet({
   open,
   onOpenChange,
@@ -68,6 +86,11 @@ export function FormBottomSheet({
 }: FormBottomSheetProps) {
   const dialogFormId = React.useId();
   const sheetFormId = React.useId();
+  const isDesktop = React.useSyncExternalStore(
+    subscribeDesktopMedia,
+    getDesktopSnapshot,
+    getDesktopServerSnapshot
+  );
 
   const renderChildren = (formId: string) =>
     typeof children === "function" ? children(formId) : children;
@@ -78,10 +101,10 @@ export function FormBottomSheet({
   return (
     <>
       {/* Desktop Dialog (>= 768px) */}
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open && isDesktop} onOpenChange={onOpenChange}>
         <DialogContent
           overlayClassName="hidden md:block"
-          className={cn("hidden md:block", dialogClassName)}
+          className={cn("hidden md:flex", dialogClassName)}
         >
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
@@ -97,7 +120,7 @@ export function FormBottomSheet({
       </Dialog>
 
       {/* Mobile Bottom Sheet (< 768px) */}
-      <Sheet open={open} onOpenChange={onOpenChange}>
+      <Sheet open={open && !isDesktop} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
           overlayClassName="md:hidden"

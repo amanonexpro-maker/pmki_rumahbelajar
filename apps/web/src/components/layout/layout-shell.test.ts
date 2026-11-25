@@ -112,13 +112,13 @@ describe("Layout Shell & Mobile Navigation Guardrails (Fase 19 Step 2 - P1 & P2)
     expect(content).toContain("sheetSlideBottom");
   });
 
-  it("verifies form-bottom-sheet.tsx contains md:hidden and hidden md:block, without lucide-react import", () => {
+  it("verifies form-bottom-sheet.tsx contains md:hidden and hidden md:flex, without lucide-react import", () => {
     const content = readFileSync(
       path.join(patternsDir, "form-bottom-sheet.tsx"),
       "utf-8"
     );
     expect(content).toContain("md:hidden");
-    expect(content).toContain("hidden md:block");
+    expect(content).toContain("hidden md:flex");
     expect(content).not.toMatch(/from\s+["']lucide-react["']/);
   });
 

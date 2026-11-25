@@ -686,7 +686,7 @@ export function StudentsWorkspaceClient({
         onOpenChange={setAddDialogOpen}
         title="Tambah peserta didik"
         description="Catat pendaftaran peserta didik baru beserta persetujuan wali."
-        dialogClassName="max-w-2xl"
+        dialogClassName="max-w-3xl"
         bodyClassName="p-0"
       >
         <PublicRegistrationWizard

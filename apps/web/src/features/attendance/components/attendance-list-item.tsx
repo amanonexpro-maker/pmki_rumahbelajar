@@ -54,7 +54,7 @@ export const AttendanceListItem = React.memo(function AttendanceListItem({
   onNoteChange,
 }: AttendanceListItemProps) {
   return (
-    <li className="p-4 space-y-3">
+    <li className="p-5 sm:p-4 space-y-3">
       <MobileCardList
         title={
           <p className="font-semibold text-foreground text-base leading-snug">
@@ -67,7 +67,7 @@ export const AttendanceListItem = React.memo(function AttendanceListItem({
           </p>
         }
         primaryMeta={
-          <p className="text-xs text-secondary-foreground mt-0.5">
+          <p className="text-sm sm:text-xs text-secondary-foreground mt-0.5">
             {item.educationLevelLabel}
             {item.registrationNumber && (
               <span> · No: {item.registrationNumber}</span>
@@ -90,7 +90,7 @@ export const AttendanceListItem = React.memo(function AttendanceListItem({
                   aria-pressed={isSelected}
                   onClick={() => onStatusChange(item.studentId, opt.code)}
                   className={cn(
-                    "min-h-11 px-3 sm:px-4 rounded-control text-xs font-medium transition-colors duration-200 border flex items-center justify-center focus-ring",
+                    "min-h-11 sm:min-h-9 px-2 sm:px-3.5 rounded-control text-xs font-medium transition-colors duration-200 border flex items-center justify-center focus-ring",
                     isSelected
                       ? opt.selectedStyles
                       : "border-border bg-surface text-secondary-foreground hover:bg-surface-subtle hover:text-foreground"

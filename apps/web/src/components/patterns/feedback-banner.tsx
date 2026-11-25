@@ -129,7 +129,7 @@ export function FloatingFeedbackToast({
   return (
     <div
       className={cn(
-        "fixed z-50 bottom-4 inset-x-4 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:max-w-md",
+        "fixed z-50 bottom-24 md:bottom-6 inset-x-4 md:inset-x-auto md:right-6 md:max-w-md",
         "pb-[env(safe-area-inset-bottom,0px)]",
         className
       )}

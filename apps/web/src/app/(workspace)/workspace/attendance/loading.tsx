@@ -1,3 +1,4 @@
+import { ListSkeleton } from "@/components/compositions";
 import { Skeleton } from "@/components/ui";
 
 /**
@@ -25,24 +26,7 @@ export default function AttendanceLoading() {
       </div>
 
       {/* Roster Cards Skeleton */}
-      <div className="rounded-card border border-border bg-surface divide-y divide-border-subtle overflow-hidden">
-        {Array.from({ length: 4 }).map((_, idx) => (
-          <div key={idx} className="p-4 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <Skeleton className="h-5 w-44" />
-                <Skeleton className="h-3.5 w-28" />
-              </div>
-              <div className="grid grid-cols-2 sm:flex gap-2">
-                <Skeleton className="h-11 sm:h-9 w-20 rounded-control" />
-                <Skeleton className="h-11 sm:h-9 w-20 rounded-control" />
-                <Skeleton className="h-11 sm:h-9 w-20 rounded-control" />
-                <Skeleton className="h-11 sm:h-9 w-20 rounded-control" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <ListSkeleton variant="attendance" count={4} />
     </div>
   );
 }

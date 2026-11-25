@@ -4,7 +4,12 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { CloudOff, FileCheck2, Plus } from "lucide-react";
 import { EmptyState } from "@/components/compositions";
-import { PageHeader, StatSummary } from "@/components/patterns";
+import {
+  FeedbackBanner,
+  FloatingFeedbackToast,
+  PageHeader,
+  StatSummary,
+} from "@/components/patterns";
 import { Button, Icon } from "@/components/ui";
 import { useTierCGuard } from "@/hooks/use-tier-c-guard";
 import { useUrlQueryParams } from "@/hooks/use-url-query-params";
@@ -281,19 +286,20 @@ export function GovernanceWorkspaceClient({
         ]}
       />
 
-      {feedback && (
-        <div
-          role={feedback.tone === "danger" ? "alert" : "status"}
-          className={
-            feedback.tone === "success"
-              ? "rounded-control border border-success/30 bg-success-soft px-4 py-3 text-sm text-success"
-              : feedback.tone === "warning"
-                ? "rounded-control border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-warning-foreground"
-                : "rounded-control border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
-          }
-        >
-          {feedback.message}
-        </div>
+      {feedback && feedback.tone !== "success" && (
+        <FeedbackBanner
+          tone={feedback.tone}
+          message={feedback.message}
+          onDismiss={() => setFeedback(null)}
+        />
+      )}
+
+      {feedback && feedback.tone === "success" && (
+        <FloatingFeedbackToast
+          tone="success"
+          message={feedback.message}
+          onDismiss={() => setFeedback(null)}
+        />
       )}
 
       <GovernanceFilterBar

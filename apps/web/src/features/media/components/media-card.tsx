@@ -41,7 +41,7 @@ export const MediaCard = React.memo(function MediaCard({
       onFocus={() => onFocus(asset.id)}
       style={{ contentVisibility: "auto", containIntrinsicSize: "360px" }}
       className={cn(
-        "rounded-card border p-4 sm:p-5 space-y-4 flex flex-col justify-between transition-colors duration-200 outline-hidden focus-ring",
+        "rounded-card border p-5 sm:p-4 space-y-3 sm:space-y-4 flex flex-col justify-between transition-colors duration-200 outline-hidden focus-ring",
         isOwnUpload
           ? "border-border/70 bg-surface-subtle/80 opacity-80"
           : "border-border bg-surface",
@@ -68,7 +68,7 @@ export const MediaCard = React.memo(function MediaCard({
             {asset.title}
           </h2>
           {asset.description && (
-            <p className="text-xs text-secondary-foreground leading-relaxed mt-1">
+            <p className="text-sm sm:text-xs text-secondary-foreground leading-relaxed mt-1">
               {asset.description}
             </p>
           )}
@@ -85,7 +85,7 @@ export const MediaCard = React.memo(function MediaCard({
           <button
             type="button"
             onClick={() => onQuickApprove(asset)}
-            className="font-semibold underline hover:text-danger/80 transition-colors duration-200 shrink-0"
+            className="min-h-11 sm:min-h-8 px-2 inline-flex items-center font-semibold underline hover:text-danger/80 transition-colors duration-200 shrink-0 focus-ring rounded-xs"
           >
             Coba lagi
           </button>

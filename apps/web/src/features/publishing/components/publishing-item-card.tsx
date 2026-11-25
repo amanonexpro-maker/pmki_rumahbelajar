@@ -33,21 +33,21 @@ export const PublishingItemCard = React.memo(function PublishingItemCard({
   return (
     <article
       style={{ contentVisibility: "auto", containIntrinsicSize: "220px" }}
-      className="rounded-card border border-border bg-surface p-5 space-y-4"
+      className="rounded-card border border-border bg-surface p-5 sm:p-4 space-y-3 sm:space-y-4"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
+        <div className="space-y-1.5 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="neutral" size="sm">
               {post.categoryLabel}
             </Badge>
             <StatusBadge domain="publication" status={post.status} />
           </div>
-          <h2 className="text-base font-semibold text-foreground">
+          <h2 className="text-base font-semibold text-foreground leading-snug">
             {post.title}
           </h2>
           {post.excerpt && (
-            <p className="text-xs text-secondary-foreground leading-relaxed">
+            <p className="text-sm sm:text-xs text-secondary-foreground leading-relaxed">
               {post.excerpt}
             </p>
           )}
@@ -63,6 +63,7 @@ export const PublishingItemCard = React.memo(function PublishingItemCard({
               disabled={pending}
               onClick={() => onTransition(post.id, "PRIVACY_REVIEW")}
               leftIcon={<Icon icon={ICON_MAP.send} size="xs" />}
+              className="min-h-11 sm:min-h-8"
             >
               Ajukan tinjauan privasi
             </Button>
@@ -76,6 +77,7 @@ export const PublishingItemCard = React.memo(function PublishingItemCard({
               disabled={pending}
               onClick={() => onTransition(post.id, "APPROVED")}
               leftIcon={<Icon icon={ICON_MAP.shieldCheck} size="xs" />}
+              className="min-h-11 sm:min-h-8"
             >
               Setujui tinjauan privasi
             </Button>
@@ -95,6 +97,7 @@ export const PublishingItemCard = React.memo(function PublishingItemCard({
                   disabled={pending}
                   onClick={() => onTransition(post.id, "PUBLISHED")}
                   leftIcon={<Icon icon={ICON_MAP.globe} size="xs" />}
+                  className="min-h-11 sm:min-h-8"
                 >
                   Terbitkan konten
                 </Button>
@@ -109,6 +112,7 @@ export const PublishingItemCard = React.memo(function PublishingItemCard({
               size="sm"
               disabled={pending}
               onClick={() => onTransition(post.id, "ARCHIVED")}
+              className="min-h-11 sm:min-h-8"
             >
               Arsipkan konten
             </Button>

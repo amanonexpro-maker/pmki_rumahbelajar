@@ -148,6 +148,7 @@ export function MediaCardActions({
                   disabled={reviewPending}
                   onClick={() => onQuickApprove(asset)}
                   leftIcon={<Icon icon={ICON_MAP.checkCircle} size="xs" />}
+                  className="min-h-11 sm:min-h-8"
                 >
                   Setujui publik
                 </Button>
@@ -160,6 +161,7 @@ export function MediaCardActions({
                 disabled={reviewPending}
                 onClick={() => onReview(asset)}
                 leftIcon={<Icon icon={ICON_MAP.shieldCheck} size="xs" />}
+                className="min-h-11 sm:min-h-8"
               >
                 Tinjau detail
               </Button>

@@ -3,6 +3,7 @@ import { cn } from "@/lib/cn";
 
 export interface MobileCardListProps<T = unknown> {
   item?: T;
+  avatar?: React.ReactNode;
   title?: React.ReactNode;
   badge?: React.ReactNode;
   primaryMeta?: React.ReactNode;
@@ -20,6 +21,7 @@ export interface MobileCardListProps<T = unknown> {
  */
 export function MobileCardList<T = unknown>({
   item,
+  avatar,
   title,
   badge,
   primaryMeta,
@@ -45,13 +47,13 @@ export function MobileCardList<T = unknown>({
     );
   }
 
-  return (
-    <div className={cn("space-y-2", className)}>
+  const body = (
+    <div className="min-w-0 flex-1 space-y-2">
       {/* Baris 1: Identitas utama + status badge */}
       {(title || badge) && (
         <div className="flex items-start justify-between gap-2">
           {typeof title === "string" ? (
-            <p className="text-base font-semibold text-foreground leading-snug">
+            <p className="text-base font-semibold text-foreground leading-snug min-w-0">
               {title}
             </p>
           ) : (
@@ -75,10 +77,10 @@ export function MobileCardList<T = unknown>({
         </div>
       )}
 
-      {/* Baris 4: Maksimal satu aksi primer */}
+      {/* Baris 4: Maksimal satu aksi operasional */}
       {action && (
         <div
-          className="pt-1 flex items-center justify-end"
+          className="pt-2.5 border-t border-border-subtle flex items-center justify-end"
           onClick={(e) => e.stopPropagation()}
         >
           {action}
@@ -86,5 +88,16 @@ export function MobileCardList<T = unknown>({
       )}
     </div>
   );
+
+  if (avatar) {
+    return (
+      <div className={cn("flex items-start gap-3", className)}>
+        <div className="shrink-0 pt-0.5">{avatar}</div>
+        {body}
+      </div>
+    );
+  }
+
+  return <div className={cn("space-y-2", className)}>{body}</div>;
 }
 

@@ -19,6 +19,7 @@ import {
   type DataTableColumn,
 } from "@/components/patterns";
 import {
+  Avatar,
   Badge,
   Button,
   Icon,
@@ -314,24 +315,27 @@ export function StudentsWorkspaceClient({
       id: "participant",
       header: "Peserta didik",
       cell: (row) => (
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/workspace/students/${row.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="font-semibold text-foreground hover:text-primary focus-ring rounded-xs"
-            >
-              {row.fullName}
-            </Link>
-            {row.isRaalResident && (
-              <Badge variant="info" size="sm">
-                RAAL
-              </Badge>
-            )}
+        <div className="flex items-center gap-3">
+          <Avatar name={row.fullName} size="sm" className="shrink-0" />
+          <div className="space-y-0.5 min-w-0">
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/workspace/students/${row.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-semibold text-foreground hover:text-primary focus-ring rounded-xs truncate"
+              >
+                {row.fullName}
+              </Link>
+              {row.isRaalResident && (
+                <Badge variant="info" size="sm">
+                  RAAL
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground font-mono">
+              {row.registrationNumber} · Panggilan: {row.nickname}
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground font-mono">
-            {row.registrationNumber} · Panggilan: {row.nickname}
-          </p>
         </div>
       ),
     },
@@ -399,15 +403,13 @@ export function StudentsWorkspaceClient({
                 Tempatkan ke kelas
               </Button>
             )}
-          <Button asChild variant="ghost" size="sm">
-            <Link
-              href={`/workspace/students/${row.id}`}
-              aria-label={`Buka profil peserta didik ${row.fullName}`}
-            >
-              <span>Buka profil</span>
-              <Icon icon={ChevronRight} size="xs" />
-            </Link>
-          </Button>
+          <Link
+            href={`/workspace/students/${row.id}`}
+            aria-label={`Buka profil peserta didik ${row.fullName}`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-control text-muted-foreground hover:bg-surface-subtle hover:text-foreground transition-colors focus-ring"
+          >
+            <Icon icon={ChevronRight} size="sm" />
+          </Link>
         </div>
       ),
     },
@@ -538,70 +540,79 @@ export function StudentsWorkspaceClient({
         getRowKey={(row) => row.id}
         caption="Daftar peserta didik Rumah Belajar"
         onRowClick={(row) => router.push(`/workspace/students/${row.id}`)}
-        renderMobileRow={(row) => (
-          <MobileCardList
-            title={row.fullName}
-            badge={
-              <StatusBadge
-                domain="registration"
-                status={row.registrationStatus}
-              />
-            }
-            primaryMeta={
-              <>
-                <span className="font-medium text-foreground">
-                  {row.assignedClassName ?? "Belum ditempatkan"}
-                </span>{" "}
-                · {row.educationLevelLabel}
-              </>
-            }
-            secondaryMeta={
-              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="font-mono">{row.registrationNumber}</span>
-                <span>· Panggilan: {row.nickname}</span>
-                {row.isRaalResident && (
-                  <Badge variant="info" size="sm">
-                    RAAL
-                  </Badge>
-                )}
-              </div>
-            }
-            action={
-              canVerifyStudent &&
-              (row.registrationStatus === "VERIFIED" ||
-                row.registrationStatus === "CLASS_PLACEMENT" ||
-                row.registrationStatus === "WAITLIST") &&
-              !row.assignedClassId ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setQuickPlaceStudent(row);
-                    setPlaceError(null);
-                  }}
-                  className="min-h-11 sm:min-h-8 text-xs"
+        renderMobileRow={(row) => {
+          const showQuickPlacement =
+            canVerifyStudent &&
+            (row.registrationStatus === "VERIFIED" ||
+              row.registrationStatus === "CLASS_PLACEMENT" ||
+              row.registrationStatus === "WAITLIST") &&
+            !row.assignedClassId;
+          const showLevelSuffix =
+            row.assignedClassName &&
+            row.assignedClassName !== row.educationLevelLabel;
+
+          return (
+            <MobileCardList
+              avatar={<Avatar name={row.fullName} size="sm" />}
+              title={row.fullName}
+              badge={
+                <div
+                  className="flex items-center gap-1 shrink-0"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  Tempatkan ke kelas
-                </Button>
-              ) : (
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="min-h-11 sm:min-h-8 text-xs text-secondary-foreground hover:text-foreground"
-                >
+                  <StatusBadge
+                    domain="registration"
+                    status={row.registrationStatus}
+                  />
                   <Link
                     href={`/workspace/students/${row.id}`}
                     aria-label={`Buka profil peserta didik ${row.fullName}`}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-control text-muted-foreground hover:text-foreground focus-ring"
                   >
-                    Buka profil →
+                    <Icon icon={ChevronRight} size="sm" />
                   </Link>
-                </Button>
-              )
-            }
-          />
-        )}
+                </div>
+              }
+              primaryMeta={
+                <>
+                  <span className="font-medium text-foreground">
+                    {row.assignedClassName ?? "Belum ditempatkan"}
+                  </span>
+                  {(!row.assignedClassName || showLevelSuffix) && (
+                    <> · {row.educationLevelLabel}</>
+                  )}
+                </>
+              }
+              secondaryMeta={
+                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="font-mono">{row.registrationNumber}</span>
+                  <span>· Panggilan: {row.nickname}</span>
+                  {row.isRaalResident && (
+                    <Badge variant="info" size="sm">
+                      RAAL
+                    </Badge>
+                  )}
+                </div>
+              }
+              action={
+                showQuickPlacement ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setQuickPlaceStudent(row);
+                      setPlaceError(null);
+                    }}
+                    className="min-h-11 sm:min-h-8 text-xs"
+                  >
+                    Tempatkan ke kelas
+                  </Button>
+                ) : undefined
+              }
+            />
+          );
+        }}
         emptyState={
           <EmptyState
             icon={Users}

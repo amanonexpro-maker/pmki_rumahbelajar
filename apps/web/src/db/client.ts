@@ -34,6 +34,7 @@ export const pgClient =
   postgres(connectionString, {
     prepare: false,
     max: 5,
+    max_pipeline: 1,
     idle_timeout: 20,
     connect_timeout: 30,
   });

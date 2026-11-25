@@ -3,8 +3,20 @@
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { DatePicker, FormBottomSheet } from "@/components/patterns";
-import { Button, Input } from "@/components/ui";
+import {
+  DatePicker,
+  FeedbackBanner,
+  FormBottomSheet,
+} from "@/components/patterns";
+import {
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui";
 import { EDUCATION_LEVEL_LABELS } from "../types/student-types";
 import {
   EDUCATION_LEVEL_VALUES,
@@ -74,12 +86,11 @@ export function EditStudentProfileSheet({
       noValidate
     >
       {submitError && (
-        <div
-          role="alert"
-          className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
-        >
-          {submitError}
-        </div>
+        <FeedbackBanner
+          tone="danger"
+          message={submitError}
+          onDismiss={() => setSubmitError(null)}
+        />
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -131,14 +142,21 @@ export function EditStudentProfileSheet({
           >
             Jenis kelamin
           </label>
-          <select
-            id={genderId}
-            {...register("gender")}
-            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-          >
-            <option value="L">Laki-laki</option>
-            <option value="P">Perempuan</option>
-          </select>
+          <Controller
+            control={form.control}
+            name="gender"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id={genderId}>
+                  <SelectValue placeholder="Pilih jenis kelamin" />
+                </SelectTrigger>
+                <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                  <SelectItem value="L">Laki-laki</SelectItem>
+                  <SelectItem value="P">Perempuan</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
           {errors.gender && (
             <p className="text-xs text-danger">{errors.gender.message}</p>
           )}
@@ -150,17 +168,24 @@ export function EditStudentProfileSheet({
           >
             Jenjang kelas
           </label>
-          <select
-            id={levelId}
-            {...register("educationLevel")}
-            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-          >
-            {EDUCATION_LEVEL_VALUES.map((code) => (
-              <option key={code} value={code}>
-                {EDUCATION_LEVEL_LABELS[code]}
-              </option>
-            ))}
-          </select>
+          <Controller
+            control={form.control}
+            name="educationLevel"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id={levelId}>
+                  <SelectValue placeholder="Pilih jenjang kelas" />
+                </SelectTrigger>
+                <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                  {EDUCATION_LEVEL_VALUES.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {EDUCATION_LEVEL_LABELS[code]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
           {errors.educationLevel && (
             <p className="text-xs text-danger">
               {errors.educationLevel.message}
@@ -174,15 +199,22 @@ export function EditStudentProfileSheet({
           >
             Wilayah
           </label>
-          <select
-            id={districtId}
-            {...register("district")}
-            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-          >
-            <option value="Kalirejo">Kelurahan Kalirejo</option>
-            <option value="Lawang">Kecamatan Lawang</option>
-            <option value="Lainnya">Wilayah lainnya</option>
-          </select>
+          <Controller
+            control={form.control}
+            name="district"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id={districtId}>
+                  <SelectValue placeholder="Pilih wilayah" />
+                </SelectTrigger>
+                <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                  <SelectItem value="Kalirejo">Kelurahan Kalirejo</SelectItem>
+                  <SelectItem value="Lawang">Kecamatan Lawang</SelectItem>
+                  <SelectItem value="Lainnya">Wilayah lainnya</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
           {errors.district && (
             <p className="text-xs text-danger">{errors.district.message}</p>
           )}

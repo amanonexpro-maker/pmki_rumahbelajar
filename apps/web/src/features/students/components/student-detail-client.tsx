@@ -88,7 +88,7 @@ export function StudentDetailClient({
       params.set("tab", nextTab);
     }
     const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
   async function handleVerifySubmit(
@@ -240,6 +240,7 @@ export function StudentDetailClient({
                 variant="primary"
                 onClick={() => setVerifyOpen(true)}
                 leftIcon={<Icon icon={ShieldCheck} size="sm" />}
+                className="w-full sm:w-auto min-h-11 sm:min-h-10"
               >
                 Verifikasi pendaftaran
               </Button>
@@ -249,6 +250,7 @@ export function StudentDetailClient({
                 variant="primary"
                 onClick={() => setPlaceOpen(true)}
                 leftIcon={<Icon icon={UserCheck} size="sm" />}
+                className="w-full sm:w-auto min-h-11 sm:min-h-10"
               >
                 {student.assignedClassId
                   ? "Pindahkan kelas"
@@ -258,13 +260,15 @@ export function StudentDetailClient({
           ) : undefined
         }
         secondaryActions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
             {canVerifyStudent && !isNeedsVerification && (
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 onClick={() => setVerifyOpen(true)}
+                leftIcon={<Icon icon={ShieldCheck} size="xs" />}
+                className="w-full sm:w-auto min-h-11 sm:min-h-9"
               >
                 Ubah status pendaftaran
               </Button>
@@ -272,10 +276,11 @@ export function StudentDetailClient({
             {canUpdateStudent && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 onClick={() => setEditOpen(true)}
                 leftIcon={<Icon icon={Pencil} size="xs" />}
+                className="w-full sm:w-auto min-h-11 sm:min-h-9"
               >
                 Ubah profil
               </Button>

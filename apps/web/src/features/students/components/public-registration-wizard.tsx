@@ -13,7 +13,18 @@ import {
   StepIndicator,
   type StepItem,
 } from "@/components/patterns";
-import { Badge, Button, Icon, Input, Textarea } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Icon,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from "@/components/ui";
 import { ICON_MAP } from "@/config/icons";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
 import { submitPublicRegistrationAction } from "../actions/student-actions";
@@ -461,14 +472,21 @@ export function PublicRegistrationWizard({
                 >
                   Jenis kelamin *
                 </label>
-                <select
-                  id="reg-gender"
-                  className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-                  {...register("gender")}
-                >
-                  <option value="L">Laki-laki</option>
-                  <option value="P">Perempuan</option>
-                </select>
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="reg-gender">
+                        <SelectValue placeholder="Pilih jenis kelamin" />
+                      </SelectTrigger>
+                      <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                        <SelectItem value="L">Laki-laki</SelectItem>
+                        <SelectItem value="P">Perempuan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -478,15 +496,24 @@ export function PublicRegistrationWizard({
                 >
                   Wilayah tempat tinggal *
                 </label>
-                <select
-                  id="reg-district"
-                  className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-                  {...register("district")}
-                >
-                  <option value="Kalirejo">Kelurahan Kalirejo</option>
-                  <option value="Lawang">Kecamatan Lawang</option>
-                  <option value="Lainnya">Wilayah lainnya</option>
-                </select>
+                <Controller
+                  control={control}
+                  name="district"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="reg-district">
+                        <SelectValue placeholder="Pilih wilayah" />
+                      </SelectTrigger>
+                      <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                        <SelectItem value="Kalirejo">
+                          Kelurahan Kalirejo
+                        </SelectItem>
+                        <SelectItem value="Lawang">Kecamatan Lawang</SelectItem>
+                        <SelectItem value="Lainnya">Wilayah lainnya</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               <div className="space-y-1.5 flex items-end pb-1">
@@ -549,17 +576,24 @@ export function PublicRegistrationWizard({
                 >
                   Hubungan dengan peserta didik *
                 </label>
-                <select
-                  id="reg-guardianRelationship"
-                  className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-                  {...register("guardianRelationship")}
-                >
-                  {GUARDIAN_RELATIONSHIP_VALUES.map((code) => (
-                    <option key={code} value={code}>
-                      {GUARDIAN_RELATIONSHIP_LABELS[code]}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  control={control}
+                  name="guardianRelationship"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="reg-guardianRelationship">
+                        <SelectValue placeholder="Pilih hubungan wali" />
+                      </SelectTrigger>
+                      <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                        {GUARDIAN_RELATIONSHIP_VALUES.map((code) => (
+                          <SelectItem key={code} value={code}>
+                            {GUARDIAN_RELATIONSHIP_LABELS[code]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -612,17 +646,24 @@ export function PublicRegistrationWizard({
                 >
                   Jenjang kelas saat ini *
                 </label>
-                <select
-                  id="reg-educationLevel"
-                  className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-                  {...register("educationLevel")}
-                >
-                  {EDUCATION_LEVEL_VALUES.map((code) => (
-                    <option key={code} value={code}>
-                      {EDUCATION_LEVEL_LABELS[code]}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  control={control}
+                  name="educationLevel"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="reg-educationLevel">
+                        <SelectValue placeholder="Pilih jenjang kelas" />
+                      </SelectTrigger>
+                      <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                        {EDUCATION_LEVEL_VALUES.map((code) => (
+                          <SelectItem key={code} value={code}>
+                            {EDUCATION_LEVEL_LABELS[code]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               <div className="space-y-1.5">

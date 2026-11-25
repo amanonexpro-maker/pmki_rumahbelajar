@@ -2,9 +2,17 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
-import { FormBottomSheet } from "@/components/patterns";
-import { Button, Textarea } from "@/components/ui";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { FeedbackBanner, FormBottomSheet } from "@/components/patterns";
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from "@/components/ui";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
 import {
   verifyStudentFormSchema,
@@ -73,12 +81,11 @@ export function VerifyStudentSheet({
       noValidate
     >
       {submitError && (
-        <div
-          role="alert"
-          className="rounded-control border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger"
-        >
-          {submitError}
-        </div>
+        <FeedbackBanner
+          tone="danger"
+          message={submitError}
+          onDismiss={() => setSubmitError(null)}
+        />
       )}
 
       <div className="space-y-1.5">
@@ -88,24 +95,34 @@ export function VerifyStudentSheet({
         >
           Keputusan verifikasi
         </label>
-        <select
-          id={decisionId}
-          autoFocus
-          {...register("decision")}
-          className="flex h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-foreground focus-ring"
-        >
-          <option value="VERIFIED">
-            Terverifikasi (Siap ditempatkan ke kelas)
-          </option>
-          <option value="PENDING_VERIFICATION">
-            Menunggu verifikasi lanjutan
-          </option>
-          <option value="WAITLIST">
-            Daftar tunggu (Kapasitas kelas penuh)
-          </option>
-          <option value="REJECTED">Ditolak (Wajib isi alasan)</option>
-          <option value="CANCELLED">Dibatalkan (Wajib isi alasan)</option>
-        </select>
+        <Controller
+          control={control}
+          name="decision"
+          render={({ field }) => (
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger id={decisionId} autoFocus>
+                <SelectValue placeholder="Pilih keputusan verifikasi" />
+              </SelectTrigger>
+              <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                <SelectItem value="VERIFIED">
+                  Terverifikasi (Siap ditempatkan ke kelas)
+                </SelectItem>
+                <SelectItem value="PENDING_VERIFICATION">
+                  Menunggu verifikasi lanjutan
+                </SelectItem>
+                <SelectItem value="WAITLIST">
+                  Daftar tunggu (Kapasitas kelas penuh)
+                </SelectItem>
+                <SelectItem value="REJECTED">
+                  Ditolak (Wajib isi alasan)
+                </SelectItem>
+                <SelectItem value="CANCELLED">
+                  Dibatalkan (Wajib isi alasan)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        />
         {errors.decision && (
           <p className="text-xs text-danger">{errors.decision.message}</p>
         )}

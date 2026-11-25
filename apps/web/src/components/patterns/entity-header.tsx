@@ -103,7 +103,7 @@ export function EntityHeader({
         </div>
 
         {(secondaryActions || primaryAction) && (
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto shrink-0">
             {secondaryActions}
             {primaryAction}
           </div>

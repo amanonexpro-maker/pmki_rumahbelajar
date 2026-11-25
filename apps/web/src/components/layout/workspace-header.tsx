@@ -2,10 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { Avatar, Button, Icon } from "@/components/ui";
+import { Avatar } from "@/components/ui";
 import { ConnectivityIndicator } from "@/hooks/use-connectivity";
-import { ThemePicker } from "./theme-picker";
 
 export interface WorkspaceHeaderUser {
   name: string;
@@ -18,8 +16,6 @@ export interface WorkspaceHeaderProps {
   serviceUnitName?: string;
   academicYearLabel?: string;
   user?: WorkspaceHeaderUser;
-  onOpenMobileMenu?: () => void;
-  rightSlot?: React.ReactNode;
 }
 
 export function WorkspaceHeader({
@@ -27,12 +23,11 @@ export function WorkspaceHeader({
   serviceUnitName = "Rumah Belajar Griya Asih Lawang",
   academicYearLabel = "TA 2026/2027",
   user,
-  rightSlot,
 }: WorkspaceHeaderProps) {
   return (
     <header className="sticky top-0 z-30 h-16 bg-surface/95 backdrop-blur-md border-b border-border px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
       <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-        {/* Mobile (< md): PMKI brand logo matching public navbar (navigation lives in bottom nav "Lainnya") */}
+        {/* Mobile (< md): PMKI brand logo matching public navbar */}
         <Link
           href="/workspace"
           aria-label="Beranda Workspace PMKI"
@@ -73,28 +68,8 @@ export function WorkspaceHeader({
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <ConnectivityIndicator />
 
-        <div className="hidden md:flex items-center">
-          <ThemePicker />
-        </div>
-
-        <Button
-          asChild
-          variant="ghost"
-          size="sm"
-          className="hidden xl:inline-flex"
-        >
-          <Link href="/">
-            <Icon icon={ArrowLeft} size="xs" />
-            <span>Website publik</span>
-          </Link>
-        </Button>
-
-        {rightSlot && (
-          <div className="hidden md:flex items-center">{rightSlot}</div>
-        )}
-
         {user && (
-          <div className="flex items-center gap-2.5 md:pl-2 md:border-l md:border-border">
+          <div className="flex items-center gap-2.5 md:pl-3 md:border-l md:border-border">
             <Avatar name={user.name} src={user.avatarUrl} size="sm" />
             <div className="hidden sm:block text-left leading-tight min-w-0">
               <p className="text-xs font-semibold text-foreground truncate max-w-36">

@@ -21,14 +21,16 @@ describe("Layout Shell & Mobile Navigation Guardrails (Fase 19 Step 2 - P1 & P2)
     expect(content).toContain("env(safe-area-inset-bottom");
   });
 
-  it("verifies workspace-header.tsx shows mobile logo (md:hidden) without duplicate hamburger and hides desktop-only rightSlot on mobile", () => {
+  it("verifies workspace-header.tsx shows mobile logo (md:hidden) cleanly without hamburger, ThemePicker, or Website publik duplication", () => {
     const content = readFileSync(
       path.join(layoutDir, "workspace-header.tsx"),
       "utf-8"
     );
     expect(content).toContain("md:hidden");
     expect(content).toContain("pmki_app_icon");
-    expect(content).toContain("hidden md:flex");
+    expect(content).toContain("<ConnectivityIndicator");
+    expect(content).not.toContain("ThemePicker");
+    expect(content).not.toContain("Website publik");
     expect(content).not.toContain("Buka menu navigasi");
   });
 

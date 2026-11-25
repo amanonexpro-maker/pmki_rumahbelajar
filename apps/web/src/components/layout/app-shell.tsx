@@ -141,6 +141,7 @@ export interface AppShellProps {
   contentWidth?: ContainerWidth;
   headerRightSlot?: React.ReactNode;
   mobileFooterActionSlot?: React.ReactNode;
+  collapsedFooterActionSlot?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -152,6 +153,7 @@ export function AppShell({
   contentWidth = "default",
   headerRightSlot,
   mobileFooterActionSlot,
+  collapsedFooterActionSlot,
   children,
 }: AppShellProps) {
   const pathname = usePathname() || "/workspace";
@@ -181,13 +183,14 @@ export function AppShell({
           userPersona={userPersona}
           isCollapsed={isSidebarCollapsed}
           onToggle={toggleSidebar}
+          footerActionSlot={mobileFooterActionSlot ?? headerRightSlot}
+          collapsedFooterActionSlot={collapsedFooterActionSlot}
         />
 
         <div className="flex-1 flex flex-col min-w-0">
           <WorkspaceHeader
             currentViewLabel={currentViewLabel}
             user={user}
-            rightSlot={headerRightSlot}
           />
 
           <ConnectivityTopBanner />

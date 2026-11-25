@@ -7,6 +7,7 @@ import { useTheme, type ThemePreference } from "./theme-provider";
 
 export interface ThemePickerProps {
   className?: string;
+  compact?: boolean;
 }
 
 const options: { value: ThemePreference; label: string }[] = [
@@ -27,14 +28,40 @@ function useIsMounted(): boolean {
   );
 }
 
-export function ThemePicker({ className }: ThemePickerProps) {
+export function ThemePicker({ className, compact = false }: ThemePickerProps) {
   const { theme, setTheme } = useTheme();
   const isMounted = useIsMounted();
 
   // Stabilize initial render to match SSR output and avoid hydration mismatch
   const currentTheme = isMounted ? theme : "light";
+  const currentOption =
+    options.find((opt) => opt.value === currentTheme) ?? options[0];
   const ThemeIcon =
     currentTheme === "dark" ? Moon : currentTheme === "system" ? Monitor : Sun;
+
+  if (compact) {
+    const cycleTheme = () => {
+      const idx = options.findIndex((opt) => opt.value === currentTheme);
+      const next = options[(idx + 1) % options.length] ?? options[0];
+      setTheme(next.value);
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={cycleTheme}
+        disabled={!isMounted}
+        aria-label={`Tema tampilan: ${currentOption.label}. Klik untuk mengganti tema`}
+        title={`Tema: ${currentOption.label} (klik untuk ubah)`}
+        className={cn(
+          "h-10 w-10 rounded-control border border-border bg-surface text-secondary-foreground hover:text-foreground hover:bg-surface-subtle inline-flex items-center justify-center transition-colors focus-ring cursor-pointer disabled:opacity-80",
+          className
+        )}
+      >
+        <ThemeIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
+      </button>
+    );
+  }
 
   return (
     <label className={cn("inline-flex items-center gap-2", className)}>

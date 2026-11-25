@@ -34,6 +34,7 @@ export default async function WorkspaceLayout({
       userPersona={session.persona}
       headerRightSlot={<LogoutButton />}
       mobileFooterActionSlot={<LogoutButton showLabelOnMobile />}
+      collapsedFooterActionSlot={<LogoutButton compact />}
     >
       {children}
     </AppShell>

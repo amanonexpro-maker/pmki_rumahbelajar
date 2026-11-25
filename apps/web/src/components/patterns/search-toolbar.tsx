@@ -107,7 +107,7 @@ export function SearchToolbar({
 
       {mobileFilterContent && (
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent side="right">
+          <SheetContent side="bottom" className="md:hidden">
             <SheetHeader>
               <SheetTitle>Filter data</SheetTitle>
               <SheetDescription>
@@ -119,7 +119,7 @@ export function SearchToolbar({
               {onResetAll && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="md"
                   onClick={() => {
                     onResetAll();
                     setMobileOpen(false);

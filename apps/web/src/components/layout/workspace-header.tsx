@@ -38,7 +38,7 @@ export function WorkspaceHeader({
           size="icon"
           aria-label="Buka menu navigasi"
           onClick={onOpenMobileMenu}
-          className="lg:hidden h-11 w-11 shrink-0"
+          className="md:hidden h-11 w-11 shrink-0"
         >
           <Icon icon={Menu} size="md" />
         </Button>

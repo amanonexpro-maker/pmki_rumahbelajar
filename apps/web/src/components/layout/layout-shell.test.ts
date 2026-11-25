@@ -21,20 +21,23 @@ describe("Layout Shell & Mobile Navigation Guardrails (Fase 19 Step 2 - P1 & P2)
     expect(content).toContain("env(safe-area-inset-bottom");
   });
 
-  it("verifies workspace-header.tsx retains lg:hidden for hamburger drawer navigation", () => {
+  it("verifies workspace-header.tsx uses md:hidden for mobile-only hamburger drawer navigation", () => {
     const content = readFileSync(
       path.join(layoutDir, "workspace-header.tsx"),
       "utf-8"
     );
-    expect(content).toContain("lg:hidden");
+    expect(content).toContain("md:hidden");
   });
 
-  it("verifies sidebar.tsx retains hidden lg:flex for desktop persistent navigation", () => {
+  it("verifies sidebar.tsx uses hidden md:flex and collapsible width for tablet/desktop navigation", () => {
     const content = readFileSync(
       path.join(layoutDir, "sidebar.tsx"),
       "utf-8"
     );
-    expect(content).toContain("hidden lg:flex");
+    expect(content).toContain("hidden md:flex");
+    expect(content).toContain("isCollapsed");
+    expect(content).toContain("md:w-16");
+    expect(content).toContain("md:w-64");
   });
 
   it("verifies page-container.tsx contains 5rem and md:pb-0 bottom inset compensation", () => {

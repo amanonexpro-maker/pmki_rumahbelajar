@@ -43,6 +43,8 @@ export function SharedWorkspaceFilters({
     return () => window.clearTimeout(t);
   }, [debounceMs, initialSearch, onSearchChange, searchInput]);
 
+  const filterIdPrefix = React.useId();
+
   const activeFilterCount = filters.filter(
     (f) => f.value !== (f.defaultValue ?? "ALL")
   ).length;
@@ -58,17 +60,46 @@ export function SharedWorkspaceFilters({
         onResetAll();
       }}
       desktopFilters={
-        <>
-          {filters.map((filter) => (
-            <GenericFilterSelect
-              key={filter.key}
-              label={filter.label}
-              value={filter.value}
-              options={filter.options}
-              onChange={filter.onChange}
-            />
-          ))}
-        </>
+        filters.length > 0 ? (
+          <>
+            {filters.map((filter) => (
+              <GenericFilterSelect
+                key={filter.key}
+                label={filter.label}
+                value={filter.value}
+                options={filter.options}
+                onChange={filter.onChange}
+              />
+            ))}
+          </>
+        ) : undefined
+      }
+      mobileFilterContent={
+        filters.length > 0 ? (
+          <div className="space-y-4">
+            {filters.map((filter) => {
+              const selectId = `${filterIdPrefix}-${filter.key}`;
+              return (
+                <div key={filter.key} className="space-y-1.5">
+                  <label
+                    htmlFor={selectId}
+                    className="type-label block text-foreground"
+                  >
+                    {filter.label}
+                  </label>
+                  <GenericFilterSelect
+                    id={selectId}
+                    label={filter.label}
+                    value={filter.value}
+                    options={filter.options}
+                    onChange={filter.onChange}
+                    className="w-full min-h-11 text-sm"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ) : undefined
       }
     />
   );

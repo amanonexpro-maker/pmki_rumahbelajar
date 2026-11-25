@@ -155,6 +155,11 @@ export function AppShell({
 }: AppShellProps) {
   const pathname = usePathname() || "/workspace";
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+
+  const toggleSidebar = React.useCallback(() => {
+    setIsSidebarCollapsed((prev) => !prev);
+  }, []);
 
   const activeItem = navGroups
     .flatMap((g) => g.items)
@@ -174,6 +179,8 @@ export function AppShell({
           currentPath={pathname}
           userPermissions={userPermissions}
           userPersona={userPersona}
+          isCollapsed={isSidebarCollapsed}
+          onToggle={toggleSidebar}
         />
 
         <div className="flex-1 flex flex-col min-w-0">

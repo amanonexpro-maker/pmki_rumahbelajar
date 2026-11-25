@@ -8,6 +8,7 @@ export interface FilterSelectOption {
 }
 
 export interface GenericFilterSelectProps {
+  id?: string;
   label: string;
   options: readonly FilterSelectOption[];
   value: string;
@@ -16,6 +17,7 @@ export interface GenericFilterSelectProps {
 }
 
 export function GenericFilterSelect({
+  id,
   label,
   options,
   value,
@@ -24,6 +26,7 @@ export function GenericFilterSelect({
 }: GenericFilterSelectProps) {
   return (
     <select
+      id={id}
       aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}

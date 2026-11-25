@@ -1,7 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { SearchToolbar } from "@/components/patterns";
+import {
+  SharedWorkspaceFilters,
+  type WorkspaceFilterConfig,
+} from "@/components/compositions";
 import type { QueryParamUpdates } from "@/hooks/use-url-query-params";
 import { MEDIA_CATEGORY_LABELS } from "../types/media-types";
 import { MEDIA_CATEGORY_VALUES } from "../validators/media-validator";
@@ -14,6 +17,21 @@ export interface MediaFilterBarProps {
   onResetAll: () => void;
 }
 
+const CATEGORY_OPTIONS = [
+  { value: "ALL", label: "Semua kategori" },
+  ...MEDIA_CATEGORY_VALUES.map((cat) => ({
+    value: cat,
+    label: MEDIA_CATEGORY_LABELS[cat],
+  })),
+];
+
+const ELIGIBILITY_OPTIONS = [
+  { value: "ALL", label: "Semua status tinjauan" },
+  { value: "UNREVIEWED", label: "Menunggu tinjauan privasi" },
+  { value: "PUBLIC", label: "Layak tayang di publik" },
+  { value: "INTERNAL", label: "Hanya arsip internal" },
+] as const;
+
 export function MediaFilterBar({
   initialSearch,
   initialCategory,
@@ -21,59 +39,35 @@ export function MediaFilterBar({
   onUpdateQuery,
   onResetAll,
 }: MediaFilterBarProps) {
-  const [searchInput, setSearchInput] = React.useState(initialSearch);
+  const handleSearchChange = React.useCallback(
+    (search: string | null) => onUpdateQuery({ search }),
+    [onUpdateQuery]
+  );
 
-  React.useEffect(() => {
-    if (searchInput === initialSearch) return;
-    const t = window.setTimeout(() => {
-      onUpdateQuery({ search: searchInput.trim() || null });
-    }, 300);
-    return () => window.clearTimeout(t);
-  }, [initialSearch, onUpdateQuery, searchInput]);
+  const filters: WorkspaceFilterConfig[] = [
+    {
+      key: "category",
+      label: "Filter kategori dokumentasi",
+      value: initialCategory,
+      options: CATEGORY_OPTIONS,
+      onChange: (value) => onUpdateQuery({ category: value }),
+    },
+    {
+      key: "eligibility",
+      label: "Filter status kelayakan publik",
+      value: initialEligibility,
+      options: ELIGIBILITY_OPTIONS,
+      onChange: (value) => onUpdateQuery({ eligibility: value }),
+    },
+  ];
 
   return (
-    <SearchToolbar
-      searchValue={searchInput}
-      onSearchChange={setSearchInput}
+    <SharedWorkspaceFilters
+      initialSearch={initialSearch}
+      onSearchChange={handleSearchChange}
       searchPlaceholder="Cari judul dokumentasi..."
-      filterCount={
-        (initialCategory !== "ALL" ? 1 : 0) +
-        (initialEligibility !== "ALL" ? 1 : 0)
-      }
-      onResetAll={() => {
-        setSearchInput("");
-        onResetAll();
-      }}
-      desktopFilters={
-        <>
-          <select
-            aria-label="Filter kategori dokumentasi"
-            value={initialCategory}
-            onChange={(e) => onUpdateQuery({ category: e.target.value })}
-            className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-          >
-            <option value="ALL">Semua kategori</option>
-            {MEDIA_CATEGORY_VALUES.map((cat) => (
-              <option key={cat} value={cat}>
-                {MEDIA_CATEGORY_LABELS[cat]}
-              </option>
-            ))}
-          </select>
-
-          <select
-            aria-label="Filter status kelayakan publik"
-            value={initialEligibility}
-            onChange={(e) => onUpdateQuery({ eligibility: e.target.value })}
-            className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-          >
-            <option value="ALL">Semua status tinjauan</option>
-            <option value="UNREVIEWED">Menunggu tinjauan privasi</option>
-            <option value="PUBLIC">Layak tayang di publik</option>
-            <option value="INTERNAL">Hanya arsip internal</option>
-          </select>
-        </>
-      }
+      filters={filters}
+      onResetAll={onResetAll}
     />
   );
 }
-

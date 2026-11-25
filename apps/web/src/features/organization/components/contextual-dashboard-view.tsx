@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageHeader, SummaryStrip } from "@/components/patterns";
 import { Badge, Icon, type BadgeProps } from "@/components/ui";
 import { ICON_MAP } from "@/config/icons";
+import { getUserPersona } from "@/lib/auth/personas";
 import { getRoleLabel, type SystemRole } from "@/lib/status";
 import type { SessionUser } from "@/server/auth/session";
 import {
@@ -43,50 +44,45 @@ function resolveHeaderData(props: DashboardOrientationHeaderProps): {
   const session = props.session;
   const primaryRole = (session?.roles[0] ?? "TEACHER") as SystemRole;
   const primaryRoleLabel = getRoleLabel(primaryRole) ?? primaryRole;
+  const persona = session?.persona ?? getUserPersona(session?.roles ?? []);
   const greeting = getIndonesianTimeGreeting();
   const userName = session?.name ?? "Pengguna";
 
   let primaryAction: DashboardActionLinkDTO | null = null;
   let secondaryAction: DashboardActionLinkDTO | null = null;
 
-  if (primaryRole === "TEACHER") {
-    primaryAction = {
-      label: "Catat presensi",
-      href: "/workspace/attendance",
-    };
-    secondaryAction = {
-      label: "Tambah catatan perkembangan",
-      href: "/workspace/development/new",
-    };
-  } else if (primaryRole === "APPROVER" || primaryRole === "REVIEWER") {
-    primaryAction = {
-      label: "Tinjau laporan",
-      href: "/workspace/reports",
-    };
-  } else if (primaryRole === "EDITOR") {
-    primaryAction = {
-      label: "Kelola publikasi",
-      href: "/workspace/publishing",
-    };
-    secondaryAction = {
-      label: "Unggah dokumentasi",
-      href: "/workspace/media",
-    };
-  } else if (primaryRole === "AUDITOR") {
-    primaryAction = {
-      label: "Lihat jejak audit",
-      href: "/workspace/audit",
-    };
-  } else {
-    // UNIT_COORDINATOR, PLATFORM_ADMIN
-    primaryAction = {
-      label: "Verifikasi pendaftaran",
-      href: "/workspace/students",
-    };
-    secondaryAction = {
-      label: "Catat presensi",
-      href: "/workspace/attendance",
-    };
+  switch (persona) {
+    case "SUPERADMIN":
+      primaryAction = {
+        label: "Lihat jejak audit",
+        href: "/workspace/audit",
+      };
+      secondaryAction = {
+        label: "Verifikasi pendaftaran",
+        href: "/workspace/students",
+      };
+      break;
+    case "PENGURUS":
+      primaryAction = {
+        label: "Verifikasi pendaftaran",
+        href: "/workspace/students",
+      };
+      secondaryAction = {
+        label: "Tinjau laporan",
+        href: "/workspace/reports",
+      };
+      break;
+    case "GURU":
+    default:
+      primaryAction = {
+        label: "Catat presensi",
+        href: "/workspace/attendance",
+      };
+      secondaryAction = {
+        label: "Tambah catatan perkembangan",
+        href: "/workspace/development/new",
+      };
+      break;
   }
 
   return {

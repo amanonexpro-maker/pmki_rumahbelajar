@@ -14,6 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui";
+import type { UserPersona } from "@/lib/auth/personas";
 import { SidebarNavigation, type SidebarNavGroup } from "./sidebar";
 import { ThemePicker } from "./theme-picker";
 
@@ -23,6 +24,7 @@ export interface MobileNavigationProps {
   groups: SidebarNavGroup[];
   currentPath: string;
   userPermissions?: string[];
+  userPersona?: UserPersona;
   serviceUnitName?: string;
   organizationName?: string;
 }
@@ -33,6 +35,7 @@ export function MobileNavigation({
   groups,
   currentPath,
   userPermissions,
+  userPersona,
   serviceUnitName = "Griya Asih Lawang",
   organizationName = "PMKI Mupel Jawa Timur",
 }: MobileNavigationProps) {
@@ -66,6 +69,7 @@ export function MobileNavigation({
             groups={groups}
             currentPath={currentPath}
             userPermissions={userPermissions}
+            userPersona={userPersona}
             touchComfortable
             onItemSelect={() => onOpenChange(false)}
           />

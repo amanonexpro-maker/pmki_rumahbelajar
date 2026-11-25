@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { cn } from "@/lib/cn";
 import type { MediaAssetDTO } from "../types/media-types";
 import {
@@ -21,7 +22,7 @@ export interface MediaCardProps {
   onReview: (asset: MediaAssetDTO) => void;
 }
 
-export function MediaCard({
+export const MediaCard = React.memo(function MediaCard({
   asset,
   isFocused,
   isOwnUpload,
@@ -101,4 +102,4 @@ export function MediaCard({
       />
     </article>
   );
-}
+});

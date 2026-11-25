@@ -48,6 +48,15 @@ export const createReportSchema = z.object({
 
 export type CreateReportInput = z.infer<typeof createReportSchema>;
 
+export const createReportFormSchema = createReportSchema.pick({
+  title: true,
+  reportType: true,
+  period: true,
+  summary: true,
+});
+
+export type CreateReportFormValues = z.infer<typeof createReportFormSchema>;
+
 export const transitionReportStatusSchema = z
   .object({
     reportId: z.string().uuid("ID laporan tidak valid."),
@@ -77,5 +86,32 @@ export const transitionReportStatusSchema = z
 
 export type TransitionReportStatusInput = z.infer<
   typeof transitionReportStatusSchema
+>;
+
+export const transitionDecisionFormSchema = z
+  .object({
+    targetStatus: z.enum(REPORT_STATUS_VALUES),
+    comment: z
+      .string()
+      .trim()
+      .max(1000, "Catatan keputusan maksimal 1000 karakter.")
+      .optional(),
+  })
+  .superRefine((val, ctx) => {
+    if (
+      val.targetStatus === "REJECTED" &&
+      (!val.comment || val.comment.length < 5)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["comment"],
+        message:
+          "Tuliskan alasan penolakan atau catatan evaluasi laporan (minimal 5 karakter).",
+      });
+    }
+  });
+
+export type TransitionDecisionFormValues = z.infer<
+  typeof transitionDecisionFormSchema
 >;
 

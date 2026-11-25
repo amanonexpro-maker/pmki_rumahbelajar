@@ -31,6 +31,7 @@ export default async function WorkspaceLayout({
         roleLabel: formatPrimaryRoleLabel(session.roles),
       }}
       userPermissions={session.permissions}
+      userPersona={session.persona}
       headerRightSlot={<LogoutButton />}
     >
       {children}

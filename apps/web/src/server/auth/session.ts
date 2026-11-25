@@ -2,6 +2,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { resolveAccessCached } from "@/features/administration";
+import { getUserPersona, type UserPersona } from "@/lib/auth/personas";
 import { createSupabaseServerClient } from "./supabase-server";
 
 export interface SessionMembership {
@@ -21,6 +22,7 @@ export interface SessionUser {
   roles: string[];
   permissions: string[];
   memberships: SessionMembership[];
+  persona?: UserPersona;
 }
 
 /**
@@ -55,6 +57,7 @@ export const getCurrentSession = cache(
       roles: access.roles,
       permissions: access.permissions,
       memberships: access.memberships,
+      persona: getUserPersona(access.roles),
     };
   }
 );

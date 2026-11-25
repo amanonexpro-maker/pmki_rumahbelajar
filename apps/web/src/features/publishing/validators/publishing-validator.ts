@@ -48,6 +48,31 @@ export const createPublicationSchema = z.object({
 
 export type CreatePublicationInput = z.infer<typeof createPublicationSchema>;
 
+export const createPublicationFormSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(5, "Masukkan judul publikasi (minimal 5 karakter).")
+    .max(180, "Judul publikasi maksimal 180 karakter."),
+  category: z.enum(PUBLICATION_CATEGORY_VALUES, {
+    message: "Pilih kategori publikasi.",
+  }),
+  excerpt: z
+    .string()
+    .trim()
+    .max(400, "Ringkasan maksimal 400 karakter.")
+    .optional(),
+  content: z
+    .string()
+    .trim()
+    .min(20, "Tuliskan isi konten publikasi (minimal 20 karakter)."),
+  coverMediaId: z.string().optional(),
+});
+
+export type CreatePublicationFormValues = z.infer<
+  typeof createPublicationFormSchema
+>;
+
 export const transitionPublicationStatusSchema = z.object({
   publicationId: z.string().uuid("ID publikasi tidak valid."),
   targetStatus: z.enum(PUBLICATION_STATUS_VALUES, {

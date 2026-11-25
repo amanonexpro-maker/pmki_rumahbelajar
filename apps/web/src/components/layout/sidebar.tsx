@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { ArrowLeft } from "lucide-react";
 import { Badge, Button, Icon } from "@/components/ui";
+import type { UserPersona } from "@/lib/auth/personas";
 import { cn } from "@/lib/cn";
 
 export interface SidebarNavItem {
@@ -19,6 +20,7 @@ export interface SidebarNavItem {
 export interface SidebarNavGroup {
   id: string;
   title?: string;
+  personas?: readonly UserPersona[];
   items: SidebarNavItem[];
 }
 
@@ -26,6 +28,7 @@ export interface SidebarNavigationProps {
   groups: SidebarNavGroup[];
   currentPath: string;
   userPermissions?: string[];
+  userPersona?: UserPersona;
   onItemSelect?: () => void;
   touchComfortable?: boolean;
 }
@@ -34,6 +37,7 @@ export function SidebarNavigation({
   groups,
   currentPath,
   userPermissions,
+  userPersona,
   onItemSelect,
   touchComfortable = false,
 }: SidebarNavigationProps) {
@@ -43,6 +47,14 @@ export function SidebarNavigation({
       className="flex-1 px-3 py-4 space-y-5 overflow-y-auto"
     >
       {groups.map((group) => {
+        if (
+          group.personas &&
+          userPersona &&
+          !group.personas.includes(userPersona)
+        ) {
+          return null;
+        }
+
         const visibleItems = group.items.filter((item) => {
           if (!item.requiredPermission || !userPermissions) return true;
           return userPermissions.includes(item.requiredPermission);
@@ -126,6 +138,7 @@ export interface SidebarProps {
   groups: SidebarNavGroup[];
   currentPath: string;
   userPermissions?: string[];
+  userPersona?: UserPersona;
   serviceUnitName?: string;
   organizationName?: string;
 }
@@ -134,6 +147,7 @@ export function Sidebar({
   groups,
   currentPath,
   userPermissions,
+  userPersona,
   serviceUnitName = "Griya Asih Lawang",
   organizationName = "PMKI Mupel Jawa Timur",
 }: SidebarProps) {
@@ -170,6 +184,7 @@ export function Sidebar({
         groups={groups}
         currentPath={currentPath}
         userPermissions={userPermissions}
+        userPersona={userPersona}
       />
 
       <div className="p-3 border-t border-border shrink-0">

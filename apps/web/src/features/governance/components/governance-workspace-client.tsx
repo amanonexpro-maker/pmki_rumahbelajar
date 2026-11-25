@@ -1,144 +1,55 @@
 "use client";
 
 import * as React from "react";
-import {
-  CheckCircle2,
-  CloudOff,
-  FileCheck2,
-  Newspaper,
-  Plus,
-  Send,
-  ShieldCheck,
-  XCircle,
-} from "lucide-react";
-import { EmptyState, StatusBadge } from "@/components/compositions";
-import {
-  DecisionHistory,
-  PageHeader,
-  SearchToolbar,
-  StatSummary,
-  WorkflowProgress,
-  type DecisionHistoryEntry,
-  type WorkflowStageItem,
-} from "@/components/patterns";
-import {
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Icon,
-  Input,
-  Textarea,
-} from "@/components/ui";
+import dynamic from "next/dynamic";
+import { CloudOff, FileCheck2, Plus } from "lucide-react";
+import { EmptyState } from "@/components/compositions";
+import { PageHeader, StatSummary } from "@/components/patterns";
+import { Button, Icon } from "@/components/ui";
 import { useTierCGuard } from "@/hooks/use-tier-c-guard";
 import { useUrlQueryParams } from "@/hooks/use-url-query-params";
-import { PRIVACY_MESSAGES } from "@/lib/messages";
 import { REPORT_STATUS_META, type ReportStatus } from "@/lib/status";
 import {
   createGovernanceReportAction,
   generatePublicationFromReportAction,
   transitionGovernanceReportStatusAction,
 } from "../actions/governance-actions";
-import {
-  REPORT_TYPE_LABELS,
-  type ReportAggregateMetricsDTO,
-  type ReportDTO,
-  type ReportTypeCode,
-  type ReportWorkflowLogDTO,
+import type {
+  ReportAggregateMetricsDTO,
+  ReportDTO,
 } from "../types/governance-types";
-import { REPORT_TYPE_VALUES } from "../validators/governance-validator";
+import type {
+  CreateReportFormValues,
+  TransitionDecisionFormValues,
+} from "../validators/governance-validator";
+import { GovernanceFilterBar } from "./governance-filter-bar";
+import { GovernanceReportCard } from "./governance-report-card";
 
-function buildReportStages(status: ReportStatus): WorkflowStageItem[] {
-  const steps: Array<{
-    id: ReportStatus;
-    label: string;
-    actorHint: string;
-  }> = [
-    {
-      id: "DRAFT",
-      label: REPORT_STATUS_META.DRAFT.label,
-      actorHint: "Penyusun laporan",
-    },
-    {
-      id: "PROGRAM_REVIEW",
-      label: REPORT_STATUS_META.PROGRAM_REVIEW.label,
-      actorHint: "Peninjau / Koordinator",
-    },
-    {
-      id: "UNIT_VALIDATION",
-      label: REPORT_STATUS_META.UNIT_VALIDATION.label,
-      actorHint: "Menunggu validasi unit",
-    },
-    {
-      id: "ORGANIZATION_APPROVAL",
-      label: REPORT_STATUS_META.ORGANIZATION_APPROVAL.label,
-      actorHint: "Pejabat Penyetuju (SoD)",
-    },
-  ];
+const DialogLoadingSkeleton = () => (
+  <div
+    role="status"
+    aria-label="Memuat dialog..."
+    className="fixed inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-xs p-4"
+  >
+    <div className="h-64 w-full max-w-lg animate-pulse rounded-card bg-surface border border-border" />
+  </div>
+);
 
-  if (status === "REJECTED") {
-    return steps.map((s, idx) => ({
-      ...s,
-      state: idx === 0 ? "completed" : idx === 1 ? "rejected" : "upcoming",
-    }));
-  }
+const GovernanceCreateDialog = dynamic(
+  () =>
+    import("./governance-create-dialog").then(
+      (mod) => mod.GovernanceCreateDialog
+    ),
+  { ssr: false, loading: DialogLoadingSkeleton }
+);
 
-  if (status === "APPROVED") {
-    return steps.map((s) => ({ ...s, state: "completed" }));
-  }
-
-  const currentIdx = steps.findIndex((s) => s.id === status);
-  return steps.map((s, idx) => ({
-    ...s,
-    state:
-      idx < currentIdx
-        ? "completed"
-        : idx === currentIdx
-          ? "current"
-          : "upcoming",
-  }));
-}
-
-function mapWorkflowLogsToDecisionHistory(
-  logs: ReportWorkflowLogDTO[]
-): DecisionHistoryEntry[] {
-  return logs.map((log) => {
-    const isRejected = log.toStatus === "REJECTED";
-    const isApproved = log.toStatus === "APPROVED";
-
-    return {
-      id: log.id,
-      stageLabel: REPORT_STATUS_META[log.toStatus]?.label ?? log.toStatus,
-      decisionLabel: isRejected
-        ? "Ditolak"
-        : isApproved
-          ? "Disetujui"
-          : log.fromStatus
-            ? `Dari ${REPORT_STATUS_META[log.fromStatus].label}`
-            : "Disusun",
-      decisionTone: isRejected
-        ? "danger"
-        : isApproved
-          ? "success"
-          : log.fromStatus
-            ? "info"
-            : "neutral",
-      actorName: log.actorName,
-      timestamp: new Date(log.createdAt).toLocaleString("id-ID", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      comment: log.comment ?? undefined,
-    };
-  });
-}
+const GovernanceTransitionDialog = dynamic(
+  () =>
+    import("./governance-transition-dialog").then(
+      (mod) => mod.GovernanceTransitionDialog
+    ),
+  { ssr: false, loading: DialogLoadingSkeleton }
+);
 
 export interface GovernanceWorkspaceClientProps {
   reports: ReportDTO[];
@@ -166,13 +77,7 @@ export function GovernanceWorkspaceClient({
   canCreatePublication,
 }: GovernanceWorkspaceClientProps) {
   const { updateQuery: updateUrl, pathname, router } = useUrlQueryParams();
-  const [searchInput, setSearchInput] = React.useState(initialSearch);
   const [createOpen, setCreateOpen] = React.useState(false);
-  const [title, setTitle] = React.useState("");
-  const [reportType, setReportType] =
-    React.useState<ReportTypeCode>("ACTIVITY");
-  const [period, setPeriod] = React.useState("Triwulan IV 2026");
-  const [summary, setSummary] = React.useState("");
   const [pending, setPending] = React.useState(false);
 
   const [decisionDialog, setDecisionDialog] = React.useState<{
@@ -180,7 +85,6 @@ export function GovernanceWorkspaceClient({
     targetStatus: ReportStatus;
     actionTitle: string;
   } | null>(null);
-  const [decisionComment, setDecisionComment] = React.useState("");
 
   const [feedback, setFeedback] = React.useState<{
     tone: "success" | "danger" | "warning";
@@ -192,51 +96,48 @@ export function GovernanceWorkspaceClient({
   );
   const isOffline = !isOnline;
 
-  React.useEffect(() => {
-    if (searchInput === initialSearch) return;
-    const t = window.setTimeout(() => {
-      updateUrl({ search: searchInput.trim() || null });
-    }, 300);
-    return () => window.clearTimeout(t);
-  }, [initialSearch, searchInput, updateUrl]);
+  const handleResetFilters = React.useCallback(() => {
+    router.push(pathname);
+  }, [pathname, router]);
 
-  async function handleCreateReport(e: React.FormEvent) {
-    e.preventDefault();
-    if (pending) return;
+  async function handleCreateReport(
+    values: CreateReportFormValues
+  ): Promise<boolean> {
+    if (pending) return false;
 
-    await withTierCGuard(async () => {
+    const succeeded = await withTierCGuard(async () => {
       setPending(true);
       setFeedback(null);
       try {
         const res = await createGovernanceReportAction({
-          title,
-          reportType,
-          period,
-          summary,
+          title: values.title,
+          reportType: values.reportType,
+          period: values.period,
+          summary: values.summary,
           classification:
-            reportType === "STAKEHOLDER" ? "STAKEHOLDER" : "INTERNAL",
+            values.reportType === "STAKEHOLDER" ? "STAKEHOLDER" : "INTERNAL",
         });
         if (!res.success) {
           setFeedback({ tone: "danger", message: res.error.message });
-          return;
+          return false;
         }
         setCreateOpen(false);
-        setTitle("");
-        setSummary("");
         setFeedback({
           tone: "success",
           message:
             "Draft laporan pelayanan berhasil disimpan dan dicatat dalam riwayat keputusan.",
         });
         router.refresh();
+        return true;
       } finally {
         setPending(false);
       }
     });
+
+    return Boolean(succeeded);
   }
 
-  async function handleConfirmDecision(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleConfirmDecision(values: TransitionDecisionFormValues) {
     if (!decisionDialog || pending) return;
     const currentDecision = decisionDialog;
 
@@ -247,14 +148,13 @@ export function GovernanceWorkspaceClient({
         const res = await transitionGovernanceReportStatusAction({
           reportId: currentDecision.report.id,
           targetStatus: currentDecision.targetStatus,
-          comment: decisionComment.trim() || null,
+          comment: values.comment?.trim() || null,
         });
         if (!res.success) {
           setFeedback({ tone: "danger", message: res.error.message });
           return;
         }
         setDecisionDialog(null);
-        setDecisionComment("");
         setFeedback({
           tone: "success",
           message: `Keputusan tata kelola berhasil disimpan. Status laporan kini: "${REPORT_STATUS_META[res.data.newStatus].label}".`,
@@ -266,24 +166,42 @@ export function GovernanceWorkspaceClient({
     });
   }
 
-  async function handleGeneratePublication(reportId: string) {
-    if (pending) return;
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await generatePublicationFromReportAction(reportId);
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return;
-      }
-      setFeedback({
-        tone: "success",
-        message: `Draft ringkasan publikasi "${res.data.title}" berhasil dibuat di modul Publikasi.`,
+  const handleOpenDecision = React.useCallback(
+    (
+      targetReport: ReportDTO,
+      targetStatus: ReportStatus,
+      actionTitle: string
+    ) => {
+      setDecisionDialog({
+        report: targetReport,
+        targetStatus,
+        actionTitle,
       });
-    } finally {
-      setPending(false);
-    }
-  }
+    },
+    []
+  );
+
+  const handleGeneratePublication = React.useCallback(
+    async (reportId: string) => {
+      if (pending) return;
+      setPending(true);
+      setFeedback(null);
+      try {
+        const res = await generatePublicationFromReportAction(reportId);
+        if (!res.success) {
+          setFeedback({ tone: "danger", message: res.error.message });
+          return;
+        }
+        setFeedback({
+          tone: "success",
+          message: `Draft ringkasan publikasi "${res.data.title}" berhasil dibuat di modul Publikasi.`,
+        });
+      } finally {
+        setPending(false);
+      }
+    },
+    [pending]
+  );
 
   const awaitingValidationCount = reports.filter(
     (r) =>
@@ -378,59 +296,12 @@ export function GovernanceWorkspaceClient({
         </div>
       )}
 
-      <SearchToolbar
-        searchValue={searchInput}
-        onSearchChange={setSearchInput}
-        searchPlaceholder="Cari judul atau periode laporan..."
-        filterCount={
-          (initialStatus !== "ALL" ? 1 : 0) + (initialType !== "ALL" ? 1 : 0)
-        }
-        onResetAll={() => {
-          setSearchInput("");
-          router.push(pathname);
-        }}
-        desktopFilters={
-          <>
-            <select
-              aria-label="Filter status laporan"
-              value={initialStatus}
-              onChange={(e) => updateUrl({ status: e.target.value })}
-              className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-            >
-              <option value="ALL">Semua status laporan</option>
-              <option value="DRAFT">{REPORT_STATUS_META.DRAFT.label}</option>
-              <option value="PROGRAM_REVIEW">
-                {REPORT_STATUS_META.PROGRAM_REVIEW.label}
-              </option>
-              <option value="UNIT_VALIDATION">
-                {REPORT_STATUS_META.UNIT_VALIDATION.label}
-              </option>
-              <option value="ORGANIZATION_APPROVAL">
-                {REPORT_STATUS_META.ORGANIZATION_APPROVAL.label}
-              </option>
-              <option value="APPROVED">
-                {REPORT_STATUS_META.APPROVED.label}
-              </option>
-              <option value="REJECTED">
-                {REPORT_STATUS_META.REJECTED.label}
-              </option>
-            </select>
-
-            <select
-              aria-label="Filter jenis laporan"
-              value={initialType}
-              onChange={(e) => updateUrl({ type: e.target.value })}
-              className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-            >
-              <option value="ALL">Semua jenis laporan</option>
-              {REPORT_TYPE_VALUES.map((typeCode) => (
-                <option key={typeCode} value={typeCode}>
-                  {REPORT_TYPE_LABELS[typeCode]}
-                </option>
-              ))}
-            </select>
-          </>
-        }
+      <GovernanceFilterBar
+        initialSearch={initialSearch}
+        initialStatus={initialStatus}
+        initialType={initialType}
+        onUpdateQuery={updateUrl}
+        onResetAll={handleResetFilters}
       />
 
       {reports.length === 0 ? (
@@ -453,446 +324,48 @@ export function GovernanceWorkspaceClient({
         />
       ) : (
         <div className="space-y-5">
-          {reports.map((report) => {
-            const isCreator = report.createdBy === currentUserId;
-            return (
-              <article
-                key={report.id}
-                className="rounded-card border border-border bg-surface p-4 sm:p-6 space-y-4"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
-                  <div className="space-y-1.5 min-w-0">
-                    <h2 className="text-base font-semibold text-foreground leading-snug">
-                      {report.title}
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                      <StatusBadge domain="report" status={report.status} />
-                      <span className="text-xs text-secondary-foreground">
-                        {report.reportTypeLabel} · Periode: {report.period}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground pt-0.5">
-                      Disusun oleh{" "}
-                      <span className="font-medium text-foreground">
-                        {report.creatorName}
-                      </span>
-                    </p>
-                  </div>
-
-                  {/* Role-aware, State-aware & SoD-aware Action Bar */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {report.status === "DRAFT" && canCreate && (
-                      <Button
-                        type="button"
-                        variant="primary"
-                        size="sm"
-                        disabled={isOffline || pending}
-                        onClick={() => {
-                          setDecisionDialog({
-                            report,
-                            targetStatus: "PROGRAM_REVIEW",
-                            actionTitle: "Ajukan ke tinjauan program",
-                          });
-                          setDecisionComment("");
-                        }}
-                        leftIcon={<Icon icon={Send} size="xs" />}
-                      >
-                        Ajukan tinjauan program
-                      </Button>
-                    )}
-
-                    {report.status === "REJECTED" && canCreate && (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        disabled={isOffline || pending}
-                        onClick={() => {
-                          setDecisionDialog({
-                            report,
-                            targetStatus: "DRAFT",
-                            actionTitle: "Kembalikan ke draft revisi",
-                          });
-                          setDecisionComment("");
-                        }}
-                      >
-                        Revisi kembali ke draft
-                      </Button>
-                    )}
-
-                    {report.status === "PROGRAM_REVIEW" &&
-                      (canReview || canApprove) && (
-                        <>
-                          {isCreator ? (
-                            <span className="text-xs text-muted-foreground italic">
-                              {PRIVACY_MESSAGES.sodApprovalRestricted}
-                            </span>
-                          ) : (
-                            <>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                disabled={isOffline || pending}
-                                onClick={() => {
-                                  setDecisionDialog({
-                                    report,
-                                    targetStatus: "UNIT_VALIDATION",
-                                    actionTitle:
-                                      "Teruskan ke tahap validasi unit",
-                                  });
-                                  setDecisionComment("");
-                                }}
-                                leftIcon={<Icon icon={ShieldCheck} size="xs" />}
-                              >
-                                Teruskan ke validasi unit
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                disabled={isOffline || pending}
-                                onClick={() => {
-                                  setDecisionDialog({
-                                    report,
-                                    targetStatus: "REJECTED",
-                                    actionTitle: "Tolak & kembalikan laporan",
-                                  });
-                                  setDecisionComment("");
-                                }}
-                                leftIcon={<Icon icon={XCircle} size="xs" />}
-                              >
-                                Tolak laporan
-                              </Button>
-                            </>
-                          )}
-                        </>
-                      )}
-
-                    {report.status === "UNIT_VALIDATION" &&
-                      (canReview || canApprove) && (
-                        <>
-                          {isCreator ? (
-                            <span className="text-xs text-muted-foreground italic">
-                              {PRIVACY_MESSAGES.sodApprovalRestricted}
-                            </span>
-                          ) : (
-                            <>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                disabled={isOffline || pending}
-                                onClick={() => {
-                                  setDecisionDialog({
-                                    report,
-                                    targetStatus: "ORGANIZATION_APPROVAL",
-                                    actionTitle:
-                                      "Validasi unit & ajukan persetujuan organisasi",
-                                  });
-                                  setDecisionComment("");
-                                }}
-                                leftIcon={<Icon icon={ShieldCheck} size="xs" />}
-                              >
-                                Validasi unit
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                disabled={isOffline || pending}
-                                onClick={() => {
-                                  setDecisionDialog({
-                                    report,
-                                    targetStatus: "REJECTED",
-                                    actionTitle: "Tolak & kembalikan laporan",
-                                  });
-                                  setDecisionComment("");
-                                }}
-                                leftIcon={<Icon icon={XCircle} size="xs" />}
-                              >
-                                Tolak laporan
-                              </Button>
-                            </>
-                          )}
-                        </>
-                      )}
-
-                    {report.status === "ORGANIZATION_APPROVAL" && canApprove && (
-                      <>
-                        {isCreator ? (
-                          <span className="text-xs text-muted-foreground italic">
-                            {PRIVACY_MESSAGES.sodApprovalRestricted}
-                          </span>
-                        ) : (
-                          <>
-                            <Button
-                              type="button"
-                              variant="primary"
-                              size="sm"
-                              disabled={isOffline || pending}
-                              onClick={() => {
-                                setDecisionDialog({
-                                  report,
-                                  targetStatus: "APPROVED",
-                                  actionTitle:
-                                    "Berikan persetujuan akhir laporan",
-                                });
-                                setDecisionComment("");
-                              }}
-                              leftIcon={<Icon icon={CheckCircle2} size="xs" />}
-                            >
-                              Setujui laporan
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              disabled={isOffline || pending}
-                              onClick={() => {
-                                setDecisionDialog({
-                                  report,
-                                  targetStatus: "REJECTED",
-                                  actionTitle: "Tolak & kembalikan laporan",
-                                });
-                                setDecisionComment("");
-                              }}
-                              leftIcon={<Icon icon={XCircle} size="xs" />}
-                            >
-                              Tolak laporan
-                            </Button>
-                          </>
-                        )}
-                      </>
-                    )}
-
-                    {report.status === "APPROVED" && canCreatePublication && (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        disabled={isOffline || pending}
-                        onClick={() =>
-                          void handleGeneratePublication(report.id)
-                        }
-                        leftIcon={<Icon icon={Newspaper} size="xs" />}
-                      >
-                        Buat draft publikasi ringkasan
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Stored WorkflowProgress */}
-                <WorkflowProgress stages={buildReportStages(report.status)} />
-
-                {/* Report Summary */}
-                <div className="rounded-control border border-border-subtle bg-surface-subtle/50 p-4 text-sm text-foreground leading-relaxed">
-                  {report.summary}
-                </div>
-
-                {/* Immutable Append-Only DecisionHistory */}
-                <div className="space-y-2 pt-2 border-t border-border-subtle">
-                  <h3 className="text-xs font-semibold text-secondary-foreground">
-                    Riwayat keputusan tata kelola (Permanen & tidak dapat
-                    diubah)
-                  </h3>
-                  <DecisionHistory
-                    entries={mapWorkflowLogsToDecisionHistory(
-                      report.workflowLogs
-                    )}
-                  />
-                </div>
-              </article>
-            );
-          })}
+          {reports.map((report) => (
+            <GovernanceReportCard
+              key={report.id}
+              report={report}
+              currentUserId={currentUserId}
+              canCreate={canCreate}
+              canReview={canReview}
+              canApprove={canApprove}
+              canCreatePublication={canCreatePublication}
+              isOffline={isOffline}
+              pending={pending}
+              onOpenDecision={handleOpenDecision}
+              onGeneratePublication={handleGeneratePublication}
+            />
+          ))}
         </div>
       )}
 
-      {/* Dialog: Susun laporan baru */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Susun laporan baru</DialogTitle>
-            <DialogDescription>
-              Susun draft laporan pelayanan untuk ditinjau secara berjenjang.{" "}
-              {PRIVACY_MESSAGES.auditLogged}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCreateReport}>
-            <DialogBody className="space-y-4">
-              <div className="space-y-1">
-                <label
-                  htmlFor="report-title"
-                  className="block text-xs font-medium text-foreground"
-                >
-                  Judul laporan *
-                </label>
-                <Input
-                  id="report-title"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Contoh: Laporan Capaian Bimbingan Belajar & Literasi Triwulan IV"
-                />
-              </div>
+      {createOpen && (
+        <GovernanceCreateDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          metrics={metrics}
+          onSubmit={handleCreateReport}
+          pending={pending}
+        />
+      )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label
-                    htmlFor="report-type"
-                    className="block text-xs font-medium text-foreground"
-                  >
-                    Jenis laporan *
-                  </label>
-                  <select
-                    id="report-type"
-                    value={reportType}
-                    onChange={(e) =>
-                      setReportType(e.target.value as ReportTypeCode)
-                    }
-                    className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
-                  >
-                    {REPORT_TYPE_VALUES.map((code) => (
-                      <option key={code} value={code}>
-                        {REPORT_TYPE_LABELS[code]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label
-                    htmlFor="report-period"
-                    className="block text-xs font-medium text-foreground"
-                  >
-                    Periode laporan *
-                  </label>
-                  <Input
-                    id="report-period"
-                    required
-                    value={period}
-                    onChange={(e) => setPeriod(e.target.value)}
-                    placeholder="Contoh: Triwulan IV 2026"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center justify-between gap-2">
-                  <label
-                    htmlFor="report-summary"
-                    className="block text-xs font-medium text-foreground"
-                  >
-                    Ringkasan capaian & evaluasi *
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSummary(
-                        (prev) =>
-                          `${prev ? prev + " " : ""}Ringkasan operasional: ${metrics.activeStudentsCount} peserta didik aktif mengikuti ${metrics.recordedAttendanceSessionsCount} sesi belajar dengan ${metrics.developmentNotesCount} catatan perkembangan tercatat.`
-                      )
-                    }
-                    className="text-xs text-primary hover:underline focus-ring rounded-xs px-1"
-                  >
-                    Sisipkan metrik agregat unit
-                  </button>
-                </div>
-                <Textarea
-                  id="report-summary"
-                  rows={4}
-                  required
-                  value={summary}
-                  onChange={(e) => setSummary(e.target.value)}
-                  placeholder="Tuliskan ringkasan kegiatan, capaian kehadiran, serta rekomendasi tindak lanjut tanpa mencantumkan data rahasia anak..."
-                />
-              </div>
-            </DialogBody>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setCreateOpen(false)}
-                disabled={pending}
-              >
-                Batal
-              </Button>
-              <Button type="submit" variant="primary" disabled={pending}>
-                {pending ? "Menyimpan..." : "Simpan draft laporan"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog: Konfirmasi Keputusan Tata Kelola */}
-      <Dialog
-        open={Boolean(decisionDialog)}
-        onOpenChange={(open) => {
-          if (!open) setDecisionDialog(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{decisionDialog?.actionTitle}</DialogTitle>
-            <DialogDescription>
-              Dokumen:{" "}
-              <strong className="text-foreground">
-                {decisionDialog?.report.title}
-              </strong>{" "}
-              ({decisionDialog?.report.period}). {PRIVACY_MESSAGES.auditLogged}{" "}
-              {PRIVACY_MESSAGES.sodApprovalRestricted}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleConfirmDecision}>
-            <DialogBody className="space-y-4">
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="decision-comment"
-                  className="block text-sm font-medium text-foreground"
-                >
-                  Catatan atau alasan keputusan{" "}
-                  {decisionDialog?.targetStatus === "REJECTED" && "*"}
-                </label>
-                <Textarea
-                  id="decision-comment"
-                  rows={3}
-                  required={decisionDialog?.targetStatus === "REJECTED"}
-                  value={decisionComment}
-                  onChange={(e) => setDecisionComment(e.target.value)}
-                  placeholder={
-                    decisionDialog?.targetStatus === "REJECTED"
-                      ? "Tuliskan alasan penolakan atau bagian yang perlu diperbaiki (minimal 5 karakter)..."
-                      : "Tambahkan catatan validasi atau pengesahan (opsional)..."
-                  }
-                />
-              </div>
-            </DialogBody>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setDecisionDialog(null)}
-                disabled={pending}
-              >
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                variant={
-                  decisionDialog?.targetStatus === "REJECTED"
-                    ? "destructive"
-                    : "primary"
-                }
-                disabled={pending}
-              >
-                {pending ? "Menyimpan..." : "Simpan keputusan"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {Boolean(decisionDialog) && (
+        <GovernanceTransitionDialog
+          open={Boolean(decisionDialog)}
+          onOpenChange={(open) => {
+            if (!open) setDecisionDialog(null);
+          }}
+          reportTitle={decisionDialog?.report.title}
+          reportPeriod={decisionDialog?.report.period}
+          targetStatus={decisionDialog?.targetStatus}
+          actionTitle={decisionDialog?.actionTitle}
+          onConfirm={handleConfirmDecision}
+          pending={pending}
+        />
+      )}
     </div>
   );
 }

@@ -1,84 +1,26 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
   DatePicker,
   DetailTabs,
-  FeedbackBanner,
-  MobileCardList,
   PageHeader,
   type DetailTabItem,
 } from "@/components/patterns";
 import { Badge, Button, Icon, Input, Textarea } from "@/components/ui";
 import { ICON_MAP } from "@/config/icons";
 import type { ClassSummaryDTO } from "@/features/academic";
-import { useConnectivity } from "@/hooks/use-connectivity";
-import { useDraftRecovery } from "@/hooks/use-draft-recovery";
-import { useOfflineQueue } from "@/hooks/use-offline-queue";
-import { cn } from "@/lib/cn";
-import { OFFLINE_MESSAGES, SUCCESS_MESSAGES } from "@/lib/messages";
-import {
-  ATTENDANCE_STATUS_META,
-  type AttendanceStatus,
-  type SyncStatus,
-} from "@/lib/status";
-import { recordAttendanceSessionAction } from "../actions/attendance-actions";
+import { useUrlQueryParams } from "@/hooks/use-url-query-params";
+import { ATTENDANCE_STATUS_META } from "@/lib/status";
+import { useAttendanceSession } from "../hooks/use-attendance-session";
+import { useAttendanceSync } from "../hooks/use-attendance-sync";
 import type {
-  AttendanceRecordItemDTO,
   AttendanceSessionDetailDTO,
   AttendanceSessionHistoryItemDTO,
 } from "../types/attendance-types";
-
-interface StatusOption {
-  code: AttendanceStatus;
-  label: string;
-  pillTone: string;
-  selectedStyles: string;
-}
-
-const ATTENDANCE_OPTIONS: StatusOption[] = [
-  {
-    code: "PRESENT",
-    label: ATTENDANCE_STATUS_META.PRESENT.label,
-    pillTone: "bg-success-soft text-success border-success/30",
-    selectedStyles:
-      "bg-success-soft text-success border-success/50 font-semibold shadow-xs ring-1 ring-success/30",
-  },
-  {
-    code: "SICK",
-    label: ATTENDANCE_STATUS_META.SICK.label,
-    pillTone: "bg-warning-soft text-warning-foreground border-warning/30",
-    selectedStyles:
-      "bg-warning-soft text-warning-foreground border-warning/50 font-semibold shadow-xs ring-1 ring-warning/30",
-  },
-  {
-    code: "PERMITTED",
-    label: ATTENDANCE_STATUS_META.PERMITTED.label,
-    pillTone: "bg-info-soft text-info border-info/30",
-    selectedStyles:
-      "bg-info-soft text-info border-info/50 font-semibold shadow-xs ring-1 ring-info/30",
-  },
-  {
-    code: "ABSENT",
-    label: ATTENDANCE_STATUS_META.ABSENT.label,
-    pillTone: "bg-danger-soft text-danger border-danger/30",
-    selectedStyles:
-      "bg-danger-soft text-danger border-danger/50 font-semibold shadow-xs ring-1 ring-danger/30",
-  },
-];
-
-interface AttendanceDraftData {
-  notes: string;
-  entries: Record<
-    string,
-    {
-      status: AttendanceStatus;
-      note: string;
-    }
-  >;
-}
+import { AttendanceListItem } from "./attendance-list-item";
+import { SyncStatusBanner } from "./sync-status-banner";
 
 export interface AttendanceWorkspaceClientProps {
   classes: ClassSummaryDTO[];
@@ -90,6 +32,10 @@ export interface AttendanceWorkspaceClientProps {
   canRecord: boolean;
 }
 
+/**
+ * Orchestrates the offline-first Attendance workspace: coordinates class/date
+ * selection, sync queue banner, roster attendance recording, and session history.
+ */
 export function AttendanceWorkspaceClient({
   classes,
   sessionView,
@@ -99,257 +45,56 @@ export function AttendanceWorkspaceClient({
   initialTab,
   canRecord,
 }: AttendanceWorkspaceClientProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { status: connectivityStatus, markSynced } = useConnectivity();
-
+  const { updateQuery: updateUrl, router } = useUrlQueryParams();
   const [activeTab, setActiveTab] = React.useState(initialTab);
-  const [submitting, setSubmitting] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [syncBadgeState, setSyncBadgeState] = React.useState<SyncStatus | null>(
-    sessionView?.sessionId ? "SYNCED" : null
-  );
-  const [feedbackBanner, setFeedbackBanner] = React.useState<{
-    tone: "success" | "warning" | "danger";
-    message: string;
-  } | null>(null);
 
-  const initialDraftValue = React.useMemo<AttendanceDraftData>(() => {
-    const entries: AttendanceDraftData["entries"] = {};
-    for (const item of sessionView?.roster ?? []) {
-      entries[item.studentId] = {
-        status: item.status,
-        note: item.note ?? "",
-      };
-    }
-    return {
-      notes: sessionView?.notes ?? "",
-      entries,
-    };
-  }, [sessionView]);
-
-  const draftKey = `attendance:${initialClassId}:${initialDate}`;
-  const {
-    draft,
-    setDraft,
-    hasRecoveredDraft,
-    saveDraftNow,
-    clearDraft,
-  } = useDraftRecovery<AttendanceDraftData>(
-    draftKey,
-    "attendance_session",
-    initialDraftValue
-  );
-
-  // Keep draft aligned when switching class/date if no recovered draft exists
-  React.useEffect(() => {
-    if (!hasRecoveredDraft) {
-      setDraft(initialDraftValue);
-    }
-  }, [hasRecoveredDraft, initialDraftValue, setDraft]);
-
-  const { pendingCount, enqueue, flushQueue } = useOfflineQueue(() => {
-    setSyncBadgeState("SYNCED");
-    setFeedbackBanner({
-      tone: "success",
-      message: SUCCESS_MESSAGES.attendanceSaved,
-    });
+  const handleRefresh = React.useCallback(() => {
     router.refresh();
+  }, [router]);
+
+  const {
+    connectivityStatus,
+    pendingCount,
+    isSyncing,
+    syncBadgeState,
+    setSyncBadgeState,
+    feedbackBanner,
+    setFeedbackBanner,
+    enqueue,
+    markSynced,
+    triggerSync,
+  } = useAttendanceSync({
+    hasExistingSession: Boolean(sessionView?.sessionId),
+    onSyncSuccess: handleRefresh,
   });
 
-  function updateUrl(updates: Record<string, string | null>) {
-    const next = new URLSearchParams(searchParams?.toString() ?? "");
-    for (const [k, v] of Object.entries(updates)) {
-      if (!v) next.delete(k);
-      else next.set(k, v);
-    }
-    const qs = next.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
-  }
-
-  function handleStudentStatusChange(
-    studentId: string,
-    nextStatus: AttendanceStatus
-  ) {
-    if (!canRecord) return;
-    setFeedbackBanner(null);
-    setSyncBadgeState("LOCAL_SAVED");
-    setDraft((prev) => {
-      const next: AttendanceDraftData = {
-        ...prev,
-        entries: {
-          ...prev.entries,
-          [studentId]: {
-            status: nextStatus,
-            note: prev.entries[studentId]?.note ?? "",
-          },
-        },
-      };
-      void saveDraftNow(next);
-      return next;
-    });
-  }
-
-  function handleStudentNoteChange(studentId: string, nextNote: string) {
-    if (!canRecord) return;
-    setSyncBadgeState("LOCAL_SAVED");
-    setDraft((prev) => {
-      const next: AttendanceDraftData = {
-        ...prev,
-        entries: {
-          ...prev.entries,
-          [studentId]: {
-            status: prev.entries[studentId]?.status ?? "PRESENT",
-            note: nextNote,
-          },
-        },
-      };
-      void saveDraftNow(next);
-      return next;
-    });
-  }
-
-  function handleMarkAllPresent() {
-    if (!canRecord || !sessionView) return;
-    setFeedbackBanner(null);
-    setSyncBadgeState("LOCAL_SAVED");
-    setDraft((prev) => {
-      const nextEntries = { ...prev.entries };
-      for (const item of sessionView.roster) {
-        nextEntries[item.studentId] = {
-          status: "PRESENT",
-          note: nextEntries[item.studentId]?.note ?? "",
-        };
-      }
-      const next = { ...prev, entries: nextEntries };
-      void saveDraftNow(next);
-      return next;
-    });
-  }
-
-  async function handleSaveSession(e: React.FormEvent) {
-    e.preventDefault();
-    if (!canRecord || !sessionView || submitting) return;
-
-    // Collect all entries across the entire class roster
-    const entriesPayload = sessionView.roster.map((item) => ({
-      studentId: item.studentId,
-      status: draft.entries[item.studentId]?.status ?? item.status,
-      note: draft.entries[item.studentId]?.note?.trim() || null,
-    }));
-
-    const payload = {
-      classId: sessionView.classId,
-      sessionDate: sessionView.sessionDate,
-      notes: draft.notes.trim() || null,
-      entries: entriesPayload,
-    };
-
-    const isOffline =
-      connectivityStatus === "OFFLINE" ||
-      (typeof navigator !== "undefined" && navigator.onLine === false);
-
-    if (isOffline) {
-      await saveDraftNow(draft);
-      await enqueue({
-        operation: "ATTENDANCE_RECORD",
-        entityType: "attendance_session",
-        entityId: `${sessionView.classId}:${sessionView.sessionDate}`,
-        payload,
-      });
-      setSyncBadgeState("PENDING_SYNC");
-      setFeedbackBanner({
-        tone: "warning",
-        message: `${OFFLINE_MESSAGES.savedLocally} ${OFFLINE_MESSAGES.syncPending}`,
-      });
-      return;
-    }
-
-    setSubmitting(true);
-    setFeedbackBanner(null);
-
-    try {
-      const result = await recordAttendanceSessionAction(payload);
-      if (!result.success) {
-        setFeedbackBanner({
-          tone: "danger",
-          message: result.error.message,
-        });
-        return;
-      }
-
-      await clearDraft();
-      markSynced();
-      setSyncBadgeState("SYNCED");
-      setFeedbackBanner({
-        tone: "success",
-        message: SUCCESS_MESSAGES.attendanceSaved,
-      });
-      router.refresh();
-    } catch {
-      // Network dropped mid-request -> queue offline honestly
-      await saveDraftNow(draft);
-      await enqueue({
-        operation: "ATTENDANCE_RECORD",
-        entityType: "attendance_session",
-        entityId: `${sessionView.classId}:${sessionView.sessionDate}`,
-        payload,
-      });
-      setSyncBadgeState("PENDING_SYNC");
-      setFeedbackBanner({
-        tone: "warning",
-        message: `${OFFLINE_MESSAGES.savedLocally} ${OFFLINE_MESSAGES.syncPending}`,
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  // Full roster with current draft status applied
-  const rosterItems: AttendanceRecordItemDTO[] = React.useMemo(() => {
-    if (!sessionView) return [];
-    return sessionView.roster.map((item) => ({
-      ...item,
-      status: draft.entries[item.studentId]?.status ?? item.status,
-      note: draft.entries[item.studentId]?.note ?? item.note,
-    }));
-  }, [draft.entries, sessionView]);
-
-  // Realtime counts calculated across ALL class students (not filtered subset)
-  const counts = React.useMemo(() => {
-    const total = rosterItems.length;
-    const presentCount = rosterItems.filter(
-      (r) => r.status === "PRESENT"
-    ).length;
-    const permittedCount = rosterItems.filter(
-      (r) => r.status === "PERMITTED"
-    ).length;
-    const sickCount = rosterItems.filter((r) => r.status === "SICK").length;
-    const absentCount = rosterItems.filter((r) => r.status === "ABSENT").length;
-    return {
-      total,
-      recorded: total,
-      presentCount,
-      permittedCount,
-      sickCount,
-      absentCount,
-    };
-  }, [rosterItems]);
-
-  // Instant client-side memoized filter for search query
-  const filteredRosterItems = React.useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return rosterItems;
-    return rosterItems.filter(
-      (item) =>
-        item.studentFullName.toLowerCase().includes(q) ||
-        (item.studentNickname &&
-          item.studentNickname.toLowerCase().includes(q)) ||
-        (item.registrationNumber &&
-          item.registrationNumber.toLowerCase().includes(q))
-    );
-  }, [rosterItems, searchQuery]);
+  const {
+    draft,
+    hasRecoveredDraft,
+    clearDraft,
+    submitting,
+    searchQuery,
+    setSearchQuery,
+    rosterItems,
+    filteredRosterItems,
+    counts,
+    handleStudentStatusChange,
+    handleStudentNoteChange,
+    handleSessionNotesChange,
+    handleMarkAllPresent,
+    handleSaveSession,
+  } = useAttendanceSession({
+    sessionView,
+    initialClassId,
+    initialDate,
+    canRecord,
+    connectivityStatus,
+    enqueue,
+    markSynced,
+    setSyncBadgeState,
+    setFeedbackBanner,
+    onSaved: handleRefresh,
+  });
 
   const tabs: DetailTabItem[] = [
     { id: "session", label: "Sesi presensi" },
@@ -376,7 +121,8 @@ export function AttendanceWorkspaceClient({
               type="button"
               variant="secondary"
               size="sm"
-              onClick={() => void flushQueue()}
+              disabled={isSyncing}
+              onClick={() => void triggerSync()}
               leftIcon={<Icon icon={ICON_MAP.refresh} size="xs" />}
             >
               Sinkronkan antrean ({pendingCount})
@@ -429,59 +175,13 @@ export function AttendanceWorkspaceClient({
         ariaLabel="Mode halaman kehadiran"
       />
 
-      {hasRecoveredDraft && (
-        <div
-          role="status"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-warning/30 bg-warning-soft px-4 py-2.5 text-xs text-foreground"
-        >
-          <div className="flex items-center gap-2">
-            <Icon icon={ICON_MAP.cloudOff} size="xs" className="text-warning" />
-            <span>
-              Draft presensi lokal dipulihkan dari perangkat ini (Disimpan
-              lokal · Belum tersinkronisasi).
-            </span>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => void clearDraft()}
-          >
-            Hapus draft lokal
-          </Button>
-        </div>
-      )}
-
-      {sessionView?.needsManualReview && (
-        <div
-          role="alert"
-          className="flex items-start gap-3 rounded-control border border-warning/40 bg-warning-soft p-4 text-xs text-foreground"
-        >
-          <Icon
-            icon={ICON_MAP.alertTriangle}
-            size="sm"
-            className="text-warning shrink-0 mt-0.5"
-          />
-          <div className="space-y-1">
-            <p className="font-semibold">
-              Perlu tinjauan koordinator (Konflik sinkronisasi offline)
-            </p>
-            <p className="text-secondary-foreground">
-              Sesi ini menerima kiriman sinkronisasi offline ketika data server
-              sudah tercatat sebelumnya. Sesuai kebijakan tata kelola, data
-              server dipertahankan dan sesi ditandai untuk ditinjau.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {feedbackBanner && (
-        <FeedbackBanner
-          tone={feedbackBanner.tone}
-          message={feedbackBanner.message}
-          onDismiss={() => setFeedbackBanner(null)}
-        />
-      )}
+      <SyncStatusBanner
+        hasRecoveredDraft={hasRecoveredDraft}
+        onClearDraft={() => void clearDraft()}
+        needsManualReview={sessionView?.needsManualReview}
+        feedbackBanner={feedbackBanner}
+        onDismissFeedback={() => setFeedbackBanner(null)}
+      />
 
       {activeTab === "session" && (
         <>
@@ -495,7 +195,6 @@ export function AttendanceWorkspaceClient({
             <form onSubmit={handleSaveSession} className="space-y-5">
               {/* Quick Batch Toolbar - Sticky on Scroll */}
               <div className="sticky top-0 z-20 -mx-4 px-4 sm:mx-0 sm:px-0 py-3 bg-background/95 backdrop-blur-sm border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                {/* Large Primary Action Button */}
                 <button
                   type="button"
                   disabled={!canRecord || rosterItems.length === 0}
@@ -515,25 +214,25 @@ export function AttendanceWorkspaceClient({
                     {`Rekapitulasi presensi: ${counts.presentCount} hadir, ${counts.sickCount} sakit, ${counts.permittedCount} izin, ${counts.absentCount} tidak hadir dari total ${counts.total} peserta didik.`}
                   </div>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-medium bg-success-soft text-success border border-success/30">
-                    Hadir:{" "}
+                    {ATTENDANCE_STATUS_META.PRESENT.label}:{" "}
                     <strong className="tabular-nums font-semibold">
                       {counts.presentCount}
                     </strong>
                   </span>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-medium bg-warning-soft text-warning-foreground border border-warning/30">
-                    Sakit:{" "}
+                    {ATTENDANCE_STATUS_META.SICK.label}:{" "}
                     <strong className="tabular-nums font-semibold">
                       {counts.sickCount}
                     </strong>
                   </span>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-medium bg-info-soft text-info border border-info/30">
-                    Izin:{" "}
+                    {ATTENDANCE_STATUS_META.PERMITTED.label}:{" "}
                     <strong className="tabular-nums font-semibold">
                       {counts.permittedCount}
                     </strong>
                   </span>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-medium bg-danger-soft text-danger border border-danger/30">
-                    Tidak hadir:{" "}
+                    {ATTENDANCE_STATUS_META.ABSENT.label}:{" "}
                     <strong className="tabular-nums font-semibold">
                       {counts.absentCount}
                     </strong>
@@ -561,11 +260,12 @@ export function AttendanceWorkspaceClient({
               {filteredRosterItems.length === 0 ? (
                 <div className="rounded-card border border-border bg-surface p-8 text-center space-y-2">
                   <p className="font-medium text-foreground text-sm">
-                    Tidak ada peserta didik yang cocok dengan &ldquo;{searchQuery}&rdquo;
+                    Tidak ada peserta didik yang cocok dengan &ldquo;{searchQuery}
+                    &rdquo;
                   </p>
                   <p className="text-xs text-secondary-foreground">
-                    Periksa ejaan nama atau bersihkan kotak pencarian untuk melihat
-                    seluruh daftar kelas.
+                    Periksa ejaan nama atau bersihkan kotak pencarian untuk
+                    melihat seluruh daftar kelas.
                   </p>
                   <Button
                     type="button"
@@ -584,80 +284,13 @@ export function AttendanceWorkspaceClient({
                   className="rounded-card border border-border bg-surface divide-y divide-border-subtle overflow-hidden"
                 >
                   {filteredRosterItems.map((item) => (
-                    <li key={item.studentId} className="p-4 space-y-3">
-                      <MobileCardList
-                        title={
-                          <p className="font-semibold text-foreground text-base leading-snug">
-                            {item.studentFullName}
-                            {item.studentNickname && (
-                              <span className="font-normal text-muted-foreground text-sm ml-1.5">
-                                ({item.studentNickname})
-                              </span>
-                            )}
-                          </p>
-                        }
-                        primaryMeta={
-                          <p className="text-xs text-secondary-foreground mt-0.5">
-                            {item.educationLevelLabel}
-                            {item.registrationNumber && (
-                              <span>
-                                {" "}
-                                · No: {item.registrationNumber}
-                              </span>
-                            )}
-                          </p>
-                        }
-                        secondaryMeta={
-                          <div
-                            role="group"
-                            aria-label={`Status kehadiran ${item.studentFullName}`}
-                            className="grid grid-cols-4 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2 pt-1"
-                          >
-                            {ATTENDANCE_OPTIONS.map((opt) => {
-                              const isSelected = item.status === opt.code;
-                              return (
-                                <button
-                                  key={opt.code}
-                                  type="button"
-                                  disabled={!canRecord}
-                                  aria-pressed={isSelected}
-                                  onClick={() =>
-                                    handleStudentStatusChange(
-                                      item.studentId,
-                                      opt.code
-                                    )
-                                  }
-                                  className={cn(
-                                    "min-h-11 px-3 sm:px-4 rounded-control text-xs font-medium transition-colors duration-200 border flex items-center justify-center focus-ring",
-                                    isSelected
-                                      ? opt.selectedStyles
-                                      : "border-border bg-surface text-secondary-foreground hover:bg-surface-subtle hover:text-foreground"
-                                  )}
-                                >
-                                  {opt.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        }
-                        action={
-                          <div className="w-full pt-1">
-                            <Input
-                              aria-label={`Catatan kehadiran ${item.studentFullName}`}
-                              placeholder="Catatan singkat (mis. izin sakit demam, perlu tindak lanjut)..."
-                              value={item.note ?? ""}
-                              disabled={!canRecord}
-                              onChange={(e) =>
-                                handleStudentNoteChange(
-                                  item.studentId,
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </div>
-                        }
-                      />
-                    </li>
+                    <AttendanceListItem
+                      key={item.studentId}
+                      item={item}
+                      canRecord={canRecord}
+                      onStatusChange={handleStudentStatusChange}
+                      onNoteChange={handleStudentNoteChange}
+                    />
                   ))}
                 </ul>
               )}
@@ -676,15 +309,7 @@ export function AttendanceWorkspaceClient({
                   disabled={!canRecord}
                   placeholder="Ringkasan materi belajar atau kendala selama sesi berlangsung..."
                   value={draft.notes}
-                  onChange={(e) => {
-                    const nextVal = e.target.value;
-                    setSyncBadgeState("LOCAL_SAVED");
-                    setDraft((prev) => {
-                      const next = { ...prev, notes: nextVal };
-                      void saveDraftNow(next);
-                      return next;
-                    });
-                  }}
+                  onChange={(e) => handleSessionNotesChange(e.target.value)}
                 />
               </div>
 

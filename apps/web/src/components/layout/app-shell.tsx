@@ -16,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { ConnectivityTopBanner } from "@/hooks/use-connectivity";
+import type { UserPersona } from "@/lib/auth/personas";
 import { MobileNavigation } from "./mobile-navigation";
 import { PageContainer, type ContainerWidth } from "./page-container";
 import { Sidebar, type SidebarNavGroup } from "./sidebar";
@@ -30,6 +31,7 @@ export const DEFAULT_WORKSPACE_NAV: SidebarNavGroup[] = [
   {
     id: "ringkasan",
     title: "Ringkasan",
+    personas: ["GURU", "PENGURUS", "SUPERADMIN"],
     items: [
       {
         id: "dashboard",
@@ -42,6 +44,7 @@ export const DEFAULT_WORKSPACE_NAV: SidebarNavGroup[] = [
   {
     id: "rumah-belajar",
     title: "Rumah Belajar",
+    personas: ["GURU", "PENGURUS", "SUPERADMIN"],
     items: [
       {
         id: "students",
@@ -76,6 +79,7 @@ export const DEFAULT_WORKSPACE_NAV: SidebarNavGroup[] = [
   {
     id: "tata-kelola",
     title: "Tata Kelola",
+    personas: ["PENGURUS", "SUPERADMIN"],
     items: [
       {
         id: "consent",
@@ -110,6 +114,7 @@ export const DEFAULT_WORKSPACE_NAV: SidebarNavGroup[] = [
   {
     id: "sistem",
     title: "Sistem",
+    personas: ["SUPERADMIN"],
     items: [
       {
         id: "audit",
@@ -133,6 +138,7 @@ export interface AppShellProps {
   navGroups?: SidebarNavGroup[];
   user?: WorkspaceHeaderUser;
   userPermissions?: string[];
+  userPersona?: UserPersona;
   contentWidth?: ContainerWidth;
   headerRightSlot?: React.ReactNode;
   children: React.ReactNode;
@@ -142,6 +148,7 @@ export function AppShell({
   navGroups = DEFAULT_WORKSPACE_NAV,
   user,
   userPermissions,
+  userPersona,
   contentWidth = "default",
   headerRightSlot,
   children,
@@ -166,6 +173,7 @@ export function AppShell({
           groups={navGroups}
           currentPath={pathname}
           userPermissions={userPermissions}
+          userPersona={userPersona}
         />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -184,6 +192,7 @@ export function AppShell({
             groups={navGroups}
             currentPath={pathname}
             userPermissions={userPermissions}
+            userPersona={userPersona}
           />
 
           <WorkspaceBottomNav

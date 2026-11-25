@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { EmptyState } from "@/components/compositions";
 import { PageHeader, StatSummary } from "@/components/patterns";
 import { Button, Icon } from "@/components/ui";
@@ -12,8 +13,26 @@ import { useMediaSerialReview } from "../hooks/use-media-serial-review";
 import type { MediaAssetDTO } from "../types/media-types";
 import { MediaCard } from "./media-card";
 import { MediaFilterBar } from "./media-filter-bar";
-import { MediaReviewDialog } from "./media-review-dialog";
-import { MediaUploadDialog } from "./media-upload-dialog";
+
+const DialogLoadingSkeleton = () => (
+  <div
+    role="status"
+    aria-label="Memuat dialog..."
+    className="fixed inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-xs p-4"
+  >
+    <div className="h-64 w-full max-w-lg animate-pulse rounded-card bg-surface border border-border" />
+  </div>
+);
+
+const MediaUploadDialog = dynamic(
+  () => import("./media-upload-dialog").then((mod) => mod.MediaUploadDialog),
+  { ssr: false, loading: DialogLoadingSkeleton }
+);
+
+const MediaReviewDialog = dynamic(
+  () => import("./media-review-dialog").then((mod) => mod.MediaReviewDialog),
+  { ssr: false, loading: DialogLoadingSkeleton }
+);
 
 export interface MediaWorkspaceClientProps {
   assets: MediaAssetDTO[];
@@ -93,6 +112,17 @@ export function MediaWorkspaceClient({
     checkOnline,
     onSuccess: handleRefresh,
   });
+
+  const handleQuickApproveClick = React.useCallback(
+    (target: MediaAssetDTO) => {
+      void handleQuickApprove(target);
+    },
+    [handleQuickApprove]
+  );
+
+  const handleReviewClick = React.useCallback((target: MediaAssetDTO) => {
+    setReviewingAsset(target);
+  }, []);
 
   // Sisa Ditinjau calculation
   const unreviewedCount = React.useMemo(() => {
@@ -218,64 +248,66 @@ export function MediaWorkspaceClient({
               reviewPending={reviewPending}
               priority={idx < 2}
               onFocus={setFocusedAssetId}
-              onQuickApprove={(target) => void handleQuickApprove(target)}
-              onReview={(target) => {
-                setReviewingAsset(target);
-              }}
+              onQuickApprove={handleQuickApproveClick}
+              onReview={handleReviewClick}
             />
           ))}
         </div>
       )}
 
-      <MediaUploadDialog
-        open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        onSuccess={() => {
-          setFeedback({
-            tone: "success",
-            message:
-              "Dokumentasi berhasil disimpan di bucket privat dan menunggu tinjauan privasi.",
-          });
-          router.refresh();
-        }}
-      />
+      {uploadOpen && (
+        <MediaUploadDialog
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          onSuccess={() => {
+            setFeedback({
+              tone: "success",
+              message:
+                "Dokumentasi berhasil disimpan di bucket privat dan menunggu tinjauan privasi.",
+            });
+            router.refresh();
+          }}
+        />
+      )}
 
-      <MediaReviewDialog
-        open={Boolean(reviewingAsset)}
-        onOpenChange={(open) => {
-          if (!open) setReviewingAsset(null);
-        }}
-        asset={reviewingAsset}
-        pending={reviewPending}
-        onSubmit={async (values) => {
-          if (!reviewingAsset || reviewPending) return;
-          const currentAsset = reviewingAsset;
-          await withTierCGuard(async () => {
-            setReviewPending(true);
-            setFeedback(null);
-            try {
-              const res = await reviewMediaAssetPrivacyAction({
-                mediaId: currentAsset.id,
-                eligibleForPublic: values.eligibleForPublic,
-                reviewNotes: values.reviewNotes?.trim() || null,
-              });
-              if (!res.success) {
-                setFeedback({ tone: "danger", message: res.error.message });
-                return;
+      {Boolean(reviewingAsset) && (
+        <MediaReviewDialog
+          open={Boolean(reviewingAsset)}
+          onOpenChange={(open) => {
+            if (!open) setReviewingAsset(null);
+          }}
+          asset={reviewingAsset}
+          pending={reviewPending}
+          onSubmit={async (values) => {
+            if (!reviewingAsset || reviewPending) return;
+            const currentAsset = reviewingAsset;
+            await withTierCGuard(async () => {
+              setReviewPending(true);
+              setFeedback(null);
+              try {
+                const res = await reviewMediaAssetPrivacyAction({
+                  mediaId: currentAsset.id,
+                  eligibleForPublic: values.eligibleForPublic,
+                  reviewNotes: values.reviewNotes?.trim() || null,
+                });
+                if (!res.success) {
+                  setFeedback({ tone: "danger", message: res.error.message });
+                  return;
+                }
+                setReviewingAsset(null);
+                setFeedback({
+                  tone: "success",
+                  message:
+                    "Keputusan tinjauan privasi dokumentasi berhasil disimpan dan dicatat dalam jejak audit.",
+                });
+                router.refresh();
+              } finally {
+                setReviewPending(false);
               }
-              setReviewingAsset(null);
-              setFeedback({
-                tone: "success",
-                message:
-                  "Keputusan tinjauan privasi dokumentasi berhasil disimpan dan dicatat dalam jejak audit.",
-              });
-              router.refresh();
-            } finally {
-              setReviewPending(false);
-            }
-          });
-        }}
-      />
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

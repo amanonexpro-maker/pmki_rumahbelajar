@@ -1,5 +1,5 @@
-const SHELL_CACHE = "pmki-shell-v2";
-const PUBLIC_IMAGE_CACHE = "pmki-public-images-v2";
+const SHELL_CACHE = "pmki-shell-v3";
+const PUBLIC_IMAGE_CACHE = "pmki-public-images-v3";
 const SHELL_ASSETS = [
   "/",
   "/program",
@@ -40,18 +40,25 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
+
+  // Never intercept or cache Next.js RSC payloads or Tier C /workspace sub-fetches
+  if (
+    request.mode !== "navigate" &&
+    (url.pathname.startsWith("/workspace") ||
+      url.searchParams.has("_rsc") ||
+      request.headers.get("RSC") === "1")
+  ) {
+    return;
+  }
 
   // Navigation requests: Network First with Cached Page / Offline Fallback (06 §9)
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (
-            response.ok &&
-            url.origin === self.location.origin &&
-            !url.pathname.startsWith("/workspace")
-          ) {
+          if (response.ok && !url.pathname.startsWith("/workspace")) {
             const clone = response.clone();
             caches.open(SHELL_CACHE).then((cache) => cache.put(request, clone));
           }
@@ -69,41 +76,42 @@ self.addEventListener("fetch", (event) => {
 
   // Static images, icons, fonts: Cache First (06 §9, §28 Repeated Load < 1s)
   if (
-    url.origin === self.location.origin &&
-    (url.pathname.startsWith("/images/") ||
-      url.pathname.startsWith("/icons/") ||
-      url.pathname.startsWith("/_next/static/"))
+    url.pathname.startsWith("/images/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname.startsWith("/_next/static/")
   ) {
     event.respondWith(
       caches.match(request).then(
         (cached) =>
           cached ||
-          fetch(request).then((response) => {
-            if (response.ok) {
-              const clone = response.clone();
-              caches
-                .open(PUBLIC_IMAGE_CACHE)
-                .then((cache) => cache.put(request, clone));
-            }
-            return response;
-          })
+          fetch(request)
+            .then((response) => {
+              if (response.ok) {
+                const clone = response.clone();
+                caches
+                  .open(PUBLIC_IMAGE_CACHE)
+                  .then((cache) => cache.put(request, clone));
+              }
+              return response;
+            })
+            .catch(() => Response.error())
       )
     );
     return;
   }
 
-  // Other same-origin GET assets: Stale-While-Revalidate
+  // Other same-origin GET assets: Stale-While-Revalidate (never resolve undefined)
   event.respondWith(
     caches.match(request).then((cached) => {
       const networkFetch = fetch(request)
         .then((response) => {
-          if (response.ok && url.origin === self.location.origin) {
+          if (response.ok && !url.pathname.startsWith("/workspace")) {
             const clone = response.clone();
             caches.open(SHELL_CACHE).then((cache) => cache.put(request, clone));
           }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => cached || Response.error());
       return cached || networkFetch;
     })
   );

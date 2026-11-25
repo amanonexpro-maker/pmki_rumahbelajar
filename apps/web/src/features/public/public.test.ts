@@ -304,7 +304,7 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
   });
 
   it("ensures filterAndMapPublicGalleryItems maps absolute Indonesian dates and never yields 'Terbaru'", () => {
-    const rawMockAssets: any[] = [
+    const rawMockAssets = [
       {
         id: "asset-1",
         title: "Dokumentasi Matematika Ceria",
@@ -337,7 +337,9 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       },
     ];
 
-    const mapped = filterAndMapPublicGalleryItems(rawMockAssets);
+    const mapped = filterAndMapPublicGalleryItems(
+      rawMockAssets as unknown as MediaAssetDTO[]
+    );
     expect(mapped).toHaveLength(3);
     // Verified descending sort by timestamp: Oktober -> September -> Agustus
     expect(mapped[0].capturedDate).toBe("24 Oktober 2026");
@@ -358,7 +360,10 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       content: "Isi artikel.",
     };
     const canonicalUrl = "https://pmkirumahbelajar-web.vercel.app/kabar/jadwal-bimbingan-belajar-semester-ganjil";
-    const waText = generateWaShareText(mockArticle as any, canonicalUrl);
+    const waText = generateWaShareText(
+      mockArticle as unknown as Parameters<typeof generateWaShareText>[0],
+      canonicalUrl
+    );
 
     expect(waText).toContain("https://pmkirumahbelajar-web.vercel.app/kabar/jadwal-bimbingan-belajar-semester-ganjil");
     expect(waText).not.toContain("/kabar/jadwal-bimbingan-belajar-semester-ganjil/kabar/");
@@ -374,7 +379,10 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       description: "Dokumentasi foto kegiatan.",
     };
     const albumCanonicalUrl = "https://pmkirumahbelajar-web.vercel.app/kabar/suasana-belajar-sabtu-griya-asih";
-    const albumWaText = generateWaShareText(mockAlbum as any, albumCanonicalUrl);
+    const albumWaText = generateWaShareText(
+      mockAlbum as unknown as Parameters<typeof generateWaShareText>[0],
+      albumCanonicalUrl
+    );
 
     expect(albumWaText).toContain("https://pmkirumahbelajar-web.vercel.app/kabar/suasana-belajar-sabtu-griya-asih");
     expect(albumWaText).not.toContain("/kabar/suasana-belajar-sabtu-griya-asih/kabar/");
@@ -393,7 +401,7 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
   });
 
   it("intelligently deduplicates home feed so news and gallery never share the same image", () => {
-    const mockNews: any[] = [
+    const mockNews = [
       {
         id: "news-1",
         title: "Tahun Ajaran 2026/2027",
@@ -414,7 +422,7 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       },
     ];
 
-    const mockGallery: any[] = [
+    const mockGallery = [
       {
         id: "gal-1",
         title: "Suasana Belajar",
@@ -435,7 +443,10 @@ describe("Fase 9 — Public Experience: Copywriting, Privacy Filters, Terminolog
       },
     ];
 
-    const result = deduplicateHomeFeed(mockNews, mockGallery);
+    const result = deduplicateHomeFeed(
+      mockNews as unknown as Parameters<typeof deduplicateHomeFeed>[0],
+      mockGallery as unknown as Parameters<typeof deduplicateHomeFeed>[1]
+    );
 
     // Primary slot prioritizes the news article
     expect(result.primaryArticle?.id).toBe("news-1");

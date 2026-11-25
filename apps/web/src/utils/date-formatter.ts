@@ -71,3 +71,44 @@ export function formatToIndonesianStandard(
   }
 }
 
+export function formatDateID(
+  dateInput: Date | string | number | null | undefined,
+  options?: Intl.DateTimeFormatOptions
+): string {
+  if (dateInput === null || dateInput === undefined || dateInput === "") {
+    return "";
+  }
+  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (Number.isNaN(d.getTime())) {
+    return typeof dateInput === "string" ? dateInput : "";
+  }
+  return new Intl.DateTimeFormat("id-ID", options).format(d);
+}
+
+export function formatTimeID(
+  dateInput: Date | string | number | null | undefined,
+  options: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" }
+): string {
+  if (dateInput === null || dateInput === undefined || dateInput === "") {
+    return "";
+  }
+  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (Number.isNaN(d.getTime())) {
+    return "";
+  }
+  return new Intl.DateTimeFormat("id-ID", options).format(d);
+}
+
+export function formatDateTimeID(
+  dateInput: Date | string | number | null | undefined,
+  options: Intl.DateTimeFormatOptions = {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }
+): string {
+  return formatDateID(dateInput, options);
+}
+

@@ -4,6 +4,7 @@ import * as React from "react";
 import { RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { Icon } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { formatTimeID } from "@/utils/date-formatter";
 
 export type ConnectivityState = "ONLINE" | "OFFLINE" | "RECONNECTING" | "SYNCING";
 
@@ -145,10 +146,7 @@ export function ConnectivityIndicator({ className }: { className?: string }) {
   const formattedTime = React.useMemo(() => {
     if (!lastSyncedAt) return null;
     try {
-      return new Date(lastSyncedAt).toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      return formatTimeID(lastSyncedAt) || null;
     } catch {
       return null;
     }

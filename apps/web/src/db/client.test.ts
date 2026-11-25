@@ -38,7 +38,7 @@ describe("Platform Wiring Verification (ADR-13)", () => {
     expect(res.ok).toBe(true);
   });
 
-  it("reaches local Mailpit web API (port 55424)", async () => {
+  it.skipIf(!process.env.CI)("reaches local Mailpit web API (port 55424)", async () => {
     const res = await fetch("http://127.0.0.1:55424/api/v1/messages");
     expect(res.ok).toBe(true);
   });

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, Plus, UserCheck, Users } from "lucide-react";
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
@@ -19,6 +18,7 @@ import {
   Icon,
 } from "@/components/ui";
 import type { AcademicYearDTO, ClassSummaryDTO } from "@/features/academic";
+import { useUrlQueryParams } from "@/hooks/use-url-query-params";
 import { REGISTRATION_STATUS_META, type RegistrationStatus } from "@/lib/status";
 import { placeStudentInClassAction } from "../actions/student-actions";
 import type {
@@ -76,9 +76,7 @@ export function StudentsWorkspaceClient({
   canCreateStudent,
   canVerifyStudent,
 }: StudentsWorkspaceClientProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { updateQuery: updateUrlParams, pathname, router } = useUrlQueryParams();
 
   const [searchInput, setSearchInput] = React.useState(initialFilters.search);
   const [addDialogOpen, setAddDialogOpen] = React.useState(false);
@@ -90,22 +88,6 @@ export function StudentsWorkspaceClient({
   const [placePending, setPlacePending] = React.useState(false);
   const [placeError, setPlaceError] = React.useState<string | null>(null);
   const quickPlaceClassId = React.useId();
-
-  const updateUrlParams = React.useCallback(
-    (updates: Record<string, string | null>) => {
-      const next = new URLSearchParams(searchParams?.toString() ?? "");
-      for (const [key, val] of Object.entries(updates)) {
-        if (!val || val === "ALL" || (key === "page" && val === "1")) {
-          next.delete(key);
-        } else {
-          next.set(key, val);
-        }
-      }
-      const qs = next.toString();
-      router.push(qs ? `${pathname}?${qs}` : pathname);
-    },
-    [pathname, router, searchParams]
-  );
 
   // Sync debounced search input to URL `?search=`
   React.useEffect(() => {

@@ -55,16 +55,19 @@ export function KontakActionCenter({ initialTab = "info" }: KontakActionCenterPr
       : initialTab;
 
   const [activeTab, setActiveTab] = React.useState<KontakTabId>(resolvedTab);
+  const [prevQueryTab, setPrevQueryTab] = React.useState(queryTab);
 
-  React.useEffect(() => {
+  if (queryTab !== prevQueryTab) {
+    setPrevQueryTab(queryTab);
     if (
-      queryTab &&
-      (queryTab === "siswa" || queryTab === "relawan" || queryTab === "donasi" || queryTab === "info") &&
-      queryTab !== activeTab
+      queryTab === "siswa" ||
+      queryTab === "relawan" ||
+      queryTab === "donasi" ||
+      queryTab === "info"
     ) {
       setActiveTab(queryTab);
     }
-  }, [queryTab, activeTab]);
+  }
 
   // Address copy state
   const [isCopied, setIsCopied] = React.useState(false);

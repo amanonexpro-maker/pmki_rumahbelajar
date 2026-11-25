@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Eye, History, Lock } from "lucide-react";
 import { EmptyState } from "@/components/compositions";
 import {
@@ -25,6 +24,8 @@ import {
   DialogTitle,
   Icon,
 } from "@/components/ui";
+import { useUrlQueryParams } from "@/hooks/use-url-query-params";
+import { formatDateID } from "@/utils/date-formatter";
 import {
   AUDIT_ENTITY_META,
   getAuditEntityLabel,
@@ -48,29 +49,11 @@ export function AuditWorkspaceClient({
   initialAction,
   initialEntityType,
 }: AuditWorkspaceClientProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { updateQuery: updateUrl, pathname, router } = useUrlQueryParams();
 
   const [searchInput, setSearchInput] = React.useState(initialSearch);
   const [selectedLog, setSelectedLog] = React.useState<AuditLogItemDTO | null>(
     null
-  );
-
-  const updateUrl = React.useCallback(
-    (updates: Record<string, string | null>) => {
-      const next = new URLSearchParams(searchParams?.toString() ?? "");
-      for (const [k, v] of Object.entries(updates)) {
-        if (!v || v === "ALL" || (k === "page" && v === "1")) {
-          next.delete(k);
-        } else {
-          next.set(k, v);
-        }
-      }
-      const qs = next.toString();
-      router.push(qs ? `${pathname}?${qs}` : pathname);
-    },
-    [pathname, router, searchParams]
   );
 
   React.useEffect(() => {
@@ -265,7 +248,7 @@ export function AuditWorkspaceClient({
             }
             badge={
               <span className="text-[11px] font-mono text-muted-foreground">
-                {new Date(row.createdAt).toLocaleDateString("id-ID", {
+                {formatDateID(row.createdAt, {
                   day: "2-digit",
                   month: "short",
                   year: "numeric",

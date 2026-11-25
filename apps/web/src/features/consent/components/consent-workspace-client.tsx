@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Lock, ShieldAlert, ShieldCheck } from "lucide-react";
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
@@ -24,9 +23,10 @@ import {
   Icon,
   Textarea,
 } from "@/components/ui";
-import { useConnectivity } from "@/hooks/use-connectivity";
+import { useTierCGuard } from "@/hooks/use-tier-c-guard";
+import { useUrlQueryParams } from "@/hooks/use-url-query-params";
+import { formatDateID } from "@/utils/date-formatter";
 import { PRIVACY_MESSAGES, SUCCESS_MESSAGES } from "@/lib/messages";
-import { checkTierCOnlineAvailability } from "@/lib/offline";
 import { CONSENT_STATUS_META, type ConsentStatus } from "@/lib/status";
 import { updateStudentConsentAction } from "../actions/consent-actions";
 import type { StudentConsentRecordDTO } from "../types/consent-types";
@@ -44,10 +44,7 @@ export function ConsentWorkspaceClient({
   initialPhotoStatus,
   canUpdate,
 }: ConsentWorkspaceClientProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { status: connectivityStatus } = useConnectivity();
+  const { updateQuery: updateUrl, pathname, router } = useUrlQueryParams();
 
   const [searchInput, setSearchInput] = React.useState(initialSearch);
   const [editingConsent, setEditingConsent] =
@@ -61,18 +58,9 @@ export function ConsentWorkspaceClient({
     tone: "success" | "danger" | "warning";
     message: string;
   } | null>(null);
-
-  const updateUrl = React.useCallback(
-    (updates: Record<string, string | null>) => {
-      const next = new URLSearchParams(searchParams?.toString() ?? "");
-      for (const [k, v] of Object.entries(updates)) {
-        if (!v || v === "ALL") next.delete(k);
-        else next.set(k, v);
-      }
-      const qs = next.toString();
-      router.push(qs ? `${pathname}?${qs}` : pathname);
-    },
-    [pathname, router, searchParams]
+  const { checkOnline, withTierCGuard } = useTierCGuard(
+    "Tata Kelola & Persetujuan Laporan",
+    (message) => setFeedback({ tone: "warning", message })
   );
 
   React.useEffect(() => {
@@ -88,14 +76,7 @@ export function ConsentWorkspaceClient({
     presetRevokePhoto = false
   ) {
     setFeedback(null);
-    const tierCheck = checkTierCOnlineAvailability(
-      "Tata Kelola & Persetujuan Laporan",
-      connectivityStatus !== "OFFLINE"
-    );
-    if (!tierCheck.allowed) {
-      setFeedback({ tone: "warning", message: tierCheck.message });
-      return;
-    }
+    if (!checkOnline()) return;
 
     setEditingConsent(item);
     setDraftPersonal(item.personalDataConsent);
@@ -106,38 +87,32 @@ export function ConsentWorkspaceClient({
   async function handleSaveConsent(e: React.FormEvent) {
     e.preventDefault();
     if (!editingConsent || pending) return;
+    const currentConsent = editingConsent;
 
-    const tierCheck = checkTierCOnlineAvailability(
-      "Tata Kelola & Persetujuan Laporan",
-      connectivityStatus !== "OFFLINE"
-    );
-    if (!tierCheck.allowed) {
-      setFeedback({ tone: "warning", message: tierCheck.message });
-      return;
-    }
-
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await updateStudentConsentAction({
-        consentId: editingConsent.id,
-        personalDataConsent: draftPersonal,
-        photoVideoConsent: draftPhoto,
-        notes: draftNotes.trim() || null,
-      });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return;
+    await withTierCGuard(async () => {
+      setPending(true);
+      setFeedback(null);
+      try {
+        const res = await updateStudentConsentAction({
+          consentId: currentConsent.id,
+          personalDataConsent: draftPersonal,
+          photoVideoConsent: draftPhoto,
+          notes: draftNotes.trim() || null,
+        });
+        if (!res.success) {
+          setFeedback({ tone: "danger", message: res.error.message });
+          return;
+        }
+        setEditingConsent(null);
+        setFeedback({
+          tone: "success",
+          message: SUCCESS_MESSAGES.consentUpdated,
+        });
+        router.refresh();
+      } finally {
+        setPending(false);
       }
-      setEditingConsent(null);
-      setFeedback({
-        tone: "success",
-        message: SUCCESS_MESSAGES.consentUpdated,
-      });
-      router.refresh();
-    } finally {
-      setPending(false);
-    }
+    });
   }
 
   const totalCount = consents.length;
@@ -190,9 +165,9 @@ export function ConsentWorkspaceClient({
             )}
           </p>
           <p className="text-muted-foreground font-mono">
-            Efektif: {new Date(row.effectiveAt).toLocaleDateString("id-ID")}
+            Efektif: {formatDateID(row.effectiveAt)}
             {row.revokedAt
-              ? ` · Dicabut: ${new Date(row.revokedAt).toLocaleDateString("id-ID")}`
+              ? ` · Dicabut: ${formatDateID(row.revokedAt)}`
               : ""}
           </p>
         </div>

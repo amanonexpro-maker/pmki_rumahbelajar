@@ -8,16 +8,19 @@ export {
   CANONICAL_AUTHENTIC_ALBUMS,
   CANONICAL_AUTHENTIC_PUBLICATIONS,
   CANONICAL_PUBLIC_COPY,
-  filterAndMapPublicGalleryItems,
-  filterAndMapPublicNewsItems,
-  getPublicArticleDetail,
-  getPublicPortalData,
-  PublicDataTimeoutError,
   PUBLIC_COORDINATOR_CONTACTS,
   PUBLIC_GRADE_TARGETS,
   PUBLIC_PROGRAMS_LIST,
   PUBLIC_SCHEDULE_SLOTS,
   PUBLIC_VOLUNTEER_TEACHERS,
+} from "./constants/portal-content";
+
+export {
+  filterAndMapPublicGalleryItems,
+  filterAndMapPublicNewsItems,
+  getPublicArticleDetail,
+  getPublicPortalData,
+  PublicDataTimeoutError,
 } from "./services/public-portal-service";
 
 export {

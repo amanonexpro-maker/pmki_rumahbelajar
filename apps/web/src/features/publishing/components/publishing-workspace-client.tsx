@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { EmptyState, StatusBadge } from "@/components/compositions";
 import {
   PageHeader,
@@ -27,10 +26,10 @@ import {
 } from "@/components/ui";
 import { ICON_MAP } from "@/config/icons";
 import type { MediaAssetDTO } from "@/features/media";
-import { useConnectivity } from "@/hooks/use-connectivity";
+import { useTierCGuard } from "@/hooks/use-tier-c-guard";
+import { useUrlQueryParams } from "@/hooks/use-url-query-params";
 import { cn } from "@/lib/cn";
 import { PRIVACY_MESSAGES, SUCCESS_MESSAGES } from "@/lib/messages";
-import { checkTierCOnlineAvailability } from "@/lib/offline";
 import { PUBLICATION_STATUS_META, type PublicationStatus } from "@/lib/status";
 import {
   createPublicationDraftAction,
@@ -121,10 +120,7 @@ export function PublishingWorkspaceClient({
   canReview,
   canPublish,
 }: PublishingWorkspaceClientProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { status: connectivityStatus } = useConnectivity();
+  const { updateQuery: updateUrl, pathname, router } = useUrlQueryParams();
 
   const [searchInput, setSearchInput] = React.useState(initialSearch);
   const [createOpen, setCreateOpen] = React.useState(false);
@@ -146,18 +142,8 @@ export function PublishingWorkspaceClient({
     tone: "success" | "danger" | "warning";
     message: string;
   } | null>(null);
-
-  const updateUrl = React.useCallback(
-    (updates: Record<string, string | null>) => {
-      const next = new URLSearchParams(searchParams?.toString() ?? "");
-      for (const [k, v] of Object.entries(updates)) {
-        if (!v || v === "ALL") next.delete(k);
-        else next.set(k, v);
-      }
-      const qs = next.toString();
-      router.push(qs ? `${pathname}?${qs}` : pathname);
-    },
-    [pathname, router, searchParams]
+  const { withTierCGuard } = useTierCGuard("Publikasi", (message) =>
+    setFeedback({ tone: "warning", message })
   );
 
   React.useEffect(() => {
@@ -168,31 +154,33 @@ export function PublishingWorkspaceClient({
     return () => window.clearTimeout(t);
   }, [initialSearch, searchInput, updateUrl]);
 
-  // Check and recover draft when create modal opens
-  React.useEffect(() => {
-    if (!createOpen || typeof window === "undefined") return;
-    try {
-      const saved = localStorage.getItem(DRAFT_KEY);
-      if (saved) {
-        const parsed: Partial<LocalPublicationDraft> = JSON.parse(saved);
-        if (
-          parsed.title?.trim() ||
-          parsed.content?.trim() ||
-          parsed.excerpt?.trim()
-        ) {
-          setTitle(parsed.title ?? "");
-          setCategory(parsed.category ?? "BERITA");
-          setExcerpt(parsed.excerpt ?? "");
-          setContent(parsed.content ?? "");
-          setCoverMediaId(parsed.coverMediaId ?? "");
-          setHasRecoveredDraft(true);
-          setDraftDismissed(false);
+  function handleOpenCreateDialog() {
+    setModalError(null);
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          const parsed: Partial<LocalPublicationDraft> = JSON.parse(saved);
+          if (
+            parsed.title?.trim() ||
+            parsed.content?.trim() ||
+            parsed.excerpt?.trim()
+          ) {
+            setTitle(parsed.title ?? "");
+            setCategory(parsed.category ?? "BERITA");
+            setExcerpt(parsed.excerpt ?? "");
+            setContent(parsed.content ?? "");
+            setCoverMediaId(parsed.coverMediaId ?? "");
+            setHasRecoveredDraft(true);
+            setDraftDismissed(false);
+          }
         }
+      } catch {
+        // Storage unavailable or invalid JSON -> ignore gracefully
       }
-    } catch {
-      // Storage unavailable or invalid JSON -> ignore gracefully
     }
-  }, [createOpen]);
+    setCreateOpen(true);
+  }
 
   // Debounced auto-save to localStorage (non-sensitive text fields only)
   React.useEffect(() => {
@@ -238,56 +226,52 @@ export function PublishingWorkspaceClient({
     e.preventDefault();
     if (pending) return;
 
-    const tierCheck = checkTierCOnlineAvailability(
-      "Publikasi",
-      connectivityStatus !== "OFFLINE"
-    );
-    if (!tierCheck.allowed) {
-      setModalError(tierCheck.message);
-      return;
-    }
+    await withTierCGuard(
+      async () => {
+        setPending(true);
+        setModalError(null);
+        setFeedback(null);
 
-    setPending(true);
-    setModalError(null);
-    setFeedback(null);
-
-    try {
-      const res = await createPublicationDraftAction({
-        title,
-        category,
-        excerpt: excerpt.trim() || null,
-        content,
-        coverMediaId: coverMediaId || null,
-      });
-
-      if (!res.success) {
-        setModalError(res.error.message);
-        return;
-      }
-
-      // Automatically clean up localStorage draft upon verified server save
-      if (typeof window !== "undefined") {
         try {
-          localStorage.removeItem(DRAFT_KEY);
-        } catch {}
-      }
+          const res = await createPublicationDraftAction({
+            title,
+            category,
+            excerpt: excerpt.trim() || null,
+            content,
+            coverMediaId: coverMediaId || null,
+          });
 
-      setCreateOpen(false);
-      setTitle("");
-      setExcerpt("");
-      setContent("");
-      setCoverMediaId("");
-      setHasRecoveredDraft(false);
-      setModalError(null);
+          if (!res.success) {
+            setModalError(res.error.message);
+            return;
+          }
 
-      setFeedback({
-        tone: "success",
-        message: "Draft konten publikasi berhasil disimpan.",
-      });
-      router.refresh();
-    } finally {
-      setPending(false);
-    }
+          // Automatically clean up localStorage draft upon verified server save
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.removeItem(DRAFT_KEY);
+            } catch {}
+          }
+
+          setCreateOpen(false);
+          setTitle("");
+          setExcerpt("");
+          setContent("");
+          setCoverMediaId("");
+          setHasRecoveredDraft(false);
+          setModalError(null);
+
+          setFeedback({
+            tone: "success",
+            message: "Draft konten publikasi berhasil disimpan.",
+          });
+          router.refresh();
+        } finally {
+          setPending(false);
+        }
+      },
+      (msg) => setModalError(msg)
+    );
   }
 
   async function handleTransition(
@@ -296,37 +280,30 @@ export function PublishingWorkspaceClient({
   ) {
     if (pending) return;
 
-    const tierCheck = checkTierCOnlineAvailability(
-      "Publikasi",
-      connectivityStatus !== "OFFLINE"
-    );
-    if (!tierCheck.allowed) {
-      setFeedback({ tone: "warning", message: tierCheck.message });
-      return;
-    }
-
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await transitionPublicationStatusAction({
-        publicationId,
-        targetStatus,
-      });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return;
+    await withTierCGuard(async () => {
+      setPending(true);
+      setFeedback(null);
+      try {
+        const res = await transitionPublicationStatusAction({
+          publicationId,
+          targetStatus,
+        });
+        if (!res.success) {
+          setFeedback({ tone: "danger", message: res.error.message });
+          return;
+        }
+        setFeedback({
+          tone: "success",
+          message:
+            targetStatus === "PUBLISHED"
+              ? SUCCESS_MESSAGES.publicationPublished
+              : `Status konten berhasil diperbarui menjadi "${PUBLICATION_STATUS_META[targetStatus].label}".`,
+        });
+        router.refresh();
+      } finally {
+        setPending(false);
       }
-      setFeedback({
-        tone: "success",
-        message:
-          targetStatus === "PUBLISHED"
-            ? SUCCESS_MESSAGES.publicationPublished
-            : `Status konten berhasil diperbarui menjadi "${PUBLICATION_STATUS_META[targetStatus].label}".`,
-      });
-      router.refresh();
-    } finally {
-      setPending(false);
-    }
+    });
   }
 
   const publishedCount = publications.filter(
@@ -346,10 +323,7 @@ export function PublishingWorkspaceClient({
             <Button
               type="button"
               variant="primary"
-              onClick={() => {
-                setModalError(null);
-                setCreateOpen(true);
-              }}
+              onClick={handleOpenCreateDialog}
               leftIcon={<Icon icon={ICON_MAP.plus} size="sm" />}
             >
               Tambah draft konten
@@ -437,10 +411,7 @@ export function PublishingWorkspaceClient({
               <Button
                 type="button"
                 variant="primary"
-                onClick={() => {
-                  setModalError(null);
-                  setCreateOpen(true);
-                }}
+                onClick={handleOpenCreateDialog}
               >
                 Tambah draft konten
               </Button>

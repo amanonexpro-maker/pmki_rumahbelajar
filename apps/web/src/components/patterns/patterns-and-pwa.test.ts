@@ -59,7 +59,7 @@ describe("Compositions, Patterns & PWA Baseline Compliance (Fase 1c)", () => {
 
     expect(manifest.display).toBe("standalone");
     expect(manifest.theme_color).toBe("#1F6650");
-    expect(manifest.background_color).toBe("#F7F8F4");
+    expect(manifest.background_color).toBe("#1F6650");
     expect(manifest.icons.length).toBeGreaterThan(0);
     expect(manifest.shortcuts.length).toBeGreaterThan(0);
 

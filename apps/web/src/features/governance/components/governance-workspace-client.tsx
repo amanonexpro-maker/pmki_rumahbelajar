@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
   CloudOff,
@@ -35,9 +34,9 @@ import {
   Input,
   Textarea,
 } from "@/components/ui";
-import { useConnectivity } from "@/hooks/use-connectivity";
+import { useTierCGuard } from "@/hooks/use-tier-c-guard";
+import { useUrlQueryParams } from "@/hooks/use-url-query-params";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
-import { checkTierCOnlineAvailability } from "@/lib/offline";
 import { REPORT_STATUS_META, type ReportStatus } from "@/lib/status";
 import {
   createGovernanceReportAction,
@@ -166,12 +165,7 @@ export function GovernanceWorkspaceClient({
   canApprove,
   canCreatePublication,
 }: GovernanceWorkspaceClientProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { status: connectivityStatus } = useConnectivity();
-  const isOffline = connectivityStatus === "OFFLINE";
-
+  const { updateQuery: updateUrl, pathname, router } = useUrlQueryParams();
   const [searchInput, setSearchInput] = React.useState(initialSearch);
   const [createOpen, setCreateOpen] = React.useState(false);
   const [title, setTitle] = React.useState("");
@@ -192,19 +186,11 @@ export function GovernanceWorkspaceClient({
     tone: "success" | "danger" | "warning";
     message: string;
   } | null>(null);
-
-  const updateUrl = React.useCallback(
-    (updates: Record<string, string | null>) => {
-      const next = new URLSearchParams(searchParams?.toString() ?? "");
-      for (const [k, v] of Object.entries(updates)) {
-        if (!v || v === "ALL") next.delete(k);
-        else next.set(k, v);
-      }
-      const qs = next.toString();
-      router.push(qs ? `${pathname}?${qs}` : pathname);
-    },
-    [pathname, router, searchParams]
+  const { isOnline, withTierCGuard } = useTierCGuard(
+    "Tata Kelola & Persetujuan Laporan",
+    (message) => setFeedback({ tone: "warning", message })
   );
+  const isOffline = !isOnline;
 
   React.useEffect(() => {
     if (searchInput === initialSearch) return;
@@ -218,79 +204,66 @@ export function GovernanceWorkspaceClient({
     e.preventDefault();
     if (pending) return;
 
-    const tierCheck = checkTierCOnlineAvailability(
-      "Tata Kelola & Persetujuan Laporan",
-      !isOffline
-    );
-    if (!tierCheck.allowed) {
-      setFeedback({ tone: "warning", message: tierCheck.message });
-      return;
-    }
-
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await createGovernanceReportAction({
-        title,
-        reportType,
-        period,
-        summary,
-        classification:
-          reportType === "STAKEHOLDER" ? "STAKEHOLDER" : "INTERNAL",
-      });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return;
+    await withTierCGuard(async () => {
+      setPending(true);
+      setFeedback(null);
+      try {
+        const res = await createGovernanceReportAction({
+          title,
+          reportType,
+          period,
+          summary,
+          classification:
+            reportType === "STAKEHOLDER" ? "STAKEHOLDER" : "INTERNAL",
+        });
+        if (!res.success) {
+          setFeedback({ tone: "danger", message: res.error.message });
+          return;
+        }
+        setCreateOpen(false);
+        setTitle("");
+        setSummary("");
+        setFeedback({
+          tone: "success",
+          message:
+            "Draft laporan pelayanan berhasil disimpan dan dicatat dalam riwayat keputusan.",
+        });
+        router.refresh();
+      } finally {
+        setPending(false);
       }
-      setCreateOpen(false);
-      setTitle("");
-      setSummary("");
-      setFeedback({
-        tone: "success",
-        message:
-          "Draft laporan pelayanan berhasil disimpan dan dicatat dalam riwayat keputusan.",
-      });
-      router.refresh();
-    } finally {
-      setPending(false);
-    }
+    });
   }
 
   async function handleConfirmDecision(e: React.FormEvent) {
     e.preventDefault();
     if (!decisionDialog || pending) return;
+    const currentDecision = decisionDialog;
 
-    const tierCheck = checkTierCOnlineAvailability(
-      "Tata Kelola & Persetujuan Laporan",
-      !isOffline
-    );
-    if (!tierCheck.allowed) {
-      setFeedback({ tone: "warning", message: tierCheck.message });
-      return;
-    }
-
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await transitionGovernanceReportStatusAction({
-        reportId: decisionDialog.report.id,
-        targetStatus: decisionDialog.targetStatus,
-        comment: decisionComment.trim() || null,
-      });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return;
+    await withTierCGuard(async () => {
+      setPending(true);
+      setFeedback(null);
+      try {
+        const res = await transitionGovernanceReportStatusAction({
+          reportId: currentDecision.report.id,
+          targetStatus: currentDecision.targetStatus,
+          comment: decisionComment.trim() || null,
+        });
+        if (!res.success) {
+          setFeedback({ tone: "danger", message: res.error.message });
+          return;
+        }
+        setDecisionDialog(null);
+        setDecisionComment("");
+        setFeedback({
+          tone: "success",
+          message: `Keputusan tata kelola berhasil disimpan. Status laporan kini: "${REPORT_STATUS_META[res.data.newStatus].label}".`,
+        });
+        router.refresh();
+      } finally {
+        setPending(false);
       }
-      setDecisionDialog(null);
-      setDecisionComment("");
-      setFeedback({
-        tone: "success",
-        message: `Keputusan tata kelola berhasil disimpan. Status laporan kini: "${REPORT_STATUS_META[res.data.newStatus].label}".`,
-      });
-      router.refresh();
-    } finally {
-      setPending(false);
-    }
+    });
   }
 
   async function handleGeneratePublication(reportId: string) {

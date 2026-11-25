@@ -115,10 +115,14 @@ describe("Layout Shell & Mobile Navigation Guardrails (Fase 19 Step 2 - P1 & P2)
   });
 
   it("verifies both students workspace and detail clients use FormBottomSheet, autoFocus, and zero literal dialog form IDs", () => {
-    const detailContent = readFileSync(
-      path.join(studentsDir, "student-detail-client.tsx"),
-      "utf-8"
-    );
+    const detailContent = [
+      "student-detail-client.tsx",
+      "edit-student-profile-sheet.tsx",
+      "verify-student-sheet.tsx",
+      "place-student-sheet.tsx",
+    ]
+      .map((f) => readFileSync(path.join(studentsDir, f), "utf-8"))
+      .join("\n");
     const workspaceContent = readFileSync(
       path.join(studentsDir, "students-workspace-client.tsx"),
       "utf-8"

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { EmptyState } from "@/components/compositions";
 import {
   DatePicker,
@@ -25,10 +24,10 @@ import {
   Textarea,
 } from "@/components/ui";
 import { ICON_MAP } from "@/config/icons";
-import { useConnectivity } from "@/hooks/use-connectivity";
+import { useTierCGuard } from "@/hooks/use-tier-c-guard";
+import { useUrlQueryParams } from "@/hooks/use-url-query-params";
 import { cn } from "@/lib/cn";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
-import { checkTierCOnlineAvailability } from "@/lib/offline";
 import {
   confirmMediaUploadAction,
   createMediaUploadUrlAction,
@@ -60,10 +59,7 @@ export function MediaWorkspaceClient({
   canCreate,
   canReview,
 }: MediaWorkspaceClientProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { status: connectivityStatus } = useConnectivity();
+  const { updateQuery: updateUrl, pathname, router } = useUrlQueryParams();
 
   const [searchInput, setSearchInput] = React.useState(initialSearch);
   const [uploadOpen, setUploadOpen] = React.useState(false);
@@ -103,18 +99,9 @@ export function MediaWorkspaceClient({
     tone: "success" | "danger" | "warning";
     message: string;
   } | null>(null);
-
-  const updateUrl = React.useCallback(
-    (updates: Record<string, string | null>) => {
-      const next = new URLSearchParams(searchParams?.toString() ?? "");
-      for (const [k, v] of Object.entries(updates)) {
-        if (!v || v === "ALL") next.delete(k);
-        else next.set(k, v);
-      }
-      const qs = next.toString();
-      router.push(qs ? `${pathname}?${qs}` : pathname);
-    },
-    [pathname, router, searchParams]
+  const { checkOnline, withTierCGuard } = useTierCGuard(
+    "Tata Kelola & Persetujuan Laporan",
+    (message) => setFeedback({ tone: "warning", message })
   );
 
   React.useEffect(() => {
@@ -165,12 +152,11 @@ export function MediaWorkspaceClient({
         return;
       }
 
-      const tierCheck = checkTierCOnlineAvailability(
-        "Tata Kelola & Persetujuan Laporan",
-        connectivityStatus !== "OFFLINE"
-      );
-      if (!tierCheck.allowed) {
-        setInlineErrors((prev) => ({ ...prev, [asset.id]: tierCheck.message }));
+      if (
+        !checkOnline((msg) =>
+          setInlineErrors((prev) => ({ ...prev, [asset.id]: msg }))
+        )
+      ) {
         return;
       }
 
@@ -243,7 +229,7 @@ export function MediaWorkspaceClient({
     },
     [
       canReview,
-      connectivityStatus,
+      checkOnline,
       currentUserId,
       effectiveAssets,
       reviewPending,
@@ -349,119 +335,106 @@ export function MediaWorkspaceClient({
     e.preventDefault();
     if (uploadPending) return;
 
-    const tierCheck = checkTierCOnlineAvailability(
-      "Tata Kelola & Persetujuan Laporan",
-      connectivityStatus !== "OFFLINE"
-    );
-    if (!tierCheck.allowed) {
-      setFeedback({ tone: "warning", message: tierCheck.message });
-      return;
-    }
+    await withTierCGuard(async () => {
+      const fileName = selectedFile?.name ?? "dokumentasi-kegiatan.jpg";
+      const mimeType =
+        (selectedFile?.type as "image/jpeg" | "image/png" | "image/webp") ||
+        "image/jpeg";
+      const fileSize = selectedFile?.size ?? 128000;
 
-    const fileName = selectedFile?.name ?? "dokumentasi-kegiatan.jpg";
-    const mimeType =
-      (selectedFile?.type as "image/jpeg" | "image/png" | "image/webp") ||
-      "image/jpeg";
-    const fileSize = selectedFile?.size ?? 128000;
+      setUploadPending(true);
+      setFeedback(null);
 
-    setUploadPending(true);
-    setFeedback(null);
-
-    try {
-      // Step 1: Server Action generates signed upload URL in private bucket "media"
-      const urlRes = await createMediaUploadUrlAction({
-        fileName,
-        mimeType,
-        fileSize,
-      });
-      if (!urlRes.success) {
-        setFeedback({ tone: "danger", message: urlRes.error.message });
-        return;
-      }
-
-      // Step 2: Client PUTs file directly to Supabase Storage signed upload URL
-      if (selectedFile) {
-        const putRes = await fetch(urlRes.data.signedUrl, {
-          method: "PUT",
-          headers: { "Content-Type": mimeType },
-          body: selectedFile,
+      try {
+        // Step 1: Server Action generates signed upload URL in private bucket "media"
+        const urlRes = await createMediaUploadUrlAction({
+          fileName,
+          mimeType,
+          fileSize,
         });
-        if (!putRes.ok) {
-          setFeedback({
-            tone: "danger",
-            message: "Gagal mengunggah berkas ke penyimpanan privat.",
-          });
+        if (!urlRes.success) {
+          setFeedback({ tone: "danger", message: urlRes.error.message });
           return;
         }
+
+        // Step 2: Client PUTs file directly to Supabase Storage signed upload URL
+        if (selectedFile) {
+          const putRes = await fetch(urlRes.data.signedUrl, {
+            method: "PUT",
+            headers: { "Content-Type": mimeType },
+            body: selectedFile,
+          });
+          if (!putRes.ok) {
+            setFeedback({
+              tone: "danger",
+              message: "Gagal mengunggah berkas ke penyimpanan privat.",
+            });
+            return;
+          }
+        }
+
+        // Step 3: Server Action confirms upload, persists media_assets row + audit log
+        const confirmRes = await confirmMediaUploadAction({
+          title: uploadTitle,
+          description: uploadDesc.trim() || null,
+          filePath: urlRes.data.filePath,
+          mimeType,
+          fileSize,
+          category: uploadCategory,
+          capturedDate: uploadDate || null,
+        });
+
+        if (!confirmRes.success) {
+          setFeedback({ tone: "danger", message: confirmRes.error.message });
+          return;
+        }
+
+        setUploadOpen(false);
+        setUploadTitle("");
+        setUploadDesc("");
+        setSelectedFile(null);
+        setFeedback({
+          tone: "success",
+          message:
+            "Dokumentasi berhasil disimpan di bucket privat dan menunggu tinjauan privasi.",
+        });
+        router.refresh();
+      } finally {
+        setUploadPending(false);
       }
-
-      // Step 3: Server Action confirms upload, persists media_assets row + audit log
-      const confirmRes = await confirmMediaUploadAction({
-        title: uploadTitle,
-        description: uploadDesc.trim() || null,
-        filePath: urlRes.data.filePath,
-        mimeType,
-        fileSize,
-        category: uploadCategory,
-        capturedDate: uploadDate || null,
-      });
-
-      if (!confirmRes.success) {
-        setFeedback({ tone: "danger", message: confirmRes.error.message });
-        return;
-      }
-
-      setUploadOpen(false);
-      setUploadTitle("");
-      setUploadDesc("");
-      setSelectedFile(null);
-      setFeedback({
-        tone: "success",
-        message:
-          "Dokumentasi berhasil disimpan di bucket privat dan menunggu tinjauan privasi.",
-      });
-      router.refresh();
-    } finally {
-      setUploadPending(false);
-    }
+    });
   }
 
   async function handleConfirmReview(e: React.FormEvent) {
     e.preventDefault();
     if (!reviewingAsset || reviewPending) return;
+    const currentAsset = reviewingAsset;
 
-    const tierCheck = checkTierCOnlineAvailability(
-      "Tata Kelola & Persetujuan Laporan",
-      connectivityStatus !== "OFFLINE"
-    );
-    if (!tierCheck.allowed) {
-      setFeedback({ tone: "warning", message: tierCheck.message });
-      return;
-    }
-
-    setReviewPending(true);
-    setFeedback(null);
-    try {
-      const res = await reviewMediaAssetPrivacyAction({
-        mediaId: reviewingAsset.id,
-        eligibleForPublic: reviewEligible,
-        reviewNotes: reviewNotes.trim() || null,
-      });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return;
+    await withTierCGuard(async () => {
+      setReviewPending(true);
+      setFeedback(null);
+      try {
+        const res = await reviewMediaAssetPrivacyAction({
+          mediaId: currentAsset.id,
+          eligibleForPublic: reviewEligible,
+          reviewNotes: reviewNotes.trim() || null,
+        });
+        if (!res.success) {
+          setFeedback({ tone: "danger", message: res.error.message });
+          return;
+        }
+        setReviewingAsset(null);
+        setReviewNotes("");
+        setFeedback({
+          tone: "success",
+          message:
+            "Keputusan tinjauan privasi dokumentasi berhasil disimpan dan dicatat dalam jejak audit.",
+        });
+        router.refresh();
+      } finally {
+        setReviewPending(false);
       }
-      setReviewingAsset(null);
-      setReviewNotes("");
-      setFeedback({
-        tone: "success",
-        message:
-          "Keputusan tinjauan privasi dokumentasi berhasil disimpan dan dicatat dalam jejak audit.",
-      });
-      router.refresh();
-    } finally {
-      setReviewPending(false);
-    }
+    });
   }
 
   return (

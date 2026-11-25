@@ -215,12 +215,20 @@ describe("DatePicker Primitives & P4 Backlog Guardrails (Fase 19 Step 2 - P4)", 
   it("14. verifies media, registration wizard, and student detail clients have 0 raw type='date' while preserving FormBottomSheet", () => {
     const mediaContent = readFileSync(mediaPath, "utf-8");
     const wizardContent = readFileSync(wizardPath, "utf-8");
-    const detailContent = readFileSync(studentDetailPath, "utf-8");
+    const detailDir = path.dirname(studentDetailPath);
+    const detailBundleContent = [
+      "student-detail-client.tsx",
+      "edit-student-profile-sheet.tsx",
+      "verify-student-sheet.tsx",
+      "place-student-sheet.tsx",
+    ]
+      .map((f) => readFileSync(path.join(detailDir, f), "utf-8"))
+      .join("\n");
 
     expect(mediaContent).not.toContain('type="date"');
     expect(wizardContent).not.toContain('type="date"');
-    expect(detailContent).not.toContain('type="date"');
-    expect(detailContent).toContain("FormBottomSheet");
+    expect(detailBundleContent).not.toContain('type="date"');
+    expect(detailBundleContent).toContain("FormBottomSheet");
   });
 
   it("15. verifies patterns index exports date-picker (17 total) and lib/status exports AUDIT_ENTITY_META", () => {

@@ -4,17 +4,18 @@ import {
   listClassesForServiceUnit,
   listTeachersForServiceUnit,
   resolveTeacherForActor,
-} from "@/features/academic/services/academic-service";
-import { listAttendanceSessionHistory } from "@/features/attendance/services/attendance-service";
-import { listAuditLogsForWorkspace } from "@/features/audit/services/audit-service";
-import { countRevokedConsentsForDashboard } from "@/features/consent/services/consent-service";
-import { listGovernanceReportsForWorkspace } from "@/features/governance/services/governance-service";
-import { countUnreviewedMediaForDashboard } from "@/features/media/services/media-service";
-import { countAwaitingPublicationsForDashboard } from "@/features/publishing/services/publishing-service";
-import { countStudentsForDashboard } from "@/features/students/services/student-service";
+} from "@/features/academic";
+import { listAttendanceSessionHistory } from "@/features/attendance";
+import { listAuditLogsForWorkspace } from "@/features/audit";
+import { countRevokedConsentsForDashboard } from "@/features/consent";
+import { listGovernanceReportsForWorkspace } from "@/features/governance";
+import { countUnreviewedMediaForDashboard } from "@/features/media";
+import { countAwaitingPublicationsForDashboard } from "@/features/publishing";
+import { countStudentsForDashboard } from "@/features/students";
 import { getRoleLabel, type SystemRole } from "@/lib/status";
 import type { SessionUser } from "@/server/auth/session";
 import { can } from "@/server/permissions/can";
+import { formatDateID, formatTimeID } from "@/utils/date-formatter";
 
 export type DashboardTone =
   | "neutral"
@@ -105,9 +106,7 @@ export function getIndonesianTimeGreeting(now = new Date()): string {
 }
 
 function formatShortIndonesianDate(isoOrDate: string): string {
-  const parsed = new Date(isoOrDate);
-  if (Number.isNaN(parsed.getTime())) return isoOrDate;
-  return parsed.toLocaleDateString("id-ID", {
+  return formatDateID(isoOrDate, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -152,13 +151,7 @@ function mapPrivacySafeActivityEntry(
   now: Date
 ): DashboardActivityEntryDTO {
   const dateGroup = getRelativeDateGroupLabel(entry.createdAt, now);
-  const parsed = new Date(entry.createdAt);
-  const timeLabel = Number.isNaN(parsed.getTime())
-    ? ""
-    : parsed.toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+  const timeLabel = formatTimeID(entry.createdAt);
 
   switch (entry.action) {
     case "StudentRegistered":

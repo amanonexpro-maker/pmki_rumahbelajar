@@ -104,32 +104,45 @@ export type PublicRegistrationInput = z.infer<typeof publicRegistrationSchema>;
 /**
  * Registration verification decision schema
  */
-export const verifyStudentSchema = z
-  .object({
-    studentId: z.string().uuid("ID peserta didik tidak valid."),
-    decision: z.enum(
-      ["PENDING_VERIFICATION", "VERIFIED", "WAITLIST", "REJECTED", "CANCELLED"],
-      {
-        message: "Pilih keputusan verifikasi pendaftaran.",
-      }
-    ),
-    reason: z.string().trim().optional(),
-  })
-  .superRefine((val, ctx) => {
-    if (
-      (val.decision === "REJECTED" || val.decision === "CANCELLED") &&
-      (!val.reason || val.reason.length < 5)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["reason"],
-        message:
-          "Tuliskan alasan penolakan atau pembatalan pendaftaran (minimal 5 karakter).",
-      });
+const verifyStudentBaseSchema = z.object({
+  studentId: z.string().uuid("ID peserta didik tidak valid."),
+  decision: z.enum(
+    ["PENDING_VERIFICATION", "VERIFIED", "WAITLIST", "REJECTED", "CANCELLED"],
+    {
+      message: "Pilih keputusan verifikasi pendaftaran.",
     }
-  });
+  ),
+  reason: z.string().trim().optional(),
+});
+
+function refineVerifyDecisionReason(
+  val: { decision: string; reason?: string },
+  ctx: z.RefinementCtx
+) {
+  if (
+    (val.decision === "REJECTED" || val.decision === "CANCELLED") &&
+    (!val.reason || val.reason.length < 5)
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["reason"],
+      message:
+        "Tuliskan alasan penolakan atau pembatalan pendaftaran (minimal 5 karakter).",
+    });
+  }
+}
+
+export const verifyStudentSchema = verifyStudentBaseSchema.superRefine(
+  refineVerifyDecisionReason
+);
 
 export type VerifyStudentInput = z.infer<typeof verifyStudentSchema>;
+
+export const verifyStudentFormSchema = verifyStudentBaseSchema
+  .omit({ studentId: true })
+  .superRefine(refineVerifyDecisionReason);
+
+export type VerifyStudentFormValues = z.infer<typeof verifyStudentFormSchema>;
 
 /**
  * Class placement schema
@@ -141,6 +154,12 @@ export const placeStudentSchema = z.object({
 });
 
 export type PlaceStudentInput = z.infer<typeof placeStudentSchema>;
+
+export const placeStudentFormSchema = placeStudentSchema.omit({
+  studentId: true,
+});
+
+export type PlaceStudentFormValues = z.infer<typeof placeStudentFormSchema>;
 
 /**
  * Profile update schema
@@ -170,4 +189,19 @@ export const updateStudentProfileSchema = z.object({
 
 export type UpdateStudentProfileInput = z.infer<
   typeof updateStudentProfileSchema
+>;
+
+export const editStudentProfileFormSchema = updateStudentProfileSchema.pick({
+  fullName: true,
+  nickname: true,
+  gender: true,
+  birthDate: true,
+  educationLevel: true,
+  schoolName: true,
+  district: true,
+  isRaalResident: true,
+});
+
+export type EditStudentProfileFormValues = z.infer<
+  typeof editStudentProfileFormSchema
 >;

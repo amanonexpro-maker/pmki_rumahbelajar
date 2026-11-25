@@ -77,18 +77,20 @@ export function KabarFeedView({
       : initialTab;
 
   const [activeTab, setActiveTab] = React.useState<KabarTabFilter>(resolvedTab);
+  const [prevQueryTab, setPrevQueryTab] = React.useState(queryTab);
   const [displayLimit, setDisplayLimit] = React.useState(INITIAL_DISPLAY_LIMIT);
 
-  React.useEffect(() => {
+  if (queryTab !== prevQueryTab) {
+    setPrevQueryTab(queryTab);
     if (
-      queryTab &&
-      (queryTab === "galeri" || queryTab === "berita" || queryTab === "semua") &&
-      queryTab !== activeTab
+      queryTab === "galeri" ||
+      queryTab === "berita" ||
+      queryTab === "semua"
     ) {
       setActiveTab(queryTab);
       setDisplayLimit(INITIAL_DISPLAY_LIMIT);
     }
-  }, [queryTab, activeTab]);
+  }
 
   // Transformasi data real ke model feed hybrid dengan penjaminan tanggal absolut Indonesia
   const allHybridItems = React.useMemo<HybridFeedItem[]>(() => {

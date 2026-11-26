@@ -8,7 +8,18 @@ import {
   PageHeader,
   type DetailTabItem,
 } from "@/components/patterns";
-import { Badge, Button, Icon, Input, Textarea } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Icon,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from "@/components/ui";
 import { ICON_MAP } from "@/config/icons";
 import type { ClassSummaryDTO } from "@/features/academic";
 import { useUrlQueryParams } from "@/hooks/use-url-query-params";
@@ -141,18 +152,21 @@ export function AttendanceWorkspaceClient({
             >
               Kelas bimbingan belajar
             </label>
-            <select
-              id="attendance-class-select"
+            <Select
               value={initialClassId}
-              onChange={(e) => updateUrl({ classId: e.target.value })}
-              className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm font-medium text-foreground focus-ring"
+              onValueChange={(value) => updateUrl({ classId: value })}
             >
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.name} ({cls.enrolledCount} peserta didik)
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="attendance-class-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                {classes.map((cls) => (
+                  <SelectItem key={cls.id} value={cls.id}>
+                    {cls.name} ({cls.enrolledCount} peserta didik)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <DatePicker

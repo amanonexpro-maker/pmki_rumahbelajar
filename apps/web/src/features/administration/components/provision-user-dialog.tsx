@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import {
   Button,
   Dialog,
@@ -13,6 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
 import { getRoleLabel, type SystemRole } from "@/lib/status";
@@ -59,6 +64,7 @@ export function ProvisionUserDialog({
   });
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
@@ -148,17 +154,24 @@ export function ProvisionUserDialog({
               >
                 Peran awal *
               </label>
-              <select
-                id="prov-role"
-                {...register("roleCode")}
-                className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
-              >
-                {roles.map((r) => (
-                  <option key={r.id} value={r.code}>
-                    {getRoleLabel(r.code as SystemRole) ?? r.name} ({r.code})
-                  </option>
-                ))}
-              </select>
+              <Controller
+                control={control}
+                name="roleCode"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="prov-role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                      {roles.map((r) => (
+                        <SelectItem key={r.id} value={r.code}>
+                          {getRoleLabel(r.code as SystemRole) ?? r.name} ({r.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.roleCode && (
                 <p className="text-xs text-danger">{errors.roleCode.message}</p>
               )}
@@ -172,17 +185,24 @@ export function ProvisionUserDialog({
                 >
                   Organisasi *
                 </label>
-                <select
-                  id="prov-org"
-                  {...register("organizationId")}
-                  className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
-                >
-                  {organizations.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.name}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  control={control}
+                  name="organizationId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="prov-org">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                        {organizations.map((o) => (
+                          <SelectItem key={o.id} value={o.id}>
+                            {o.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.organizationId && (
                   <p className="text-xs text-danger">
                     {errors.organizationId.message}
@@ -197,17 +217,24 @@ export function ProvisionUserDialog({
                 >
                   Unit layanan *
                 </label>
-                <select
-                  id="prov-unit"
-                  {...register("serviceUnitId")}
-                  className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
-                >
-                  {serviceUnits.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  control={control}
+                  name="serviceUnitId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="prov-unit">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                        {serviceUnits.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.serviceUnitId && (
                   <p className="text-xs text-danger">
                     {errors.serviceUnitId.message}

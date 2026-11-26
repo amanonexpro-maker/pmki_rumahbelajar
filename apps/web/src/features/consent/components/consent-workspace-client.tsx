@@ -2,7 +2,11 @@
 
 import * as React from "react";
 import { Lock, ShieldAlert, ShieldCheck } from "lucide-react";
-import { EmptyState, StatusBadge } from "@/components/compositions";
+import {
+  EmptyState,
+  GenericFilterSelect,
+  StatusBadge,
+} from "@/components/compositions";
 import {
   DataTable,
   MobileCardList,
@@ -21,6 +25,11 @@ import {
   DialogHeader,
   DialogTitle,
   Icon,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from "@/components/ui";
 import { useTierCGuard } from "@/hooks/use-tier-c-guard";
@@ -266,23 +275,17 @@ export function ConsentWorkspaceClient({
           router.push(pathname);
         }}
         desktopFilters={
-          <select
-            aria-label="Filter status persetujuan foto dan video"
+          <GenericFilterSelect
+            label="Filter status persetujuan foto dan video"
             value={initialPhotoStatus}
-            onChange={(e) => updateUrl({ photoStatus: e.target.value })}
-            className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-          >
-            <option value="ALL">Semua status foto & video</option>
-            <option value="GRANTED">
-              {CONSENT_STATUS_META.GRANTED.label}
-            </option>
-            <option value="DENIED">
-              {CONSENT_STATUS_META.DENIED.label}
-            </option>
-            <option value="REVOKED">
-              {CONSENT_STATUS_META.REVOKED.label}
-            </option>
-          </select>
+            onChange={(value) => updateUrl({ photoStatus: value })}
+            options={[
+              { value: "ALL", label: "Semua status foto & video" },
+              { value: "GRANTED", label: CONSENT_STATUS_META.GRANTED.label },
+              { value: "DENIED", label: CONSENT_STATUS_META.DENIED.label },
+              { value: "REVOKED", label: CONSENT_STATUS_META.REVOKED.label },
+            ]}
+          />
         }
       />
 
@@ -372,24 +375,27 @@ export function ConsentWorkspaceClient({
                 >
                   Persetujuan Data
                 </label>
-                <select
-                  id="edit-personal-consent"
+                <Select
                   value={draftPersonal}
-                  onChange={(e) =>
-                    setDraftPersonal(e.target.value as ConsentStatus)
+                  onValueChange={(value) =>
+                    setDraftPersonal(value as ConsentStatus)
                   }
-                  className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
                 >
-                  <option value="GRANTED">
-                    {CONSENT_STATUS_META.GRANTED.label}
-                  </option>
-                  <option value="DENIED">
-                    {CONSENT_STATUS_META.DENIED.label}
-                  </option>
-                  <option value="REVOKED">
-                    {CONSENT_STATUS_META.REVOKED.label}
-                  </option>
-                </select>
+                  <SelectTrigger id="edit-personal-consent">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                    <SelectItem value="GRANTED">
+                      {CONSENT_STATUS_META.GRANTED.label}
+                    </SelectItem>
+                    <SelectItem value="DENIED">
+                      {CONSENT_STATUS_META.DENIED.label}
+                    </SelectItem>
+                    <SelectItem value="REVOKED">
+                      {CONSENT_STATUS_META.REVOKED.label}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
@@ -399,24 +405,27 @@ export function ConsentWorkspaceClient({
                 >
                   Persetujuan Foto & Video
                 </label>
-                <select
-                  id="edit-photo-consent"
+                <Select
                   value={draftPhoto}
-                  onChange={(e) =>
-                    setDraftPhoto(e.target.value as ConsentStatus)
+                  onValueChange={(value) =>
+                    setDraftPhoto(value as ConsentStatus)
                   }
-                  className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
                 >
-                  <option value="GRANTED">
-                    {CONSENT_STATUS_META.GRANTED.label}
-                  </option>
-                  <option value="DENIED">
-                    {CONSENT_STATUS_META.DENIED.label}
-                  </option>
-                  <option value="REVOKED">
-                    {CONSENT_STATUS_META.REVOKED.label}
-                  </option>
-                </select>
+                  <SelectTrigger id="edit-photo-consent">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                    <SelectItem value="GRANTED">
+                      {CONSENT_STATUS_META.GRANTED.label}
+                    </SelectItem>
+                    <SelectItem value="DENIED">
+                      {CONSENT_STATUS_META.DENIED.label}
+                    </SelectItem>
+                    <SelectItem value="REVOKED">
+                      {CONSENT_STATUS_META.REVOKED.label}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">

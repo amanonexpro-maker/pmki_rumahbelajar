@@ -1,7 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { Badge, Button, Textarea } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from "@/components/ui";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
 import type {
   AdminPermissionRecordDTO,
@@ -78,18 +87,18 @@ export function OverridesTabContent({
           >
             Pilih pengguna
           </label>
-          <select
-            id="ov-user"
-            value={overrideUserId}
-            onChange={(e) => setOverrideUserId(e.target.value)}
-            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
-          >
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({u.email})
-              </option>
-            ))}
-          </select>
+          <Select value={overrideUserId} onValueChange={setOverrideUserId}>
+            <SelectTrigger id="ov-user">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+              {users.map((u) => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.name} ({u.email})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -100,18 +109,18 @@ export function OverridesTabContent({
             >
               Kode hak akses
             </label>
-            <select
-              id="ov-perm"
-              value={overridePermCode}
-              onChange={(e) => setOverridePermCode(e.target.value)}
-              className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm font-mono text-foreground focus-ring"
-            >
-              {permissions.map((p) => (
-                <option key={p.id} value={p.code}>
-                  {p.code} — {p.name}
-                </option>
-              ))}
-            </select>
+            <Select value={overridePermCode} onValueChange={setOverridePermCode}>
+              <SelectTrigger id="ov-perm" className="font-mono">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                {permissions.map((p) => (
+                  <SelectItem key={p.id} value={p.code}>
+                    {p.code} — {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1">
@@ -121,19 +130,24 @@ export function OverridesTabContent({
             >
               Keputusan override
             </label>
-            <select
-              id="ov-mode"
+            <Select
               value={overrideMode}
-              onChange={(e) =>
-                setOverrideMode(e.target.value as "GRANT" | "REVOKE")
+              onValueChange={(value) =>
+                setOverrideMode(value as "GRANT" | "REVOKE")
               }
-              className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
             >
-              <option value="GRANT">Beri hak akses khusus (GRANT)</option>
-              <option value="REVOKE">
-                Cabut hak akses (REVOKE — selalu menang)
-              </option>
-            </select>
+              <SelectTrigger id="ov-mode">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                <SelectItem value="GRANT">
+                  Beri hak akses khusus (GRANT)
+                </SelectItem>
+                <SelectItem value="REVOKE">
+                  Cabut hak akses (REVOKE — selalu menang)
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

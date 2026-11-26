@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Eye, History, Lock } from "lucide-react";
-import { EmptyState } from "@/components/compositions";
+import { EmptyState, GenericFilterSelect } from "@/components/compositions";
 import {
   DataTable,
   DecisionHistory,
@@ -196,37 +196,31 @@ export function AuditWorkspaceClient({
         }}
         desktopFilters={
           <>
-            <select
-              aria-label="Filter jenis peristiwa audit"
+            <GenericFilterSelect
+              label="Filter jenis peristiwa audit"
               value={initialAction}
-              onChange={(e) =>
-                updateUrl({ action: e.target.value, page: "1" })
-              }
-              className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-            >
-              <option value="ALL">Semua peristiwa</option>
-              {Object.entries(AUDIT_ACTION_LABELS).map(([code, label]) => (
-                <option key={code} value={code}>
-                  {label}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => updateUrl({ action: value, page: "1" })}
+              options={[
+                { value: "ALL", label: "Semua peristiwa" },
+                ...Object.entries(AUDIT_ACTION_LABELS).map(([code, label]) => ({
+                  value: code,
+                  label,
+                })),
+              ]}
+            />
 
-            <select
-              aria-label="Filter jenis entitas"
+            <GenericFilterSelect
+              label="Filter jenis entitas"
               value={initialEntityType}
-              onChange={(e) =>
-                updateUrl({ entityType: e.target.value, page: "1" })
-              }
-              className="h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring"
-            >
-              <option value="ALL">Semua entitas</option>
-              {Object.entries(AUDIT_ENTITY_META).map(([code, meta]) => (
-                <option key={code} value={code}>
-                  {meta.label}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => updateUrl({ entityType: value, page: "1" })}
+              options={[
+                { value: "ALL", label: "Semua entitas" },
+                ...Object.entries(AUDIT_ENTITY_META).map(([code, meta]) => ({
+                  value: code,
+                  label: meta.label,
+                })),
+              ]}
+            />
           </>
         }
       />

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   Button,
   Dialog,
@@ -14,6 +14,11 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from "@/components/ui";
 import { ICON_MAP } from "@/config/icons";
@@ -274,17 +279,24 @@ function PublishingCreateForm({
               >
                 Kategori *
               </label>
-              <select
-                id="pub-category"
-                className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
-                {...register("category")}
-              >
-                {PUBLICATION_CATEGORY_VALUES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {PUBLICATION_CATEGORY_LABELS[cat]}
-                  </option>
-                ))}
-              </select>
+              <Controller
+                control={control}
+                name="category"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="pub-category">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                      {PUBLICATION_CATEGORY_VALUES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {PUBLICATION_CATEGORY_LABELS[cat]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.category && (
                 <p className="text-xs text-danger">{errors.category.message}</p>
               )}

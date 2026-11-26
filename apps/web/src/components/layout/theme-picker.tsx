@@ -2,6 +2,13 @@
 
 import * as React from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useTheme, type ThemePreference } from "./theme-provider";
 
@@ -64,31 +71,36 @@ export function ThemePicker({ className, compact = false }: ThemePickerProps) {
   }
 
   return (
-    <label className={cn("inline-flex items-center gap-2", className)}>
+    <div className={cn("inline-flex items-center gap-2", className)}>
       <ThemeIcon
         aria-hidden="true"
         className="h-4 w-4 shrink-0 text-secondary-foreground"
       />
       <span className="sr-only">Tema tampilan</span>
-      <select
-        aria-label="Tema tampilan"
+      <Select
         value={currentTheme}
         disabled={!isMounted}
-        onChange={(event) => {
-          const value = event.target.value;
+        onValueChange={(value) => {
           if (value === "light" || value === "dark" || value === "system") {
             setTheme(value);
           }
         }}
-        className="min-h-11 sm:min-h-9 min-w-24 rounded-sm border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors focus-ring cursor-pointer disabled:opacity-80"
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <SelectTrigger
+          aria-label="Tema tampilan"
+          className="min-h-11 sm:min-h-9 w-28 sm:w-26 px-2.5 py-1.5 text-xs font-semibold rounded-sm"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 

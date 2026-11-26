@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import {
   Button,
   Dialog,
@@ -13,6 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from "@/components/ui";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
@@ -49,6 +54,7 @@ export function GovernanceCreateDialog({
   pending,
 }: GovernanceCreateDialogProps) {
   const {
+    control,
     register,
     handleSubmit,
     getValues,
@@ -112,17 +118,24 @@ export function GovernanceCreateDialog({
                 >
                   Jenis laporan *
                 </label>
-                <select
-                  id="report-type"
-                  className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
-                  {...register("reportType")}
-                >
-                  {REPORT_TYPE_VALUES.map((code) => (
-                    <option key={code} value={code}>
-                      {REPORT_TYPE_LABELS[code]}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  control={control}
+                  name="reportType"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="report-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                        {REPORT_TYPE_VALUES.map((code) => (
+                          <SelectItem key={code} value={code}>
+                            {REPORT_TYPE_LABELS[code]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 {errors.reportType && (
                   <p className="text-xs text-danger">
                     {errors.reportType.message}

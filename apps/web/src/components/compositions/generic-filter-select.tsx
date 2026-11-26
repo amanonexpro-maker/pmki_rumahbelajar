@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui";
 import { cn } from "@/lib/cn";
 
 export interface FilterSelectOption {
@@ -25,22 +32,25 @@ export function GenericFilterSelect({
   className,
 }: GenericFilterSelectProps) {
   return (
-    <select
-      id={id}
-      aria-label={label}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={cn(
-        "h-10 rounded-control border border-border bg-surface px-3 text-xs font-medium text-foreground focus-ring",
-        className
-      )}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger
+        id={id}
+        aria-label={label}
+        className={cn(
+          "h-10 sm:min-h-10 w-auto px-3 text-xs font-medium",
+          className
+        )}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 

@@ -42,16 +42,14 @@ describe("DatePicker Primitives & P4 Backlog Guardrails (Fase 19 Step 2 - P4)", 
   );
   const statusIndexPath = path.resolve(process.cwd(), "src/lib/status/index.ts");
 
-  it("1. verifies date-picker.tsx contains 'use client' and real class string containing opacity-0, absolute, and inset-0 on native input", () => {
+  it("1. verifies date-picker.tsx uses custom PMKI Popover Calendar without native type='date'", () => {
     const content = readFileSync(datePickerPath, "utf-8");
     expect(content).toContain('"use client"');
-    const nativeMatch = content.match(/"([^"\n]*opacity-0[^"\n]*)"/);
-    expect(nativeMatch).not.toBeNull();
-    if (nativeMatch) {
-      expect(nativeMatch[1]).toContain("opacity-0");
-      expect(nativeMatch[1]).toContain("absolute");
-      expect(nativeMatch[1]).toContain("inset-0");
-    }
+    expect(content).toContain("Popover");
+    expect(content).toContain("PopoverTrigger");
+    expect(content).toContain("PopoverContent");
+    expect(content).toContain("Select");
+    expect(content).not.toContain('type="date"');
   });
 
   it("2. verifies date-picker.tsx contains min-h-11, ICON_MAP.calendar, formatToIndonesianStandard, and decorative button is aria-hidden (MINOR-1)", () => {
@@ -78,27 +76,14 @@ describe("DatePicker Primitives & P4 Backlog Guardrails (Fase 19 Step 2 - P4)", 
     expect(content).not.toMatch(forbiddenPalette);
   });
 
-  it("4. verifies date-picker.tsx enforces unique IDs between mobile and desktop presentations without duplicate id attributes (MAJOR-1)", () => {
+  it("4. verifies date-picker.tsx enforces unique baseId without duplicate id attributes", () => {
     const content = readFileSync(datePickerPath, "utf-8");
     expect(content).toContain("useId(");
-    expect(content).toContain("-mobile-display");
-    expect(content).toContain("-mobile-native");
-    expect(content).toContain("-desktop-native");
+    expect(content).toContain("htmlFor={baseId}");
+    expect(content).toContain("id={baseId}");
 
-    // Ensure distinct IDs for mobile and desktop inputs
-    expect(content).toContain("htmlFor={mobileDisplayId}");
-    expect(content).toContain("htmlFor={desktopNativeId}");
-    expect(content).toContain("id={mobileDisplayId}");
-    expect(content).toContain("id={mobileNativeId}");
-    expect(content).toContain("id={desktopNativeId}");
-
-    // Verify exactly one instance of each ID attribute assignment in JSX
-    const mobileDisplayMatches = Array.from(content.matchAll(/id=\{mobileDisplayId\}/g));
-    const mobileNativeMatches = Array.from(content.matchAll(/id=\{mobileNativeId\}/g));
-    const desktopNativeMatches = Array.from(content.matchAll(/id=\{desktopNativeId\}/g));
-    expect(mobileDisplayMatches.length).toBe(1);
-    expect(mobileNativeMatches.length).toBe(1);
-    expect(desktopNativeMatches.length).toBe(1);
+    const baseIdMatches = Array.from(content.matchAll(/id=\{baseId\}/g));
+    expect(baseIdMatches.length).toBe(1);
   });
 
   it("5. verifies summary-strip.tsx exports summaryStripGridClass containing snap-mandatory, sm:grid-cols-2, and sm:divide-x", () => {

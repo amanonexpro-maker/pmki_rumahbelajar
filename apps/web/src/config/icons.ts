@@ -31,6 +31,8 @@ import {
   CalendarCheck,
   Check,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   CloudOff,
   Copy,
@@ -137,5 +139,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   arrowRight: ArrowRight,
   arrowUpRight: ArrowUpRight,
   calendar: Calendar,
+  chevronLeft: ChevronLeft,
+  chevronRight: ChevronRight,
 } as const;
 

@@ -23,6 +23,11 @@ import {
   DialogHeader,
   DialogTitle,
   Icon,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from "@/components/ui";
 import type { StudentListItemDTO } from "@/features/students";
@@ -283,19 +288,22 @@ export function DevelopmentWorkspaceClient({
           >
             Filter peserta didik
           </label>
-          <select
-            id="dev-student-filter"
+          <Select
             value={initialStudentId}
-            onChange={(e) => updateUrl({ studentId: e.target.value })}
-            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
+            onValueChange={(value) => updateUrl({ studentId: value })}
           >
-            <option value="ALL">Semua peserta didik</option>
-            {students.map((st) => (
-              <option key={st.id} value={st.id}>
-                {st.fullName} ({st.educationLevelLabel})
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="dev-student-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+              <SelectItem value="ALL">Semua peserta didik</SelectItem>
+              {students.map((st) => (
+                <SelectItem key={st.id} value={st.id}>
+                  {st.fullName} ({st.educationLevelLabel})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-1">
@@ -305,19 +313,22 @@ export function DevelopmentWorkspaceClient({
           >
             Filter kategori perkembangan
           </label>
-          <select
-            id="dev-category-filter"
+          <Select
             value={initialCategoryId}
-            onChange={(e) => updateUrl({ categoryId: e.target.value })}
-            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
+            onValueChange={(value) => updateUrl({ categoryId: value })}
           >
-            <option value="ALL">Semua kategori</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="dev-category-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+              <SelectItem value="ALL">Semua kategori</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -487,26 +498,28 @@ export function DevelopmentWorkspaceClient({
                   >
                     Peserta didik *
                   </label>
-                  <select
-                    id="note-student"
+                  <Select
                     value={draft.studentId}
                     disabled={Boolean(draft.noteId)}
-                    onChange={(e) => {
-                      const val = e.target.value;
+                    onValueChange={(val) => {
                       setDraft((prev) => {
                         const next = { ...prev, studentId: val };
                         void saveDraftNow(next);
                         return next;
                       });
                     }}
-                    className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
                   >
-                    {students.map((st) => (
-                      <option key={st.id} value={st.id}>
-                        {st.fullName}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="note-student">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                      {students.map((st) => (
+                        <SelectItem key={st.id} value={st.id}>
+                          {st.fullName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1">
@@ -516,25 +529,27 @@ export function DevelopmentWorkspaceClient({
                   >
                     Kategori perkembangan *
                   </label>
-                  <select
-                    id="note-category"
+                  <Select
                     value={draft.categoryId}
-                    onChange={(e) => {
-                      const val = e.target.value;
+                    onValueChange={(val) => {
                       setDraft((prev) => {
                         const next = { ...prev, categoryId: val };
                         void saveDraftNow(next);
                         return next;
                       });
                     }}
-                    className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
                   >
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="note-category">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

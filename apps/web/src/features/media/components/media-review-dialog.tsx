@@ -12,6 +12,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Textarea,
 } from "@/components/ui";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
@@ -88,21 +93,22 @@ export function MediaReviewDialog({
                 control={control}
                 name="eligibleForPublic"
                 render={({ field }) => (
-                  <select
-                    id="review-eligibility"
+                  <Select
                     value={field.value ? "PUBLIC" : "INTERNAL"}
-                    onChange={(e) =>
-                      field.onChange(e.target.value === "PUBLIC")
-                    }
-                    className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
+                    onValueChange={(value) => field.onChange(value === "PUBLIC")}
                   >
-                    <option value="PUBLIC">
-                      Layak tayang di publik (Persetujuan wali terverifikasi)
-                    </option>
-                    <option value="INTERNAL">
-                      Hanya arsip internal (Batasi dari galeri publik)
-                    </option>
-                  </select>
+                    <SelectTrigger id="review-eligibility">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                      <SelectItem value="PUBLIC">
+                        Layak tayang di publik (Persetujuan wali terverifikasi)
+                      </SelectItem>
+                      <SelectItem value="INTERNAL">
+                        Hanya arsip internal (Batasi dari galeri publik)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 )}
               />
             </div>

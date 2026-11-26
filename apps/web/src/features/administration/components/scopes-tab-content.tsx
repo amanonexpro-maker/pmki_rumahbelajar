@@ -1,7 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Button } from "@/components/ui";
+import {
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
 import type {
   AdministrationWorkspaceViewDTO,
@@ -74,18 +81,18 @@ export function ScopesTabContent({
           >
             Pilih pengguna
           </label>
-          <select
-            id="scope-user"
-            value={scopeUserId}
-            onChange={(e) => setScopeUserId(e.target.value)}
-            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
-          >
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({u.email})
-              </option>
-            ))}
-          </select>
+          <Select value={scopeUserId} onValueChange={setScopeUserId}>
+            <SelectTrigger id="scope-user">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+              {users.map((u) => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.name} ({u.email})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-1">
@@ -95,18 +102,18 @@ export function ScopesTabContent({
           >
             Organisasi
           </label>
-          <select
-            id="scope-org"
-            value={scopeOrgId}
-            onChange={(e) => setScopeOrgId(e.target.value)}
-            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
-          >
-            {scopeCatalog.organizations.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.name} ({o.code})
-              </option>
-            ))}
-          </select>
+          <Select value={scopeOrgId} onValueChange={setScopeOrgId}>
+            <SelectTrigger id="scope-org">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+              {scopeCatalog.organizations.map((o) => (
+                <SelectItem key={o.id} value={o.id}>
+                  {o.name} ({o.code})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-1">
@@ -116,18 +123,18 @@ export function ScopesTabContent({
           >
             Unit layanan
           </label>
-          <select
-            id="scope-unit"
-            value={scopeUnitId}
-            onChange={(e) => setScopeUnitId(e.target.value)}
-            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
-          >
-            {scopeCatalog.serviceUnits.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
+          <Select value={scopeUnitId} onValueChange={setScopeUnitId}>
+            <SelectTrigger id="scope-unit">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+              {scopeCatalog.serviceUnits.map((u) => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-1">
@@ -137,19 +144,26 @@ export function ScopesTabContent({
           >
             Program (opsional)
           </label>
-          <select
-            id="scope-prog"
-            value={scopeProgramId}
-            onChange={(e) => setScopeProgramId(e.target.value)}
-            className="flex h-11 w-full rounded-control border border-border bg-surface px-3 text-sm text-foreground focus-ring"
+          <Select
+            value={scopeProgramId || "ALL_PROGRAMS"}
+            onValueChange={(value) =>
+              setScopeProgramId(value === "ALL_PROGRAMS" ? "" : value)
+            }
           >
-            <option value="">Seluruh program pada unit ini</option>
-            {scopeCatalog.programs.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="scope-prog">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+              <SelectItem value="ALL_PROGRAMS">
+                Seluruh program pada unit ini
+              </SelectItem>
+              {scopeCatalog.programs.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Button

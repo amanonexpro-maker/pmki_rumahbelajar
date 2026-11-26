@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Archive,
   ArchiveRestore,
+  MoreHorizontal,
   Pencil,
   QrCode,
   ShieldCheck,
@@ -21,6 +22,11 @@ import {
 import {
   Badge,
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Icon,
 } from "@/components/ui";
 import type { ClassSummaryDTO } from "@/features/academic";
@@ -59,6 +65,7 @@ export interface StudentDetailClientProps {
   canVerifyStudent: boolean;
   canUpdateStudent: boolean;
   canArchiveStudent?: boolean;
+  canUpdateGuardian?: boolean;
   initialTab?: string;
 }
 
@@ -69,6 +76,7 @@ export function StudentDetailClient({
   canVerifyStudent,
   canUpdateStudent,
   canArchiveStudent = false,
+  canUpdateGuardian = false,
   initialTab = "overview",
 }: StudentDetailClientProps) {
   const router = useRouter();
@@ -214,12 +222,21 @@ export function StudentDetailClient({
         educationLevel: values.educationLevel,
         schoolName: values.schoolName || undefined,
         district: values.district,
+        address: values.address || undefined,
         isRaalResident: values.isRaalResident,
+        guardianFullName: values.guardianFullName || undefined,
+        guardianRelationship: values.guardianRelationship || undefined,
+        guardianPhone: values.guardianPhone || undefined,
+        guardianOccupation: values.guardianOccupation || undefined,
       });
       if (!res.success) {
         return { success: false, error: res.error.message };
       }
       setEditOpen(false);
+      setFeedbackToast({
+        tone: "success",
+        message: `Profil ${values.fullName} berhasil diperbarui.`,
+      });
       router.refresh();
       return { success: true };
     } finally {
@@ -327,19 +344,7 @@ export function StudentDetailClient({
           ) : undefined
         }
         secondaryActions={
-          <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full sm:w-auto">
-            {canVerifyStudent && !isNeedsVerification && (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setVerifyOpen(true)}
-                leftIcon={<Icon icon={ShieldCheck} size="xs" />}
-                className="w-full sm:w-auto min-h-11 sm:min-h-9"
-              >
-                Ubah status pendaftaran
-              </Button>
-            )}
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
             <Button
               type="button"
               variant="secondary"
@@ -350,42 +355,59 @@ export function StudentDetailClient({
             >
               Kartu QR
             </Button>
-            {canUpdateStudent && (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setEditOpen(true)}
-                leftIcon={<Icon icon={Pencil} size="xs" />}
-                className="w-full sm:w-auto min-h-11 sm:min-h-9"
-              >
-                Ubah profil
-              </Button>
-            )}
-            {canArchiveStudent && (
-              student.archivedAt ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setRestoreOpen(true)}
-                  leftIcon={<Icon icon={ArchiveRestore} size="xs" />}
-                  className="w-full sm:w-auto min-h-11 sm:min-h-9"
-                >
-                  Pulihkan peserta didik
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setArchiveOpen(true)}
-                  leftIcon={<Icon icon={Archive} size="xs" />}
-                  className="w-full sm:w-auto min-h-11 sm:min-h-9 text-danger hover:text-danger"
-                >
-                  Arsipkan peserta didik
-                </Button>
-              )
+
+            {(canUpdateStudent ||
+              (canVerifyStudent && !isNeedsVerification) ||
+              canArchiveStudent) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<Icon icon={MoreHorizontal} size="xs" />}
+                    className="w-full sm:w-auto min-h-11 sm:min-h-9"
+                  >
+                    Tindakan lainnya
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {canUpdateStudent && (
+                    <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+                      <Icon icon={Pencil} size="xs" />
+                      <span>Ubah profil</span>
+                    </DropdownMenuItem>
+                  )}
+                  {canVerifyStudent && !isNeedsVerification && (
+                    <DropdownMenuItem onSelect={() => setVerifyOpen(true)}>
+                      <Icon icon={ShieldCheck} size="xs" />
+                      <span>Ubah status pendaftaran</span>
+                    </DropdownMenuItem>
+                  )}
+                  {canArchiveStudent && (
+                    <>
+                      {(canUpdateStudent ||
+                        (canVerifyStudent && !isNeedsVerification)) && (
+                        <DropdownMenuSeparator />
+                      )}
+                      {student.archivedAt ? (
+                        <DropdownMenuItem onSelect={() => setRestoreOpen(true)}>
+                          <Icon icon={ArchiveRestore} size="xs" />
+                          <span>Pulihkan peserta didik</span>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          onSelect={() => setArchiveOpen(true)}
+                          className="text-danger focus:text-danger"
+                        >
+                          <Icon icon={Archive} size="xs" />
+                          <span>Arsipkan peserta didik</span>
+                        </DropdownMenuItem>
+                      )}
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         }
@@ -441,6 +463,7 @@ export function StudentDetailClient({
       <EditStudentProfileSheet
         open={editOpen}
         onOpenChange={setEditOpen}
+        canUpdateGuardian={canUpdateGuardian && Boolean(student.guardian)}
         initialData={{
           fullName: student.fullName,
           nickname: student.nickname,
@@ -451,7 +474,12 @@ export function StudentDetailClient({
           district:
             (student.district as "Kalirejo" | "Lawang" | "Lainnya") ||
             "Kalirejo",
+          address: student.address ?? "",
           isRaalResident: student.isRaalResident,
+          guardianFullName: student.guardian?.fullName ?? "",
+          guardianRelationship: student.guardian?.relationship ?? "IBU",
+          guardianPhone: student.guardian?.phone ?? "",
+          guardianOccupation: student.guardian?.occupation ?? "",
         }}
         onSubmit={handleEditSubmit}
         pending={editPending}

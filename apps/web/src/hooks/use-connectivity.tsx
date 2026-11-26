@@ -143,7 +143,13 @@ const STATE_UI: Record<
  * Subtle, non-intrusive connectivity & last-sync indicator (06 §15–16).
  * Displays "Sinkron terakhir: [waktu]" instead of ambiguous "Up To Date".
  */
-export function ConnectivityIndicator({ className }: { className?: string }) {
+export function ConnectivityIndicator({
+  className,
+  variant = "responsive",
+}: {
+  className?: string;
+  variant?: "responsive" | "dot";
+}) {
   const { status, lastSyncedAt } = useConnectivity();
   const meta = STATE_UI[status];
 
@@ -155,6 +161,32 @@ export function ConnectivityIndicator({ className }: { className?: string }) {
       return null;
     }
   }, [lastSyncedAt]);
+
+  if (variant === "dot") {
+    const dotColor =
+      status === "ONLINE"
+        ? "bg-success"
+        : status === "OFFLINE"
+          ? "bg-warning"
+          : "bg-info";
+    const titleText = formattedTime
+      ? `${meta.label} · Sinkron terakhir: ${formattedTime} WIB`
+      : meta.label;
+    return (
+      <span
+        role="status"
+        aria-live="polite"
+        title={titleText}
+        className={cn(
+          "inline-flex h-2.5 w-2.5 rounded-full ring-2 ring-surface",
+          dotColor,
+          className
+        )}
+      >
+        <span className="sr-only">{titleText}</span>
+      </span>
+    );
+  }
 
   return (
     <div className={cn("inline-flex items-center gap-2", className)}>

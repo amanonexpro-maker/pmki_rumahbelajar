@@ -66,11 +66,15 @@ export function WorkspaceHeader({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        <ConnectivityIndicator />
-
-        {user && (
-          <div className="flex items-center gap-2.5 md:pl-3 md:border-l md:border-border">
-            <Avatar name={user.name} src={user.avatarUrl} size="sm" />
+        {user ? (
+          <div className="flex items-center gap-2.5">
+            <div className="relative inline-flex shrink-0">
+              <Avatar name={user.name} src={user.avatarUrl} size="sm" />
+              <ConnectivityIndicator
+                variant="dot"
+                className="absolute -bottom-0.5 -right-0.5"
+              />
+            </div>
             <div className="hidden sm:block text-left leading-tight min-w-0">
               <p className="text-xs font-semibold text-foreground truncate max-w-36">
                 {user.name}
@@ -80,6 +84,8 @@ export function WorkspaceHeader({
               </p>
             </div>
           </div>
+        ) : (
+          <ConnectivityIndicator />
         )}
       </div>
     </header>

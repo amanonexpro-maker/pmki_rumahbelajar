@@ -199,7 +199,12 @@ export const editStudentProfileFormSchema = updateStudentProfileSchema.pick({
   educationLevel: true,
   schoolName: true,
   district: true,
+  address: true,
   isRaalResident: true,
+  guardianFullName: true,
+  guardianRelationship: true,
+  guardianPhone: true,
+  guardianOccupation: true,
 });
 
 export type EditStudentProfileFormValues = z.infer<

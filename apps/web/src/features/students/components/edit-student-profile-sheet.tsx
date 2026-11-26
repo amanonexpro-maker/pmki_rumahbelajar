@@ -17,9 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui";
-import { EDUCATION_LEVEL_LABELS } from "../types/student-types";
+import {
+  EDUCATION_LEVEL_LABELS,
+  GUARDIAN_RELATIONSHIP_LABELS,
+} from "../types/student-types";
 import {
   EDUCATION_LEVEL_VALUES,
+  GUARDIAN_RELATIONSHIP_VALUES,
   editStudentProfileFormSchema,
   type EditStudentProfileFormValues,
 } from "../validators/student-validator";
@@ -28,6 +32,7 @@ export interface EditStudentProfileSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData: EditStudentProfileFormValues;
+  canUpdateGuardian?: boolean;
   onSubmit: (
     values: EditStudentProfileFormValues
   ) => Promise<{ success: true } | { success: false; error: string }>;
@@ -38,6 +43,7 @@ export function EditStudentProfileSheet({
   open,
   onOpenChange,
   initialData,
+  canUpdateGuardian = false,
   onSubmit,
   pending,
 }: EditStudentProfileSheetProps) {
@@ -238,6 +244,94 @@ export function EditStudentProfileSheet({
         <input type="checkbox" {...register("isRaalResident")} />
         <span>Anak asuh Asrama RAAL Griya Asih</span>
       </label>
+
+      {canUpdateGuardian && (
+        <div className="pt-3 border-t border-border space-y-3">
+          <div className="space-y-0.5">
+            <p className="text-xs font-semibold text-foreground">
+              Data orang tua / wali (Rahasia)
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Hanya dapat diubah oleh pengurus dengan hak akses data wali.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label
+                htmlFor={`${fullNameId}-gname`}
+                className="block text-xs font-medium text-foreground"
+              >
+                Nama orang tua / wali
+              </label>
+              <Input id={`${fullNameId}-gname`} {...register("guardianFullName")} />
+            </div>
+
+            <div className="space-y-1">
+              <label
+                htmlFor={`${fullNameId}-grel`}
+                className="block text-xs font-medium text-foreground"
+              >
+                Hubungan dengan peserta didik
+              </label>
+              <Controller
+                control={control}
+                name="guardianRelationship"
+                render={({ field }) => (
+                  <Select
+                    value={field.value ?? "IBU"}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger id={`${fullNameId}-grel`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                      {GUARDIAN_RELATIONSHIP_VALUES.map((rel) => (
+                        <SelectItem key={rel} value={rel}>
+                          {GUARDIAN_RELATIONSHIP_LABELS[rel]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label
+                htmlFor={`${fullNameId}-gphone`}
+                className="block text-xs font-medium text-foreground"
+              >
+                No. WhatsApp wali
+              </label>
+              <Input id={`${fullNameId}-gphone`} {...register("guardianPhone")} />
+            </div>
+
+            <div className="space-y-1">
+              <label
+                htmlFor={`${fullNameId}-gocc`}
+                className="block text-xs font-medium text-foreground"
+              >
+                Pekerjaan wali
+              </label>
+              <Input
+                id={`${fullNameId}-gocc`}
+                {...register("guardianOccupation")}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label
+              htmlFor={`${fullNameId}-addr`}
+              className="block text-xs font-medium text-foreground"
+            >
+              Alamat tempat tinggal
+            </label>
+            <Input id={`${fullNameId}-addr`} {...register("address")} />
+          </div>
+        </div>
+      )}
     </form>
   );
 

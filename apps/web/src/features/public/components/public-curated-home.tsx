@@ -311,25 +311,16 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
         style={{ contentVisibility: "auto", containIntrinsicSize: "300px" }}
         className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-4 text-left"
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="type-eyebrow text-primary uppercase tracking-wider">
-              Program Unggulan
-            </p>
-            <h2
-              id="intip-program-heading"
-              className="font-sans text-base sm:text-lg font-bold text-foreground tracking-tight"
-            >
-              Pendampingan belajar ramah anak
-            </h2>
-          </div>
-          <Link
-            href="/program"
-            className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 shrink-0"
+        <div className="space-y-1">
+          <p className="type-eyebrow text-primary uppercase tracking-wider">
+            Program Unggulan
+          </p>
+          <h2
+            id="intip-program-heading"
+            className="font-sans text-base sm:text-lg font-bold text-foreground tracking-tight"
           >
-            <span>Detail kurikulum</span>
-            <span aria-hidden="true">→</span>
-          </Link>
+            Pendampingan belajar ramah anak
+          </h2>
         </div>
 
         <div className="space-y-2.5">
@@ -362,6 +353,16 @@ export function PublicCuratedHome({ data }: PublicCuratedHomeProps) {
               </div>
             );
           })}
+        </div>
+
+        <div className="mt-3 flex justify-end">
+          <Link
+            href="/program"
+            className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+          >
+            <span>Detail kurikulum</span>
+            <span aria-hidden="true">→</span>
+          </Link>
         </div>
       </section>
 

@@ -15,24 +15,44 @@ export { placeStudentInClass } from "./services/placement-service";
 export { getConfidentialGuardianForStudent } from "./services/guardian-service";
 
 export {
+  archiveStudent,
+  archiveStudentsBulk,
   countStudentsForDashboard,
   getStudentDetailForWorkspace,
   listStudentsForWorkspace,
+  restoreStudent,
+  restoreStudentsBulk,
   updateStudentProfile,
 } from "./services/student-service";
 
 export {
+  commitStudentImportXlsx,
+  generateStudentImportTemplateWorkbook,
+  parseAndValidateStudentImportXlsx,
+  type StudentImportPreviewResult,
+  type StudentImportPreviewRow,
+} from "./services/student-import-service";
+
+export {
+  archiveStudentAction,
+  archiveStudentsBulkAction,
   placeStudentInClassAction,
+  restoreStudentAction,
+  restoreStudentsBulkAction,
   submitPublicRegistrationAction,
   updateStudentProfileAction,
   verifyStudentRegistrationAction,
 } from "./actions/student-actions";
 
 export {
+  authorizeArchiveStudent,
   authorizeCreateStudent,
+  authorizeImportStudents,
   authorizeReadStudents,
   authorizeUpdateStudent,
   authorizeVerifyStudent,
+  canArchiveStudents,
+  canImportStudents,
   canReadConfidentialGuardian,
   canReadStudents,
   canUpdateConfidentialGuardian,

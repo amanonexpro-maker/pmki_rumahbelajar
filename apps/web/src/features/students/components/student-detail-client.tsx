@@ -3,6 +3,8 @@
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  Archive,
+  ArchiveRestore,
   Pencil,
   ShieldCheck,
   UserCheck,
@@ -11,6 +13,7 @@ import { StatusBadge } from "@/components/compositions";
 import {
   DetailTabs,
   EntityHeader,
+  FloatingFeedbackToast,
   WorkflowProgress,
   type DetailTabItem,
 } from "@/components/patterns";
@@ -21,7 +24,9 @@ import {
 } from "@/components/ui";
 import type { ClassSummaryDTO } from "@/features/academic";
 import {
+  archiveStudentAction,
   placeStudentInClassAction,
+  restoreStudentAction,
   updateStudentProfileAction,
   verifyStudentRegistrationAction,
 } from "../actions/student-actions";
@@ -32,6 +37,7 @@ import type {
   PlaceStudentFormValues,
   VerifyStudentFormValues,
 } from "../validators/student-validator";
+import { ArchiveStudentSheet } from "./archive-student-sheet";
 import { EditStudentProfileSheet } from "./edit-student-profile-sheet";
 import { PlaceStudentSheet } from "./place-student-sheet";
 import {
@@ -50,6 +56,7 @@ export interface StudentDetailClientProps {
   auditLogs: AuditEntrySummary[];
   canVerifyStudent: boolean;
   canUpdateStudent: boolean;
+  canArchiveStudent?: boolean;
   initialTab?: string;
 }
 
@@ -59,6 +66,7 @@ export function StudentDetailClient({
   auditLogs,
   canVerifyStudent,
   canUpdateStudent,
+  canArchiveStudent = false,
   initialTab = "overview",
 }: StudentDetailClientProps) {
   const router = useRouter();
@@ -78,6 +86,62 @@ export function StudentDetailClient({
   // Edit profile dialog state
   const [editOpen, setEditOpen] = React.useState(false);
   const [editPending, setEditPending] = React.useState(false);
+
+  // Archive / restore dialog state
+  const [archiveOpen, setArchiveOpen] = React.useState(false);
+  const [restoreOpen, setRestoreOpen] = React.useState(false);
+  const [archivePending, setArchivePending] = React.useState(false);
+  const [feedbackToast, setFeedbackToast] = React.useState<{
+    tone: "success" | "danger";
+    message: string;
+  } | null>(null);
+
+  async function handleRestoreStudent(
+    reason: string
+  ): Promise<{ success: true } | { success: false; error: string }> {
+    setArchivePending(true);
+    try {
+      const res = await restoreStudentAction({
+        studentId: student.id,
+        reason: reason || undefined,
+      });
+      if (!res.success) {
+        return { success: false, error: res.error.message };
+      }
+      setRestoreOpen(false);
+      setFeedbackToast({
+        tone: "success",
+        message: `Peserta didik ${student.fullName} berhasil dipulihkan ke daftar aktif.`,
+      });
+      router.refresh();
+      return { success: true };
+    } finally {
+      setArchivePending(false);
+    }
+  }
+
+  async function handleArchiveSubmit(
+    reason: string
+  ): Promise<{ success: true } | { success: false; error: string }> {
+    setArchivePending(true);
+    try {
+      const res = await archiveStudentAction({
+        studentId: student.id,
+        reason,
+      });
+      if (!res.success) {
+        return { success: false, error: res.error.message };
+      }
+      setArchiveOpen(false);
+      router.push(
+        `/workspace/students?notice=archived&name=${encodeURIComponent(student.fullName)}`
+      );
+      router.refresh();
+      return { success: true };
+    } finally {
+      setArchivePending(false);
+    }
+  }
 
   function handleTabChange(nextTab: string) {
     setActiveTab(nextTab);
@@ -285,6 +349,31 @@ export function StudentDetailClient({
                 Ubah profil
               </Button>
             )}
+            {canArchiveStudent && (
+              student.archivedAt ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setRestoreOpen(true)}
+                  leftIcon={<Icon icon={ArchiveRestore} size="xs" />}
+                  className="w-full sm:w-auto min-h-11 sm:min-h-9"
+                >
+                  Pulihkan peserta didik
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setArchiveOpen(true)}
+                  leftIcon={<Icon icon={Archive} size="xs" />}
+                  className="w-full sm:w-auto min-h-11 sm:min-h-9 text-danger hover:text-danger"
+                >
+                  Arsipkan peserta didik
+                </Button>
+              )
+            )}
           </div>
         }
       />
@@ -354,6 +443,35 @@ export function StudentDetailClient({
         onSubmit={handleEditSubmit}
         pending={editPending}
       />
+      {/* Dialog: Arsipkan peserta didik */}
+      <ArchiveStudentSheet
+        open={archiveOpen}
+        onOpenChange={setArchiveOpen}
+        mode="archive"
+        targetCount={1}
+        studentName={student.fullName}
+        onSubmit={handleArchiveSubmit}
+        pending={archivePending}
+      />
+
+      {/* Dialog: Pulihkan peserta didik */}
+      <ArchiveStudentSheet
+        open={restoreOpen}
+        onOpenChange={setRestoreOpen}
+        mode="restore"
+        targetCount={1}
+        studentName={student.fullName}
+        onSubmit={handleRestoreStudent}
+        pending={archivePending}
+      />
+
+      {feedbackToast && (
+        <FloatingFeedbackToast
+          tone={feedbackToast.tone}
+          message={feedbackToast.message}
+          onDismiss={() => setFeedbackToast(null)}
+        />
+      )}
     </div>
   );
 }

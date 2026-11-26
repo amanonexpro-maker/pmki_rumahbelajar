@@ -2,7 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ChevronRight, Plus, UserCheck, Users } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  ChevronRight,
+  FileSpreadsheet,
+  Plus,
+  UserCheck,
+  Users,
+} from "lucide-react";
 import {
   EmptyState,
   GenericFilterSelect,
@@ -22,6 +30,7 @@ import {
   Avatar,
   Badge,
   Button,
+  Checkbox,
   Icon,
   Select,
   SelectContent,
@@ -32,11 +41,17 @@ import {
 import type { AcademicYearDTO, ClassSummaryDTO } from "@/features/academic";
 import { useUrlQueryParams } from "@/hooks/use-url-query-params";
 import { REGISTRATION_STATUS_META, type RegistrationStatus } from "@/lib/status";
-import { placeStudentInClassAction } from "../actions/student-actions";
+import {
+  archiveStudentsBulkAction,
+  placeStudentInClassAction,
+  restoreStudentsBulkAction,
+} from "../actions/student-actions";
 import type {
   StudentListItemDTO,
   StudentListResultDTO,
 } from "../types/student-types";
+import { ArchiveStudentSheet } from "./archive-student-sheet";
+import { ImportStudentsSheet } from "./import-students-sheet";
 import { PublicRegistrationWizard } from "./public-registration-wizard";
 
 export interface StudentsWorkspaceClientProps {
@@ -50,9 +65,12 @@ export interface StudentsWorkspaceClientProps {
     classId: string;
     educationLevel: string;
     page: number;
+    archivedOnly?: boolean;
   };
   canCreateStudent: boolean;
   canVerifyStudent: boolean;
+  canArchiveStudent?: boolean;
+  canImportStudents?: boolean;
 }
 
 const STATUS_FILTER_OPTIONS: Array<{ value: string; label: string }> = [
@@ -99,11 +117,20 @@ export function StudentsWorkspaceClient({
   initialFilters,
   canCreateStudent,
   canVerifyStudent,
+  canArchiveStudent = false,
+  canImportStudents = false,
 }: StudentsWorkspaceClientProps) {
   const { updateQuery: updateUrlParams, pathname, router } = useUrlQueryParams();
 
   const [searchInput, setSearchInput] = React.useState(initialFilters.search);
   const [addDialogOpen, setAddDialogOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const [bulkArchiveOpen, setBulkArchiveOpen] = React.useState(false);
+  const [bulkArchivePending, setBulkArchivePending] = React.useState(false);
+  const [bulkRestoreOpen, setBulkRestoreOpen] = React.useState(false);
+  const [bulkRestorePending, setBulkRestorePending] = React.useState(false);
+  const isArchivedView = Boolean(initialFilters.archivedOnly);
   const [quickPlaceStudent, setQuickPlaceStudent] =
     React.useState<StudentListItemDTO | null>(null);
   const [selectedClassId, setSelectedClassId] = React.useState(
@@ -111,9 +138,33 @@ export function StudentsWorkspaceClient({
   );
   const [placePending, setPlacePending] = React.useState(false);
   const [placeError, setPlaceError] = React.useState<string | null>(null);
-  const [feedbackToast, setFeedbackToast] = React.useState<string | null>(null);
+  const [feedbackToast, setFeedbackToast] = React.useState<{
+    tone: "success" | "danger";
+    message: string;
+  } | null>(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("notice") === "archived") {
+      const archivedName = params.get("name");
+      return {
+        tone: "success",
+        message: archivedName
+          ? `Peserta didik ${archivedName} berhasil diarsipkan.`
+          : "Peserta didik berhasil diarsipkan.",
+      };
+    }
+    return null;
+  });
   const quickPlaceClassId = React.useId();
   const filterIdPrefix = React.useId();
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("notice") === "archived") {
+      updateUrlParams({ notice: null, name: null });
+    }
+  }, [updateUrlParams]);
 
   // Sync debounced search input to URL `?search=`
   React.useEffect(() => {
@@ -127,6 +178,77 @@ export function StudentsWorkspaceClient({
   function handleResetFilters() {
     setSearchInput("");
     router.push(pathname);
+  }
+
+  const pageIds = listResult.items.map((item) => item.id);
+  const allSelectedOnPage =
+    pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+
+  function toggleSelectRow(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
+  function toggleSelectAllOnPage() {
+    if (allSelectedOnPage) {
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  }
+
+  async function handleBulkArchiveSubmit(
+    reason: string
+  ): Promise<{ success: true } | { success: false; error: string }> {
+    setBulkArchivePending(true);
+    try {
+      const res = await archiveStudentsBulkAction({
+        studentIds: selectedIds,
+        reason,
+      });
+      if (!res.success) {
+        return { success: false, error: res.error.message };
+      }
+      setBulkArchiveOpen(false);
+      setSelectedIds([]);
+      setFeedbackToast({
+        tone: "success",
+        message: `${res.data.archivedCount} peserta didik berhasil diarsipkan.`,
+      });
+      router.refresh();
+      return { success: true };
+    } finally {
+      setBulkArchivePending(false);
+    }
+  }
+
+  async function handleBulkRestore(
+    reason: string
+  ): Promise<{ success: true } | { success: false; error: string }> {
+    if (selectedIds.length === 0) {
+      return { success: false, error: "Pilih minimal satu peserta didik." };
+    }
+    setBulkRestorePending(true);
+    try {
+      const res = await restoreStudentsBulkAction({
+        studentIds: selectedIds,
+        reason: reason || undefined,
+      });
+      if (!res.success) {
+        return { success: false, error: res.error.message };
+      }
+      setBulkRestoreOpen(false);
+      setSelectedIds([]);
+      setFeedbackToast({
+        tone: "success",
+        message: `${res.data.restoredCount} peserta didik berhasil dipulihkan ke daftar aktif.`,
+      });
+      router.refresh();
+      return { success: true };
+    } finally {
+      setBulkRestorePending(false);
+    }
   }
 
   async function handleConfirmQuickPlacement() {
@@ -144,9 +266,10 @@ export function StudentsWorkspaceClient({
       }
       const placedStudentName = quickPlaceStudent.fullName;
       setQuickPlaceStudent(null);
-      setFeedbackToast(
-        `${placedStudentName} berhasil ditempatkan ke kelas.`
-      );
+      setFeedbackToast({
+        tone: "success",
+        message: `${placedStudentName} berhasil ditempatkan ke kelas.`,
+      });
       router.refresh();
     } finally {
       setPlacePending(false);
@@ -311,6 +434,23 @@ export function StudentsWorkspaceClient({
   ];
 
   const columns: DataTableColumn<StudentListItemDTO>[] = [
+    ...(canArchiveStudent
+      ? [
+          {
+            id: "select",
+            header: "Pilih",
+            cell: (row: StudentListItemDTO) => (
+              <div onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                  checked={selectedIds.includes(row.id)}
+                  onCheckedChange={() => toggleSelectRow(row.id)}
+                  aria-label={`Pilih ${row.fullName}`}
+                />
+              </div>
+            ),
+          } satisfies DataTableColumn<StudentListItemDTO>,
+        ]
+      : []),
     {
       id: "participant",
       header: "Peserta didik",
@@ -433,6 +573,18 @@ export function StudentsWorkspaceClient({
             </Button>
           ) : undefined
         }
+        secondaryActions={
+          canImportStudents ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setImportOpen(true)}
+              leftIcon={<Icon icon={FileSpreadsheet} size="sm" />}
+            >
+              Impor peserta didik
+            </Button>
+          ) : undefined
+        }
       />
 
       {/* 2. Search -> 3. Filters -> 4. Result Summary */}
@@ -533,6 +685,95 @@ export function StudentsWorkspaceClient({
         }
       />
 
+      {/* Archive View Switcher + Bulk Action Bar (Hanya tampil jika memiliki izin student.archive) */}
+      {canArchiveStudent && (
+        <div className="space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div
+              role="group"
+              aria-label="Filter status arsip peserta didik"
+              className="inline-flex rounded-control border border-border bg-surface p-1 gap-1"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedIds([]);
+                  updateUrlParams({ archived: null, page: "1" });
+                }}
+                className={
+                  !isArchivedView
+                    ? "rounded-sm bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+                    : "rounded-sm px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:text-foreground"
+                }
+              >
+                Data aktif
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedIds([]);
+                  updateUrlParams({ archived: "1", page: "1" });
+                }}
+                className={
+                  isArchivedView
+                    ? "rounded-sm bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+                    : "rounded-sm px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:text-foreground"
+                }
+              >
+                Diarsipkan
+              </button>
+            </div>
+          </div>
+
+          {listResult.items.length > 0 && (
+            <div className="rounded-control border border-border bg-surface px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <label className="inline-flex items-center gap-2 cursor-pointer font-medium text-foreground">
+                <Checkbox
+                  checked={allSelectedOnPage}
+                  onCheckedChange={toggleSelectAllOnPage}
+                  aria-label="Pilih semua peserta didik di halaman ini"
+                />
+                <span>Pilih semua di halaman ini ({pageIds.length})</span>
+              </label>
+              {selectedIds.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedIds([])}
+                  >
+                    Batal pilih
+                  </Button>
+                  {isArchivedView ? (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setBulkRestoreOpen(true)}
+                      leftIcon={<Icon icon={ArchiveRestore} size="xs" />}
+                    >
+                      Pulihkan terpilih ({selectedIds.length})
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setBulkArchiveOpen(true)}
+                      leftIcon={<Icon icon={Archive} size="xs" />}
+                      className="text-danger hover:text-danger"
+                    >
+                      Arsipkan terpilih ({selectedIds.length})
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 5. Data View (Desktop Table / Mobile Recomposition Cards at 375px) */}
       <DataTable
         columns={columns}
@@ -615,12 +856,22 @@ export function StudentsWorkspaceClient({
         }}
         emptyState={
           <EmptyState
-            icon={Users}
-            title="Belum ada peserta didik."
+            icon={isArchivedView ? Archive : Users}
+            title={
+              isArchivedView
+                ? searchInput || activeFilterCount > 0
+                  ? "Tidak ada arsip peserta didik yang cocok."
+                  : "Belum ada peserta didik yang diarsipkan."
+                : "Belum ada peserta didik."
+            }
             description={
               searchInput || activeFilterCount > 0
-                ? "Tidak ada peserta didik yang cocok dengan pencarian atau filter yang dipilih."
-                : "Daftar peserta didik masih kosong untuk cakupan unit layanan ini."
+                ? isArchivedView
+                  ? "Tidak ditemukan data arsip yang sesuai dengan pencarian atau filter yang dipilih."
+                  : "Tidak ada peserta didik yang cocok dengan pencarian atau filter yang dipilih."
+                : isArchivedView
+                  ? "Saat ini tidak ada data arsip peserta didik (kondisi ini normal jika seluruh peserta didik masih aktif). Anda dapat kembali ke data aktif atau mendaftarkan peserta didik baru melalui tombol Tambah peserta didik."
+                  : "Daftar peserta didik masih kosong untuk cakupan unit layanan ini."
             }
             action={
               searchInput || activeFilterCount > 0 ? (
@@ -631,6 +882,28 @@ export function StudentsWorkspaceClient({
                 >
                   Atur ulang filter
                 </Button>
+              ) : isArchivedView ? (
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setSelectedIds([]);
+                      updateUrlParams({ archived: null, page: "1" });
+                    }}
+                  >
+                    Lihat data aktif
+                  </Button>
+                  {canCreateStudent && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => setAddDialogOpen(true)}
+                    >
+                      Tambah peserta didik
+                    </Button>
+                  )}
+                </div>
               ) : canCreateStudent ? (
                 <Button
                   type="button"
@@ -772,10 +1045,43 @@ export function StudentsWorkspaceClient({
         </div>
       </FormBottomSheet>
 
+      {/* Impor Peserta Didik (.xlsx) */}
+      <ImportStudentsSheet
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={(count) => {
+          setFeedbackToast({
+            tone: "success",
+            message: `${count} peserta didik berhasil diimpor dengan status Pendaftaran masuk.`,
+          });
+          router.refresh();
+        }}
+      />
+
+      {/* Arsip Massal Peserta Didik */}
+      <ArchiveStudentSheet
+        open={bulkArchiveOpen}
+        onOpenChange={setBulkArchiveOpen}
+        mode="archive"
+        targetCount={selectedIds.length}
+        onSubmit={handleBulkArchiveSubmit}
+        pending={bulkArchivePending}
+      />
+
+      {/* Pemulihan Massal Peserta Didik */}
+      <ArchiveStudentSheet
+        open={bulkRestoreOpen}
+        onOpenChange={setBulkRestoreOpen}
+        mode="restore"
+        targetCount={selectedIds.length}
+        onSubmit={handleBulkRestore}
+        pending={bulkRestorePending}
+      />
+
       {feedbackToast && (
         <FloatingFeedbackToast
-          tone="success"
-          message={feedbackToast}
+          tone={feedbackToast.tone}
+          message={feedbackToast.message}
           onDismiss={() => setFeedbackToast(null)}
         />
       )}

@@ -9,7 +9,13 @@ import {
   submitPublicRegistration,
   verifyStudentRegistration,
 } from "../services/registration-service";
-import { updateStudentProfile } from "../services/student-service";
+import {
+  archiveStudent,
+  archiveStudentsBulk,
+  restoreStudent,
+  restoreStudentsBulk,
+  updateStudentProfile,
+} from "../services/student-service";
 
 /**
  * Thin Server Actions for Students Domain (09 §6–8).
@@ -82,6 +88,56 @@ export async function updateStudentProfileAction(
   if (result.success) {
     revalidatePath("/workspace/students");
     revalidatePath(`/workspace/students/${result.data.studentId}`);
+  }
+  return result;
+}
+
+export async function archiveStudentAction(
+  payload: unknown
+): Promise<ActionResult<{ studentId: string; fullName: string }>> {
+  const session = await getCurrentSession();
+  const result = await archiveStudent(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace/students");
+    revalidatePath(`/workspace/students/${result.data.studentId}`);
+    revalidatePath("/workspace");
+  }
+  return result;
+}
+
+export async function archiveStudentsBulkAction(
+  payload: unknown
+): Promise<ActionResult<{ archivedCount: number; archivedIds: string[] }>> {
+  const session = await getCurrentSession();
+  const result = await archiveStudentsBulk(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace/students");
+    revalidatePath("/workspace");
+  }
+  return result;
+}
+
+export async function restoreStudentAction(
+  payload: unknown
+): Promise<ActionResult<{ studentId: string; fullName: string }>> {
+  const session = await getCurrentSession();
+  const result = await restoreStudent(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace/students");
+    revalidatePath(`/workspace/students/${result.data.studentId}`);
+    revalidatePath("/workspace");
+  }
+  return result;
+}
+
+export async function restoreStudentsBulkAction(
+  payload: unknown
+): Promise<ActionResult<{ restoredCount: number; restoredIds: string[] }>> {
+  const session = await getCurrentSession();
+  const result = await restoreStudentsBulk(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace/students");
+    revalidatePath("/workspace");
   }
   return result;
 }

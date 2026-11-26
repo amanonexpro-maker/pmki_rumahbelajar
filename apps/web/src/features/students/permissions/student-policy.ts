@@ -40,6 +40,34 @@ export function authorizeVerifyStudent(
   return authorize(user, "student.verify", { serviceUnitId });
 }
 
+export function canArchiveStudents(
+  user: SessionUser | null | undefined,
+  serviceUnitId?: string
+): boolean {
+  return can(user, "student.archive", { serviceUnitId });
+}
+
+export function authorizeArchiveStudent(
+  user: SessionUser | null | undefined,
+  serviceUnitId: string
+) {
+  return authorize(user, "student.archive", { serviceUnitId });
+}
+
+export function canImportStudents(
+  user: SessionUser | null | undefined,
+  serviceUnitId?: string
+): boolean {
+  return can(user, "student.import", { serviceUnitId });
+}
+
+export function authorizeImportStudents(
+  user: SessionUser | null | undefined,
+  serviceUnitId: string
+) {
+  return authorize(user, "student.import", { serviceUnitId });
+}
+
 /**
  * CONFIDENTIAL Data Policy (05 §13–14):
  * Default DENY. Requires explicit `guardian.read` permission AND matching service unit scope.

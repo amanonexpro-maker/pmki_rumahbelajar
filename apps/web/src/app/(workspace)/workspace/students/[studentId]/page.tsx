@@ -67,6 +67,9 @@ export default async function WorkspaceStudentDetailPage({
   const canUpdateStudent = can(session, "student.update", {
     serviceUnitId: student.serviceUnitId,
   });
+  const canArchiveStudent = can(session, "student.archive", {
+    serviceUnitId: student.serviceUnitId,
+  });
 
   return (
     <StudentDetailClient
@@ -75,6 +78,7 @@ export default async function WorkspaceStudentDetailPage({
       auditLogs={auditLogs}
       canVerifyStudent={canVerifyStudent}
       canUpdateStudent={canUpdateStudent}
+      canArchiveStudent={canArchiveStudent}
       initialTab={resolvedSearch.tab ?? "overview"}
     />
   );

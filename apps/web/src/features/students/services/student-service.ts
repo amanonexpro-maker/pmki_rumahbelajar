@@ -9,16 +9,22 @@ import { getHumanErrorMessage } from "@/lib/messages";
 import type { SessionUser } from "@/server/auth/session";
 import { fail, ok, type ActionResult } from "@/server/contracts/result";
 import {
+  authorizeArchiveStudent,
   authorizeReadStudents,
   authorizeUpdateStudent,
+  canArchiveStudents,
   canReadConfidentialGuardian,
   canUpdateConfidentialGuardian,
 } from "../permissions/student-policy";
 import {
+  archiveStudentsByIds,
   countStudentMetricsByUnitIds,
+  findArchivedStudentRowsByIds,
   findPrimaryGuardianByStudentId,
   findStudentRowById,
+  findStudentRowsByIds,
   findStudentsFiltered,
+  restoreStudentsByIds,
   updateStudentAndGuardianProfile,
 } from "../repositories/student-repository";
 import {
@@ -32,7 +38,13 @@ import {
   type StudentListItemDTO,
   type StudentListResultDTO,
 } from "../types/student-types";
-import { updateStudentProfileSchema } from "../validators/student-validator";
+import {
+  archiveStudentSchema,
+  archiveStudentsBulkSchema,
+  restoreStudentSchema,
+  restoreStudentsBulkSchema,
+  updateStudentProfileSchema,
+} from "../validators/student-validator";
 
 /**
  * Student Domain Application Service (11 §10).
@@ -45,6 +57,10 @@ export async function listStudentsForWorkspace(
 ): Promise<ActionResult<StudentListResultDTO>> {
   const authz = authorizeReadStudents(user);
   if (!authz.success) return authz;
+
+  if (filters.archivedOnly && !canArchiveStudents(user)) {
+    return fail("PERMISSION_DENIED", getHumanErrorMessage("PERMISSION_DENIED"));
+  }
 
   const serviceUnitIds = Array.from(
     new Set((user?.memberships ?? []).map((m) => m.serviceUnitId))
@@ -73,6 +89,7 @@ export async function listStudentsForWorkspace(
     academicYearId: filters.academicYearId,
     classId: filters.classId,
     educationLevel: filters.educationLevel,
+    archivedOnly: filters.archivedOnly,
   });
 
   const allItems: StudentListItemDTO[] = rows.map((row) => {
@@ -99,6 +116,7 @@ export async function listStudentsForWorkspace(
       isRaalResident: row.isRaalResident,
       registrationStatus: row.registrationStatus,
       createdAt: row.createdAt.toISOString(),
+      archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     };
   });
 
@@ -137,8 +155,12 @@ export async function getStudentDetailForWorkspace(
   user: SessionUser | null | undefined,
   studentId: string
 ): Promise<ActionResult<StudentDetailDTO>> {
-  const row = await findStudentRowById(studentId);
+  const row = await findStudentRowById(studentId, { includeArchived: true });
   if (!row) {
+    return fail("RESOURCE_NOT_FOUND", getHumanErrorMessage("RESOURCE_NOT_FOUND"));
+  }
+
+  if (row.archivedAt && !canArchiveStudents(user, row.serviceUnitId)) {
     return fail("RESOURCE_NOT_FOUND", getHumanErrorMessage("RESOURCE_NOT_FOUND"));
   }
 
@@ -202,6 +224,7 @@ export async function getStudentDetailForWorkspace(
     isRaalResident: row.isRaalResident,
     registrationStatus: row.registrationStatus,
     createdAt: row.createdAt.toISOString(),
+    archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     address: allowGuardian ? row.address : null,
     guardian: guardianDto,
     guardianAccessDenied: !allowGuardian,
@@ -330,5 +353,227 @@ export async function countStudentsForDashboard(
   }
 
   return countStudentMetricsByUnitIds(serviceUnitIds);
+}
+
+/**
+ * Soft-archive a single student (`student.archive`).
+ * Never executes physical DELETE (04 §25).
+ */
+export async function archiveStudent(
+  user: SessionUser | null | undefined,
+  rawInput: unknown
+): Promise<ActionResult<{ studentId: string; fullName: string }>> {
+  const parsed = archiveStudentSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return fail(
+      "VALIDATION_FAILED",
+      getHumanErrorMessage("VALIDATION_FAILED"),
+      parsed.error.flatten().fieldErrors
+    );
+  }
+
+  const row = await findStudentRowById(parsed.data.studentId);
+  if (!row || row.archivedAt) {
+    return fail("RESOURCE_NOT_FOUND", getHumanErrorMessage("RESOURCE_NOT_FOUND"));
+  }
+
+  const authz = authorizeArchiveStudent(user, row.serviceUnitId);
+  if (!authz.success) return authz;
+
+  await archiveStudentsByIds({
+    studentIds: [row.id],
+    actorId: user!.id,
+  });
+
+  await recordAuditLog({
+    organizationId: row.organizationId,
+    serviceUnitId: row.serviceUnitId,
+    actorId: user?.id ?? null,
+    action: "StudentArchived",
+    entityType: "student",
+    entityId: row.id,
+    description: `Mengarsipkan peserta didik ${row.fullName} (${row.registrationNumber}).`,
+    metadata: {
+      reason: parsed.data.reason,
+      registrationNumber: row.registrationNumber,
+    },
+  });
+
+  return ok({ studentId: row.id, fullName: row.fullName });
+}
+
+/**
+ * Bulk soft-archive selected students (`student.archive`).
+ * Validates scope on every target row before archiving and records audit logs.
+ */
+export async function archiveStudentsBulk(
+  user: SessionUser | null | undefined,
+  rawInput: unknown
+): Promise<ActionResult<{ archivedCount: number; archivedIds: string[] }>> {
+  const parsed = archiveStudentsBulkSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return fail(
+      "VALIDATION_FAILED",
+      getHumanErrorMessage("VALIDATION_FAILED"),
+      parsed.error.flatten().fieldErrors
+    );
+  }
+
+  const uniqueIds = Array.from(new Set(parsed.data.studentIds));
+  const rows = await findStudentRowsByIds(uniqueIds);
+  if (rows.length === 0) {
+    return fail(
+      "RESOURCE_NOT_FOUND",
+      "Tidak ada peserta didik aktif yang ditemukan untuk diarsipkan."
+    );
+  }
+
+  const unitIds = Array.from(new Set(rows.map((r) => r.serviceUnitId)));
+  for (const unitId of unitIds) {
+    const authz = authorizeArchiveStudent(user, unitId);
+    if (!authz.success) return authz;
+  }
+
+  const archived = await archiveStudentsByIds({
+    studentIds: rows.map((r) => r.id),
+    actorId: user!.id,
+  });
+
+  await Promise.all(
+    rows
+      .filter((r) => archived.some((a) => a.id === r.id))
+      .map((r) =>
+        recordAuditLog({
+          organizationId: r.organizationId,
+          serviceUnitId: r.serviceUnitId,
+          actorId: user?.id ?? null,
+          action: "StudentArchived",
+          entityType: "student",
+          entityId: r.id,
+          description: `Mengarsipkan peserta didik ${r.fullName} (${r.registrationNumber}) melalui pengarsipan massal.`,
+          metadata: {
+            reason: parsed.data.reason,
+            bulk: true,
+            registrationNumber: r.registrationNumber,
+          },
+        })
+      )
+  );
+
+  return ok({
+    archivedCount: archived.length,
+    archivedIds: archived.map((a) => a.id),
+  });
+}
+
+/**
+ * Restore a single archived student (`student.archive`).
+ */
+export async function restoreStudent(
+  user: SessionUser | null | undefined,
+  rawInput: unknown
+): Promise<ActionResult<{ studentId: string; fullName: string }>> {
+  const parsed = restoreStudentSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return fail(
+      "VALIDATION_FAILED",
+      getHumanErrorMessage("VALIDATION_FAILED"),
+      parsed.error.flatten().fieldErrors
+    );
+  }
+
+  const row = await findStudentRowById(parsed.data.studentId, {
+    includeArchived: true,
+  });
+  if (!row || !row.archivedAt) {
+    return fail("RESOURCE_NOT_FOUND", getHumanErrorMessage("RESOURCE_NOT_FOUND"));
+  }
+
+  const authz = authorizeArchiveStudent(user, row.serviceUnitId);
+  if (!authz.success) return authz;
+
+  await restoreStudentsByIds({
+    studentIds: [row.id],
+    actorId: user!.id,
+  });
+
+  await recordAuditLog({
+    organizationId: row.organizationId,
+    serviceUnitId: row.serviceUnitId,
+    actorId: user?.id ?? null,
+    action: "StudentRestored",
+    entityType: "student",
+    entityId: row.id,
+    description: `Memulihkan data peserta didik ${row.fullName} (${row.registrationNumber}) dari arsip.`,
+    metadata: {
+      reason: parsed.data.reason ?? null,
+      registrationNumber: row.registrationNumber,
+    },
+  });
+
+  return ok({ studentId: row.id, fullName: row.fullName });
+}
+
+/**
+ * Bulk restore archived students (`student.archive`).
+ */
+export async function restoreStudentsBulk(
+  user: SessionUser | null | undefined,
+  rawInput: unknown
+): Promise<ActionResult<{ restoredCount: number; restoredIds: string[] }>> {
+  const parsed = restoreStudentsBulkSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return fail(
+      "VALIDATION_FAILED",
+      getHumanErrorMessage("VALIDATION_FAILED"),
+      parsed.error.flatten().fieldErrors
+    );
+  }
+
+  const uniqueIds = Array.from(new Set(parsed.data.studentIds));
+  const rows = await findArchivedStudentRowsByIds(uniqueIds);
+  if (rows.length === 0) {
+    return fail(
+      "RESOURCE_NOT_FOUND",
+      "Tidak ada peserta didik diarsipkan yang ditemukan untuk dipulihkan."
+    );
+  }
+
+  const unitIds = Array.from(new Set(rows.map((r) => r.serviceUnitId)));
+  for (const unitId of unitIds) {
+    const authz = authorizeArchiveStudent(user, unitId);
+    if (!authz.success) return authz;
+  }
+
+  const restored = await restoreStudentsByIds({
+    studentIds: rows.map((r) => r.id),
+    actorId: user!.id,
+  });
+
+  await Promise.all(
+    rows
+      .filter((r) => restored.some((x) => x.id === r.id))
+      .map((r) =>
+        recordAuditLog({
+          organizationId: r.organizationId,
+          serviceUnitId: r.serviceUnitId,
+          actorId: user?.id ?? null,
+          action: "StudentRestored",
+          entityType: "student",
+          entityId: r.id,
+          description: `Memulihkan peserta didik ${r.fullName} (${r.registrationNumber}) melalui pemulihan massal.`,
+          metadata: {
+            reason: parsed.data.reason ?? null,
+            bulk: true,
+            registrationNumber: r.registrationNumber,
+          },
+        })
+      )
+  );
+
+  return ok({
+    restoredCount: restored.length,
+    restoredIds: restored.map((r) => r.id),
+  });
 }
 

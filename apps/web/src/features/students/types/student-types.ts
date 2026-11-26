@@ -72,6 +72,7 @@ export interface StudentListItemDTO {
   isRaalResident: boolean;
   registrationStatus: RegistrationStatus;
   createdAt: string;
+  archivedAt?: string | null;
 }
 
 export interface StudentDetailDTO extends StudentListItemDTO {
@@ -93,6 +94,7 @@ export interface StudentListFilterParams {
   academicYearId?: string;
   classId?: string;
   educationLevel?: string;
+  archivedOnly?: boolean;
   page?: number;
   pageSize?: number;
 }

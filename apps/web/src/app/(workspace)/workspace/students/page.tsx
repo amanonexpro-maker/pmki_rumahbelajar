@@ -26,6 +26,7 @@ interface StudentsPageProps {
     classId?: string;
     level?: string;
     page?: string;
+    archived?: string;
   }>;
 }
 
@@ -45,6 +46,10 @@ export default async function WorkspaceStudentsPage({
   const educationLevel = resolvedParams.level ?? "ALL";
   const parsedPage = Number.parseInt(resolvedParams.page ?? "1", 10);
   const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const canArchiveStudent = can(session, "student.archive", {
+    serviceUnitId: primaryUnitId,
+  });
+  const archivedOnly = canArchiveStudent && resolvedParams.archived === "1";
 
   const [listRes, classes, academicYears] = await Promise.all([
     listStudentsForWorkspace(session, {
@@ -55,6 +60,7 @@ export default async function WorkspaceStudentsPage({
       educationLevel,
       page,
       pageSize: 20,
+      archivedOnly,
     }),
     primaryUnitId ? listClassesForServiceUnit(primaryUnitId) : Promise.resolve([]),
     primaryUnitId ? listAcademicYears(primaryUnitId) : Promise.resolve([]),
@@ -78,6 +84,9 @@ export default async function WorkspaceStudentsPage({
   const canVerifyStudent = can(session, "student.verify", {
     serviceUnitId: primaryUnitId,
   });
+  const canImportStudents = can(session, "student.import", {
+    serviceUnitId: primaryUnitId,
+  });
 
   return (
     <StudentsWorkspaceClient
@@ -91,9 +100,12 @@ export default async function WorkspaceStudentsPage({
         classId,
         educationLevel,
         page,
+        archivedOnly,
       }}
       canCreateStudent={canCreateStudent}
       canVerifyStudent={canVerifyStudent}
+      canArchiveStudent={canArchiveStudent}
+      canImportStudents={canImportStudents}
     />
   );
 }

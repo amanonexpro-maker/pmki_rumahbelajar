@@ -5,6 +5,7 @@ import {
   eq,
   ilike,
   inArray,
+  isNotNull,
   isNull,
   or,
   sql,
@@ -138,11 +139,18 @@ export async function insertStudentWithGuardian(params: {
   });
 }
 
-export async function findStudentRowById(studentId: string) {
+export async function findStudentRowById(
+  studentId: string,
+  options?: { includeArchived?: boolean }
+) {
+  const condition = options?.includeArchived
+    ? eq(students.id, studentId)
+    : and(eq(students.id, studentId), isNull(students.archivedAt));
+
   const [row] = await db
     .select()
     .from(students)
-    .where(and(eq(students.id, studentId), isNull(students.archivedAt)))
+    .where(condition)
     .limit(1);
   return row ?? null;
 }
@@ -281,6 +289,7 @@ export async function findStudentsFiltered(params: {
   academicYearId?: string;
   classId?: string;
   educationLevel?: string;
+  archivedOnly?: boolean;
 }) {
   if (params.serviceUnitIds.length === 0) {
     return [];
@@ -288,7 +297,9 @@ export async function findStudentsFiltered(params: {
 
   const conditions = [
     inArray(students.serviceUnitId, params.serviceUnitIds),
-    isNull(students.archivedAt),
+    params.archivedOnly
+      ? isNotNull(students.archivedAt)
+      : isNull(students.archivedAt),
   ];
 
   // Search ONLY non-confidential identity fields (fullName, nickname, registrationNumber)
@@ -336,5 +347,77 @@ export async function findStudentsFiltered(params: {
     .from(students)
     .where(and(...conditions))
     .orderBy(desc(students.createdAt), students.fullName);
+}
+
+export async function findStudentRowsByIds(studentIds: string[]) {
+  if (studentIds.length === 0) return [];
+  return db
+    .select()
+    .from(students)
+    .where(and(inArray(students.id, studentIds), isNull(students.archivedAt)));
+}
+
+export async function archiveStudentsByIds(params: {
+  studentIds: string[];
+  actorId: string;
+}) {
+  if (params.studentIds.length === 0) return [];
+  const now = new Date();
+  return db
+    .update(students)
+    .set({
+      archivedAt: now,
+      archivedBy: params.actorId,
+      updatedAt: now,
+      updatedBy: params.actorId,
+    })
+    .where(
+      and(
+        inArray(students.id, params.studentIds),
+        isNull(students.archivedAt)
+      )
+    )
+    .returning({
+      id: students.id,
+      fullName: students.fullName,
+      registrationNumber: students.registrationNumber,
+      serviceUnitId: students.serviceUnitId,
+    });
+}
+
+export async function findArchivedStudentRowsByIds(studentIds: string[]) {
+  if (studentIds.length === 0) return [];
+  return db
+    .select()
+    .from(students)
+    .where(and(inArray(students.id, studentIds), isNotNull(students.archivedAt)));
+}
+
+export async function restoreStudentsByIds(params: {
+  studentIds: string[];
+  actorId: string;
+}) {
+  if (params.studentIds.length === 0) return [];
+  const now = new Date();
+  return db
+    .update(students)
+    .set({
+      archivedAt: null,
+      archivedBy: null,
+      updatedAt: now,
+      updatedBy: params.actorId,
+    })
+    .where(
+      and(
+        inArray(students.id, params.studentIds),
+        isNotNull(students.archivedAt)
+      )
+    )
+    .returning({
+      id: students.id,
+      fullName: students.fullName,
+      registrationNumber: students.registrationNumber,
+      serviceUnitId: students.serviceUnitId,
+    });
 }
 

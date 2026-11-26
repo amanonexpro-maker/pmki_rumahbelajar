@@ -3,13 +3,18 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { SessionUser } from "@/server/auth/session";
 import {
+  authorizeArchiveStudent,
   authorizeCreateStudent,
+  authorizeImportStudents,
   authorizeVerifyStudent,
   canReadConfidentialGuardian,
   canReadStudents,
 } from "./permissions/student-policy";
 import { isValidVerificationTransition } from "./services/registration-service";
+import { generateStudentImportTemplateWorkbook } from "./services/student-import-service";
 import {
+  archiveStudentSchema,
+  archiveStudentsBulkSchema,
   publicRegistrationSchema,
   verifyStudentSchema,
 } from "./validators/student-validator";
@@ -167,5 +172,50 @@ describe("Students Domain — Validators, Policies, Lifecycle & Domain Boundarie
       expect(source).not.toMatch(/db\/schema\/academic/);
       expect(source).not.toMatch(/classEnrollments/);
     }
+  });
+
+  it("validates archiveStudentSchema & archiveStudentsBulkSchema and enforces student.archive / student.import policies", async () => {
+    const badArchive = archiveStudentSchema.safeParse({
+      studentId: "not-a-uuid",
+      reason: "abc",
+    });
+    expect(badArchive.success).toBe(false);
+
+    const goodBulk = archiveStudentsBulkSchema.safeParse({
+      studentIds: [
+        "01950000-0000-7000-8000-000000000111",
+        "01950000-0000-7000-8000-000000000112",
+      ],
+      reason: "Pembersihan data uji coba",
+    });
+    expect(goodBulk.success).toBe(true);
+
+    expect(authorizeArchiveStudent(teacherDefaultSession, UNIT_ID).success).toBe(
+      false
+    );
+    expect(authorizeImportStudents(teacherDefaultSession, UNIT_ID).success).toBe(
+      false
+    );
+
+    const adminWithImportArchive: SessionUser = {
+      ...coordinatorSession,
+      permissions: [
+        ...coordinatorSession.permissions,
+        "student.archive",
+        "student.import",
+      ],
+    };
+    expect(
+      authorizeArchiveStudent(adminWithImportArchive, UNIT_ID).success
+    ).toBe(true);
+    expect(
+      authorizeArchiveStudent(adminWithImportArchive, OTHER_UNIT_ID).success
+    ).toBe(false);
+    expect(
+      authorizeImportStudents(adminWithImportArchive, UNIT_ID).success
+    ).toBe(true);
+
+    const templateBytes = await generateStudentImportTemplateWorkbook();
+    expect(templateBytes.byteLength).toBeGreaterThan(1000);
   });
 });

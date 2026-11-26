@@ -205,3 +205,53 @@ export const editStudentProfileFormSchema = updateStudentProfileSchema.pick({
 export type EditStudentProfileFormValues = z.infer<
   typeof editStudentProfileFormSchema
 >;
+
+/**
+ * Archive (Soft Delete) schemas (04 §25, 05 §8)
+ */
+export const archiveStudentSchema = z.object({
+  studentId: z.string().uuid("ID peserta didik tidak valid."),
+  reason: z
+    .string()
+    .trim()
+    .min(5, "Tuliskan alasan pengarsipan peserta didik (minimal 5 karakter).")
+    .max(300, "Alasan pengarsipan maksimal 300 karakter."),
+});
+
+export type ArchiveStudentInput = z.infer<typeof archiveStudentSchema>;
+
+export const archiveStudentsBulkSchema = z.object({
+  studentIds: z
+    .array(z.string().uuid("Terdapat ID peserta didik yang tidak valid."))
+    .min(1, "Pilih minimal satu peserta didik untuk diarsipkan.")
+    .max(100, "Maksimal 100 peserta didik per pengarsipan massal."),
+  reason: z
+    .string()
+    .trim()
+    .min(5, "Tuliskan alasan pengarsipan massal (minimal 5 karakter).")
+    .max(300, "Alasan pengarsipan maksimal 300 karakter."),
+});
+
+export type ArchiveStudentsBulkInput = z.infer<typeof archiveStudentsBulkSchema>;
+
+/**
+ * Restore archived student schemas (`student.archive`)
+ */
+export const restoreStudentSchema = z.object({
+  studentId: z.string().uuid("ID peserta didik tidak valid."),
+  reason: z.string().trim().max(300).optional(),
+});
+
+export const restoreStudentsBulkSchema = z.object({
+  studentIds: z
+    .array(z.string().uuid("Terdapat ID peserta didik yang tidak valid."))
+    .min(1, "Pilih minimal satu peserta didik untuk dipulihkan.")
+    .max(100, "Maksimal 100 peserta didik per pemulihan massal."),
+  reason: z.string().trim().max(300).optional(),
+});
+
+/**
+ * Bulk .xlsx Import Row Schema (status awal selalu SUBMITTED)
+ */
+export const importStudentRowSchema = publicRegistrationSchema;
+export type ImportStudentRowInput = z.infer<typeof importStudentRowSchema>;

@@ -33,3 +33,23 @@ export type RecordAttendanceSessionInput = z.infer<
   typeof recordAttendanceSessionSchema
 >;
 
+export const quickAttendanceEntrySchema = attendanceEntrySchema.extend({
+  classId: z.string().uuid("ID kelas peserta didik tidak valid."),
+});
+
+export const recordQuickAttendanceSchema = z.object({
+  sessionDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Pilih tanggal sesi belajar yang valid."),
+  entries: z
+    .array(quickAttendanceEntrySchema)
+    .min(1, "Tandai presensi minimal untuk 1 peserta didik."),
+  recordedOfflineAt: z.string().datetime().optional().nullable(),
+  isOfflineSync: z.boolean().optional(),
+});
+
+export type RecordQuickAttendanceInput = z.infer<
+  typeof recordQuickAttendanceSchema
+>;
+

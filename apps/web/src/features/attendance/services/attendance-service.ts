@@ -16,16 +16,24 @@ import {
 import {
   findRecentSessionsByUnitIds,
   findRecordsBySessionId,
+  findRecordsBySessionIds,
   findSessionByClassAndDate,
+  findSessionsByClassIdsAndDate,
   upsertAttendanceSessionAndRecords,
 } from "../repositories/attendance-repository";
 import type {
   AttendanceRecordItemDTO,
   AttendanceSessionDetailDTO,
   AttendanceSessionHistoryItemDTO,
+  QuickAttendanceRosterItemDTO,
+  QuickAttendanceWorkspaceViewDTO,
   RecordAttendanceSessionResultDTO,
+  RecordQuickAttendanceResultDTO,
 } from "../types/attendance-types";
-import { recordAttendanceSessionSchema } from "../validators/attendance-validator";
+import {
+  recordAttendanceSessionSchema,
+  recordQuickAttendanceSchema,
+} from "../validators/attendance-validator";
 
 /**
  * Attendance Domain Application Service (11 §12, 06 §10, §14).
@@ -246,5 +254,138 @@ export async function listAttendanceSessionHistory(
   }
 
   return ok(items);
+}
+
+/**
+ * Loads active students across all classes in the user's service units for
+ * cross-class quick attendance check-in on a given `sessionDate`.
+ */
+export async function getQuickAttendanceRosterView(
+  user: SessionUser | null | undefined,
+  params: { sessionDate: string }
+): Promise<ActionResult<QuickAttendanceWorkspaceViewDTO>> {
+  const authz = authorizeReadAttendance(user);
+  if (!authz.success) return authz;
+
+  const serviceUnitIds = Array.from(
+    new Set((user?.memberships ?? []).map((m) => m.serviceUnitId))
+  );
+  if (serviceUnitIds.length === 0) {
+    return fail("SCOPE_DENIED", getHumanErrorMessage("SCOPE_DENIED"));
+  }
+
+  const classNameById = new Map<string, string>();
+  for (const unitId of serviceUnitIds) {
+    const unitClasses = await listClassesForServiceUnit(unitId);
+    for (const c of unitClasses) classNameById.set(c.id, c.name);
+  }
+
+  const studentsRes = await listStudentsForWorkspace(user, {
+    status: "ACTIVE",
+    sortBy: "name",
+    sortDir: "asc",
+    pageSize: 50,
+  });
+  if (!studentsRes.success) return studentsRes;
+
+  const activeInClass = studentsRes.data.items.filter((st) =>
+    Boolean(st.assignedClassId)
+  );
+  const classIds = Array.from(
+    new Set(
+      activeInClass
+        .map((st) => st.assignedClassId)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const sessions = await findSessionsByClassIdsAndDate(
+    classIds,
+    params.sessionDate
+  );
+  const records = await findRecordsBySessionIds(sessions.map((s) => s.id));
+  const recordByStudentId = new Map(records.map((r) => [r.studentId, r]));
+
+  const items: QuickAttendanceRosterItemDTO[] = activeInClass.map((st) => {
+    const rec = recordByStudentId.get(st.id);
+    const classId = st.assignedClassId!;
+    return {
+      studentId: st.id,
+      studentFullName: st.fullName,
+      studentNickname: st.nickname,
+      registrationNumber: st.registrationNumber,
+      educationLevelLabel: st.educationLevelLabel,
+      classId,
+      className:
+        st.assignedClassName ?? classNameById.get(classId) ?? "Kelas",
+      recordedStatus: (rec?.status as AttendanceStatus) ?? null,
+      note: rec?.note ?? null,
+      hasExistingRecord: Boolean(rec),
+    };
+  });
+
+  return ok({
+    sessionDate: params.sessionDate,
+    items,
+  });
+}
+
+/**
+ * Incremental cross-class check-in (Opsi B):
+ * Groups touched student entries by `classId` and updates only those students
+ * without overwriting existing records of other students in the same class.
+ */
+export async function recordQuickAttendanceBatch(
+  user: SessionUser | null | undefined,
+  rawInput: unknown
+): Promise<ActionResult<RecordQuickAttendanceResultDTO>> {
+  const parsed = recordQuickAttendanceSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return fail(
+      "VALIDATION_FAILED",
+      getHumanErrorMessage("VALIDATION_FAILED"),
+      parsed.error.flatten().fieldErrors
+    );
+  }
+
+  const entriesByClass = new Map<
+    string,
+    Array<{ studentId: string; status: AttendanceStatus; note?: string | null }>
+  >();
+
+  for (const entry of parsed.data.entries) {
+    const list = entriesByClass.get(entry.classId) ?? [];
+    list.push({
+      studentId: entry.studentId,
+      status: entry.status,
+      note: entry.note ?? null,
+    });
+    entriesByClass.set(entry.classId, list);
+  }
+
+  let totalRecorded = 0;
+  let anyConflict = false;
+
+  for (const [classId, entries] of entriesByClass.entries()) {
+    const res = await recordAttendanceSession(user, {
+      classId,
+      sessionDate: parsed.data.sessionDate,
+      entries,
+      recordedOfflineAt: parsed.data.recordedOfflineAt ?? null,
+      isOfflineSync: parsed.data.isOfflineSync,
+    });
+    if (!res.success) return res;
+    totalRecorded += entries.length;
+    if (res.data.conflictNeedsManualReview) {
+      anyConflict = true;
+    }
+  }
+
+  return ok({
+    sessionDate: parsed.data.sessionDate,
+    recordedCount: totalRecorded,
+    classCount: entriesByClass.size,
+    conflictNeedsManualReview: anyConflict,
+  });
 }
 

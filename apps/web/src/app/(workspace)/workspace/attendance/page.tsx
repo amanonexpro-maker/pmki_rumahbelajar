@@ -3,6 +3,7 @@ import { listClassesForServiceUnit } from "@/features/academic";
 import {
   AttendanceWorkspaceClient,
   getAttendanceSessionWorkspaceView,
+  getQuickAttendanceRosterView,
   listAttendanceSessionHistory,
 } from "@/features/attendance";
 import { requireSession } from "@/server/auth/session";
@@ -42,7 +43,7 @@ export default async function WorkspaceAttendancePage({
   const selectedDate = resolvedParams.date ?? todayIso;
   const selectedTab = resolvedParams.tab ?? "session";
 
-  const [sessionViewRes, historyRes] = await Promise.all([
+  const [sessionViewRes, historyRes, quickRes] = await Promise.all([
     selectedClassId
       ? getAttendanceSessionWorkspaceView(session, {
           classId: selectedClassId,
@@ -50,6 +51,7 @@ export default async function WorkspaceAttendancePage({
         })
       : Promise.resolve(null),
     listAttendanceSessionHistory(session, selectedClassId || undefined),
+    getQuickAttendanceRosterView(session, { sessionDate: selectedDate }),
   ]);
 
   if (sessionViewRes && !sessionViewRes.success) {
@@ -72,6 +74,7 @@ export default async function WorkspaceAttendancePage({
     <AttendanceWorkspaceClient
       classes={classes}
       sessionView={sessionViewRes?.success ? sessionViewRes.data : null}
+      quickRoster={quickRes.success ? quickRes.data : null}
       historyItems={historyRes.success ? historyRes.data : []}
       initialClassId={selectedClassId}
       initialDate={selectedDate}

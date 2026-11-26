@@ -29,13 +29,16 @@ import { useAttendanceSync } from "../hooks/use-attendance-sync";
 import type {
   AttendanceSessionDetailDTO,
   AttendanceSessionHistoryItemDTO,
+  QuickAttendanceWorkspaceViewDTO,
 } from "../types/attendance-types";
 import { AttendanceListItem } from "./attendance-list-item";
+import { QuickAttendanceTab } from "./quick-attendance-tab";
 import { SyncStatusBanner } from "./sync-status-banner";
 
 export interface AttendanceWorkspaceClientProps {
   classes: ClassSummaryDTO[];
   sessionView: AttendanceSessionDetailDTO | null;
+  quickRoster?: QuickAttendanceWorkspaceViewDTO | null;
   historyItems: AttendanceSessionHistoryItemDTO[];
   initialClassId: string;
   initialDate: string;
@@ -50,6 +53,7 @@ export interface AttendanceWorkspaceClientProps {
 export function AttendanceWorkspaceClient({
   classes,
   sessionView,
+  quickRoster = null,
   historyItems,
   initialClassId,
   initialDate,
@@ -110,6 +114,11 @@ export function AttendanceWorkspaceClient({
   const tabs: DetailTabItem[] = [
     { id: "session", label: "Sesi presensi" },
     {
+      id: "quick",
+      label: "Presensi cepat",
+      count: quickRoster?.items.length,
+    },
+    {
       id: "history",
       label: "Riwayat sesi",
       count: historyItems.length,
@@ -144,30 +153,38 @@ export function AttendanceWorkspaceClient({
 
       {/* Class & Date Selector Bar (Synced to URL ?classId=&date=) */}
       <div className="rounded-card border border-border bg-surface p-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
-          <div className="space-y-1">
-            <label
-              htmlFor="attendance-class-select"
-              className="block text-xs font-medium text-secondary-foreground"
-            >
-              Kelas bimbingan belajar
-            </label>
-            <Select
-              value={initialClassId}
-              onValueChange={(value) => updateUrl({ classId: value })}
-            >
-              <SelectTrigger id="attendance-class-select">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
-                {classes.map((cls) => (
-                  <SelectItem key={cls.id} value={cls.id}>
-                    {cls.name} ({cls.enrolledCount} peserta didik)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div
+          className={
+            activeTab === "quick"
+              ? "grid grid-cols-1 gap-3 flex-1 sm:max-w-xs"
+              : "grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1"
+          }
+        >
+          {activeTab !== "quick" && (
+            <div className="space-y-1">
+              <label
+                htmlFor="attendance-class-select"
+                className="block text-xs font-medium text-secondary-foreground"
+              >
+                Kelas bimbingan belajar
+              </label>
+              <Select
+                value={initialClassId}
+                onValueChange={(value) => updateUrl({ classId: value })}
+              >
+                <SelectTrigger id="attendance-class-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                  {classes.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.id}>
+                      {cls.name} ({cls.enrolledCount} peserta didik)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <DatePicker
             id="attendance-date-input"
@@ -315,7 +332,7 @@ export function AttendanceWorkspaceClient({
                   htmlFor="session-general-notes"
                   className="block text-sm font-medium text-foreground"
                 >
-                  Catatan sesi kelas (opsional)
+                  {`Catatan sesi ${sessionView.className} (opsional)`}
                 </label>
                 <Textarea
                   id="session-general-notes"
@@ -330,16 +347,11 @@ export function AttendanceWorkspaceClient({
               {/* Action Bar Footer */}
               {canRecord && (
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                  <div className="flex items-center gap-2 text-xs text-secondary-foreground">
-                    {syncBadgeState && (
-                      <StatusBadge domain="sync" status={syncBadgeState} />
-                    )}
-                    <span>
-                      {connectivityStatus === "OFFLINE"
-                        ? "Mode offline aktif: presensi akan masuk antrean sinkronisasi."
-                        : "Pastikan seluruh kehadiran peserta didik telah sesuai."}
-                    </span>
-                  </div>
+                  <p className="text-xs text-secondary-foreground">
+                    {connectivityStatus === "OFFLINE"
+                      ? "Mode offline aktif: presensi akan masuk antrean sinkronisasi."
+                      : "Pastikan seluruh kehadiran peserta didik telah sesuai."}
+                  </p>
 
                   <Button
                     type="submit"
@@ -354,6 +366,25 @@ export function AttendanceWorkspaceClient({
             </form>
           )}
         </>
+      )}
+
+      {activeTab === "quick" && (
+        <QuickAttendanceTab
+          quickRoster={quickRoster}
+          sessionDate={initialDate}
+          canRecord={canRecord}
+          isOffline={connectivityStatus === "OFFLINE"}
+          onEnqueueOfflineClass={(payload) =>
+            enqueue({
+              operation: "ATTENDANCE_RECORD",
+              entityType: "attendance_session",
+              entityId: `${payload.classId}:${payload.sessionDate}`,
+              payload,
+            })
+          }
+          onFeedback={(tone, message) => setFeedbackBanner({ tone, message })}
+          onSaved={handleRefresh}
+        />
       )}
 
       {activeTab === "history" && (

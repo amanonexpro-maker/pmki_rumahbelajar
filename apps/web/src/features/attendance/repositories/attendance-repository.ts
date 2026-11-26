@@ -33,6 +33,31 @@ export async function findRecordsBySessionId(sessionId: string) {
     .where(eq(attendanceRecords.sessionId, sessionId));
 }
 
+export async function findSessionsByClassIdsAndDate(
+  classIds: string[],
+  sessionDate: string
+) {
+  if (classIds.length === 0) return [];
+  return db
+    .select()
+    .from(attendanceSessions)
+    .where(
+      and(
+        inArray(attendanceSessions.classId, classIds),
+        eq(attendanceSessions.sessionDate, sessionDate),
+        isNull(attendanceSessions.archivedAt)
+      )
+    );
+}
+
+export async function findRecordsBySessionIds(sessionIds: string[]) {
+  if (sessionIds.length === 0) return [];
+  return db
+    .select()
+    .from(attendanceRecords)
+    .where(inArray(attendanceRecords.sessionId, sessionIds));
+}
+
 export async function findRecentSessionsByUnitIds(
   serviceUnitIds: string[],
   classId?: string

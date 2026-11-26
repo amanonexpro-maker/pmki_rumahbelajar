@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { ATTENDANCE_STATUS_META } from "@/lib/status";
+import { buildStudentQrPayload, parseStudentQrPayload } from "@/lib/student-qr";
 import type { SessionUser } from "@/server/auth/session";
 import {
   authorizeReadAttendance,
@@ -9,7 +10,10 @@ import {
   canReadAttendance,
   canRecordAttendance,
 } from "./permissions/attendance-policy";
-import { recordAttendanceSessionSchema } from "./validators/attendance-validator";
+import {
+  recordAttendanceSessionSchema,
+  recordQuickAttendanceSchema,
+} from "./validators/attendance-validator";
 
 const ORG_ID = "01950000-0000-7000-8000-000000000001";
 const UNIT_ID = "01950000-0000-7000-8000-000000000010";
@@ -80,6 +84,39 @@ describe("Attendance Domain — Validators, Policies, Canonical Labels & Boundar
       entries: [],
     });
     expect(invalid.success).toBe(false);
+  });
+
+  it("validates recordQuickAttendanceSchema for cross-class incremental check-in", () => {
+    const valid = recordQuickAttendanceSchema.safeParse({
+      sessionDate: "2026-11-26",
+      entries: [
+        {
+          classId: ORG_ID,
+          studentId: UNIT_ID,
+          status: "PRESENT",
+        },
+        {
+          classId: OTHER_UNIT_ID,
+          studentId: UNIT_ID,
+          status: "PERMITTED",
+        },
+      ],
+    });
+    expect(valid.success).toBe(true);
+
+    const emptyInvalid = recordQuickAttendanceSchema.safeParse({
+      sessionDate: "2026-11-26",
+      entries: [],
+    });
+    expect(emptyInvalid.success).toBe(false);
+  });
+
+  it("encodes and parses non-sensitive student QR payloads safely", () => {
+    const payload = buildStudentQrPayload("rb-2026-002413");
+    expect(payload).toBe("PMKI:RB-2026-002413");
+    expect(parseStudentQrPayload(payload)).toBe("RB-2026-002413");
+    expect(parseStudentQrPayload("RB-2026-000123")).toBe("RB-2026-000123");
+    expect(parseStudentQrPayload("https://example.com/phish")).toBeNull();
   });
 
   it("enforces attendance RBAC and serviceUnitId scope", () => {

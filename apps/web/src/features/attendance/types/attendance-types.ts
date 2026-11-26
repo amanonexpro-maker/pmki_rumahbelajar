@@ -58,3 +58,28 @@ export interface RecordAttendanceSessionResultDTO {
   conflictNeedsManualReview: boolean;
 }
 
+export interface QuickAttendanceRosterItemDTO {
+  studentId: string;
+  studentFullName: string;
+  studentNickname: string;
+  registrationNumber: string;
+  educationLevelLabel: string;
+  classId: string;
+  className: string;
+  recordedStatus: AttendanceStatus | null;
+  note: string | null;
+  hasExistingRecord: boolean;
+}
+
+export interface QuickAttendanceWorkspaceViewDTO {
+  sessionDate: string;
+  items: QuickAttendanceRosterItemDTO[];
+}
+
+export interface RecordQuickAttendanceResultDTO {
+  sessionDate: string;
+  recordedCount: number;
+  classCount: number;
+  conflictNeedsManualReview: boolean;
+}
+

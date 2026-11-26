@@ -6,6 +6,7 @@ import {
   Archive,
   ArchiveRestore,
   Pencil,
+  QrCode,
   ShieldCheck,
   UserCheck,
 } from "lucide-react";
@@ -46,6 +47,7 @@ import {
 } from "./student-audit-tab";
 import { StudentLearningTab } from "./student-learning-tab";
 import { StudentOverviewTab } from "./student-overview-tab";
+import { StudentQrCardSheet } from "./student-qr-card-sheet";
 import { VerifyStudentSheet } from "./verify-student-sheet";
 
 export type { AuditEntrySummary };
@@ -87,9 +89,10 @@ export function StudentDetailClient({
   const [editOpen, setEditOpen] = React.useState(false);
   const [editPending, setEditPending] = React.useState(false);
 
-  // Archive / restore dialog state
+  // Archive / restore & QR card dialog state
   const [archiveOpen, setArchiveOpen] = React.useState(false);
   const [restoreOpen, setRestoreOpen] = React.useState(false);
+  const [qrOpen, setQrOpen] = React.useState(false);
   const [archivePending, setArchivePending] = React.useState(false);
   const [feedbackToast, setFeedbackToast] = React.useState<{
     tone: "success" | "danger";
@@ -337,6 +340,16 @@ export function StudentDetailClient({
                 Ubah status pendaftaran
               </Button>
             )}
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setQrOpen(true)}
+              leftIcon={<Icon icon={QrCode} size="xs" />}
+              className="w-full sm:w-auto min-h-11 sm:min-h-9"
+            >
+              Kartu QR
+            </Button>
             {canUpdateStudent && (
               <Button
                 type="button"
@@ -463,6 +476,19 @@ export function StudentDetailClient({
         studentName={student.fullName}
         onSubmit={handleRestoreStudent}
         pending={archivePending}
+      />
+
+      {/* Dialog: Kartu QR Peserta Didik */}
+      <StudentQrCardSheet
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        student={{
+          fullName: student.fullName,
+          nickname: student.nickname,
+          registrationNumber: student.registrationNumber,
+          educationLevelLabel: student.educationLevelLabel,
+          assignedClassName: student.assignedClassName,
+        }}
       />
 
       {feedbackToast && (

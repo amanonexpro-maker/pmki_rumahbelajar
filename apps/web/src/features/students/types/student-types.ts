@@ -88,6 +88,9 @@ export interface StudentDetailDTO extends StudentListItemDTO {
   learningContext: ClassLearningContextDTO | null;
 }
 
+export type StudentSortKey = "name" | "level" | "class" | "status";
+export type SortDirection = "asc" | "desc";
+
 export interface StudentListFilterParams {
   search?: string;
   status?: string;
@@ -95,6 +98,8 @@ export interface StudentListFilterParams {
   classId?: string;
   educationLevel?: string;
   archivedOnly?: boolean;
+  sortBy?: StudentSortKey;
+  sortDir?: SortDirection;
   page?: number;
   pageSize?: number;
 }

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
@@ -9,6 +10,8 @@ export interface DataTableColumn<T> {
   align?: "left" | "center" | "right";
   className?: string;
   headerClassName?: string;
+  sortable?: boolean;
+  sortKey?: string;
 }
 
 export interface DataTableProps<T> {
@@ -22,6 +25,9 @@ export interface DataTableProps<T> {
    */
   renderMobileRow: (row: T) => React.ReactNode;
   onRowClick?: (row: T) => void;
+  sortKey?: string;
+  sortDirection?: "asc" | "desc";
+  onSortChange?: (key: string) => void;
   loading?: boolean;
   loadingRows?: number;
   emptyState?: React.ReactNode;
@@ -35,6 +41,9 @@ export function DataTable<T>({
   getRowKey,
   renderMobileRow,
   onRowClick,
+  sortKey,
+  sortDirection,
+  onSortChange,
   loading = false,
   loadingRows = 4,
   emptyState,
@@ -101,20 +110,58 @@ export function DataTable<T>({
           {caption && <caption className="sr-only">{caption}</caption>}
           <thead>
             <tr className="border-b border-border bg-surface-subtle/50">
-              {columns.map((col) => (
-                <th
-                  key={col.id}
-                  scope="col"
-                  className={cn(
-                    "px-4 py-3 sm:px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none",
-                    col.align === "center" && "text-center",
-                    col.align === "right" && "text-right",
-                    col.headerClassName
-                  )}
-                >
-                  {col.header}
-                </th>
-              ))}
+              {columns.map((col) => {
+                const colSortKey = col.sortKey ?? col.id;
+                const isSortable = Boolean(col.sortable && onSortChange);
+                const isSorted = isSortable && sortKey === colSortKey;
+                const ariaSort = isSortable
+                  ? isSorted
+                    ? sortDirection === "desc"
+                      ? "descending"
+                      : "ascending"
+                    : "none"
+                  : undefined;
+
+                return (
+                  <th
+                    key={col.id}
+                    scope="col"
+                    aria-sort={ariaSort}
+                    className={cn(
+                      "px-4 py-3 sm:px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground select-none",
+                      col.align === "center" && "text-center",
+                      col.align === "right" && "text-right",
+                      col.headerClassName
+                    )}
+                  >
+                    {isSortable ? (
+                      <button
+                        type="button"
+                        onClick={() => onSortChange?.(colSortKey)}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 uppercase tracking-wider transition-colors hover:text-foreground focus-ring rounded-xs cursor-pointer",
+                          isSorted && "text-foreground",
+                          col.align === "right" && "ml-auto",
+                          col.align === "center" && "mx-auto"
+                        )}
+                      >
+                        <span>{col.header}</span>
+                        {isSorted ? (
+                          sortDirection === "desc" ? (
+                            <ArrowDown className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                          ) : (
+                            <ArrowUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+                        )}
+                      </button>
+                    ) : (
+                      col.header
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle">

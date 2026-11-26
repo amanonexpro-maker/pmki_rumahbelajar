@@ -81,10 +81,12 @@ export {
   type ConfidentialGuardianDTO,
   type EducationLevelCode,
   type GuardianRelationshipCode,
+  type SortDirection,
   type StudentDetailDTO,
   type StudentListFilterParams,
   type StudentListItemDTO,
   type StudentListResultDTO,
+  type StudentSortKey,
 } from "./types/student-types";
 
 export { PublicRegistrationWizard } from "./components/public-registration-wizard";

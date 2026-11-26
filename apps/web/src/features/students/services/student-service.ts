@@ -133,6 +133,42 @@ export async function listStudentsForWorkspace(
       !s.assignedClassId
   ).length;
 
+  const EDUCATION_LEVEL_ORDER: Record<EducationLevelCode, number> = {
+    TK: 0,
+    SD_1: 1,
+    SD_2: 2,
+    SD_3: 3,
+    SD_4: 4,
+    SD_5: 5,
+    SD_6: 6,
+    SMP_7: 7,
+    SMP_8: 8,
+  };
+
+  if (filters.sortBy) {
+    const dir = filters.sortDir === "desc" ? -1 : 1;
+    allItems.sort((a, b) => {
+      let cmp = 0;
+      if (filters.sortBy === "name") {
+        cmp = a.fullName.localeCompare(b.fullName, "id");
+      } else if (filters.sortBy === "level") {
+        const orderA = EDUCATION_LEVEL_ORDER[a.educationLevel] ?? 99;
+        const orderB = EDUCATION_LEVEL_ORDER[b.educationLevel] ?? 99;
+        cmp = orderA - orderB;
+        if (cmp === 0) cmp = a.fullName.localeCompare(b.fullName, "id");
+      } else if (filters.sortBy === "class") {
+        const classA = a.assignedClassName ?? "\uffff";
+        const classB = b.assignedClassName ?? "\uffff";
+        cmp = classA.localeCompare(classB, "id");
+        if (cmp === 0) cmp = a.fullName.localeCompare(b.fullName, "id");
+      } else if (filters.sortBy === "status") {
+        cmp = a.registrationStatus.localeCompare(b.registrationStatus, "id");
+        if (cmp === 0) cmp = a.fullName.localeCompare(b.fullName, "id");
+      }
+      return cmp * dir;
+    });
+  }
+
   const pageSize = Math.max(1, Math.min(50, filters.pageSize ?? 20));
   const totalCount = allItems.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));

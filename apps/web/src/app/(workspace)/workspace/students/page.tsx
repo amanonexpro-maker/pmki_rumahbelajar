@@ -6,6 +6,8 @@ import {
 import {
   listStudentsForWorkspace,
   StudentsWorkspaceClient,
+  type SortDirection,
+  type StudentSortKey,
 } from "@/features/students";
 import { requireSession } from "@/server/auth/session";
 import { can } from "@/server/permissions";
@@ -27,6 +29,8 @@ interface StudentsPageProps {
     level?: string;
     page?: string;
     archived?: string;
+    sort?: string;
+    dir?: string;
   }>;
 }
 
@@ -50,6 +54,20 @@ export default async function WorkspaceStudentsPage({
     serviceUnitId: primaryUnitId,
   });
   const archivedOnly = canArchiveStudent && resolvedParams.archived === "1";
+  const VALID_SORTS: readonly StudentSortKey[] = [
+    "name",
+    "level",
+    "class",
+    "status",
+  ];
+  const sortBy = VALID_SORTS.includes(resolvedParams.sort as StudentSortKey)
+    ? (resolvedParams.sort as StudentSortKey)
+    : undefined;
+  const sortDir: SortDirection | undefined = sortBy
+    ? resolvedParams.dir === "desc"
+      ? "desc"
+      : "asc"
+    : undefined;
 
   const [listRes, classes, academicYears] = await Promise.all([
     listStudentsForWorkspace(session, {
@@ -61,6 +79,8 @@ export default async function WorkspaceStudentsPage({
       page,
       pageSize: 20,
       archivedOnly,
+      sortBy,
+      sortDir,
     }),
     primaryUnitId ? listClassesForServiceUnit(primaryUnitId) : Promise.resolve([]),
     primaryUnitId ? listAcademicYears(primaryUnitId) : Promise.resolve([]),
@@ -101,6 +121,8 @@ export default async function WorkspaceStudentsPage({
         educationLevel,
         page,
         archivedOnly,
+        sortBy,
+        sortDir,
       }}
       canCreateStudent={canCreateStudent}
       canVerifyStudent={canVerifyStudent}

@@ -47,8 +47,10 @@ import {
   restoreStudentsBulkAction,
 } from "../actions/student-actions";
 import type {
+  SortDirection,
   StudentListItemDTO,
   StudentListResultDTO,
+  StudentSortKey,
 } from "../types/student-types";
 import { ArchiveStudentSheet } from "./archive-student-sheet";
 import { ImportStudentsSheet } from "./import-students-sheet";
@@ -66,6 +68,8 @@ export interface StudentsWorkspaceClientProps {
     educationLevel: string;
     page: number;
     archivedOnly?: boolean;
+    sortBy?: StudentSortKey;
+    sortDir?: SortDirection;
   };
   canCreateStudent: boolean;
   canVerifyStudent: boolean;
@@ -179,6 +183,34 @@ export function StudentsWorkspaceClient({
     setSearchInput("");
     router.push(pathname);
   }
+
+  function handleSortChange(key: string) {
+    if (initialFilters.sortBy !== key) {
+      updateUrlParams({ sort: key, dir: "asc", page: "1" });
+      return;
+    }
+    if (initialFilters.sortDir === "asc") {
+      updateUrlParams({ sort: key, dir: "desc", page: "1" });
+      return;
+    }
+    updateUrlParams({ sort: null, dir: null, page: "1" });
+  }
+
+  const currentSortValue = initialFilters.sortBy
+    ? `${initialFilters.sortBy}:${initialFilters.sortDir ?? "asc"}`
+    : "DEFAULT";
+
+  const MOBILE_SORT_OPTIONS = [
+    { value: "DEFAULT", label: "Terbaru (bawaan)" },
+    { value: "name:asc", label: "Nama peserta didik (A–Z)" },
+    { value: "name:desc", label: "Nama peserta didik (Z–A)" },
+    { value: "level:asc", label: "Jenjang (TK → SMP)" },
+    { value: "level:desc", label: "Jenjang (SMP → TK)" },
+    { value: "class:asc", label: "Kelas (A–Z)" },
+    { value: "class:desc", label: "Kelas (Z–A)" },
+    { value: "status:asc", label: "Status (A–Z)" },
+    { value: "status:desc", label: "Status (Z–A)" },
+  ];
 
   const pageIds = listResult.items.map((item) => item.id);
   const allSelectedOnPage =
@@ -454,6 +486,8 @@ export function StudentsWorkspaceClient({
     {
       id: "participant",
       header: "Peserta didik",
+      sortable: true,
+      sortKey: "name",
       cell: (row) => (
         <div className="flex items-center gap-3">
           <Avatar name={row.fullName} size="sm" className="shrink-0" />
@@ -482,6 +516,8 @@ export function StudentsWorkspaceClient({
     {
       id: "education",
       header: "Jenjang & wilayah",
+      sortable: true,
+      sortKey: "level",
       cell: (row) => (
         <div className="space-y-0.5 text-xs">
           <p className="font-medium text-foreground">
@@ -496,6 +532,8 @@ export function StudentsWorkspaceClient({
     {
       id: "class",
       header: "Kelas",
+      sortable: true,
+      sortKey: "class",
       cell: (row) =>
         row.assignedClassName ? (
           <span className="text-xs font-medium text-foreground">
@@ -510,6 +548,8 @@ export function StudentsWorkspaceClient({
     {
       id: "status",
       header: "Status",
+      sortable: true,
+      sortKey: "status",
       cell: (row) => (
         <StatusBadge
           domain="registration"
@@ -629,6 +669,29 @@ export function StudentsWorkspaceClient({
                 </div>
               );
             })}
+            <div className="space-y-1.5">
+              <label
+                htmlFor={`${filterIdPrefix}-sort`}
+                className="type-label block text-foreground"
+              >
+                Urutkan daftar
+              </label>
+              <GenericFilterSelect
+                id={`${filterIdPrefix}-sort`}
+                label="Urutkan daftar"
+                value={currentSortValue}
+                options={MOBILE_SORT_OPTIONS}
+                onChange={(value) => {
+                  if (value === "DEFAULT") {
+                    updateUrlParams({ sort: null, dir: null, page: "1" });
+                    return;
+                  }
+                  const [nextSort, nextDir] = value.split(":");
+                  updateUrlParams({ sort: nextSort, dir: nextDir, page: "1" });
+                }}
+                className="w-full min-h-11 text-sm"
+              />
+            </div>
           </div>
         }
         onResetAll={handleResetFilters}
@@ -780,6 +843,9 @@ export function StudentsWorkspaceClient({
         data={listResult.items}
         getRowKey={(row) => row.id}
         caption="Daftar peserta didik Rumah Belajar"
+        sortKey={initialFilters.sortBy}
+        sortDirection={initialFilters.sortDir}
+        onSortChange={handleSortChange}
         onRowClick={(row) => router.push(`/workspace/students/${row.id}`)}
         renderMobileRow={(row) => {
           const showQuickPlacement =

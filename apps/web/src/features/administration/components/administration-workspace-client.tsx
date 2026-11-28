@@ -17,6 +17,7 @@ import { SearchInput } from "@/components/compositions";
 import {
   DetailTabs,
   FeedbackBanner,
+  FloatingFeedbackToast,
   PageHeader,
   StatSummary,
   type DetailTabItem,
@@ -491,7 +492,7 @@ export function AdministrationWorkspaceClient({
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
                   {canManageRoles && (
                     <Button
                       type="button"
@@ -501,6 +502,7 @@ export function AdministrationWorkspaceClient({
                       onClick={() => {
                         setEditingRoleUser(u);
                       }}
+                      className="flex-1 lg:flex-initial"
                     >
                       Tetapkan peran
                     </Button>
@@ -515,6 +517,7 @@ export function AdministrationWorkspaceClient({
                         setTogglingUser(u);
                         setToggleReason("");
                       }}
+                      className="flex-1 lg:flex-initial"
                     >
                       {u.active ? "Nonaktifkan pengguna" : "Aktifkan pengguna"}
                     </Button>
@@ -786,6 +789,14 @@ export function AdministrationWorkspaceClient({
           </form>
         </DialogContent>
       </Dialog>
+
+      {feedback && (
+        <FloatingFeedbackToast
+          tone={feedback.tone}
+          message={feedback.message}
+          onDismiss={() => setFeedback(null)}
+        />
+      )}
     </div>
   );
 }

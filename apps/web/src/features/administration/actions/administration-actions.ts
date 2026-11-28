@@ -6,10 +6,12 @@ import type { ActionResult } from "@/server/contracts/result";
 import {
   applyUserPermissionOverride,
   createCustomRole,
+  deleteCustomRole,
   provisionNewPlatformUser,
   removeUserPermissionOverride,
   resetUserToDefaultPassword,
   setPlatformUserActiveState,
+  updateCustomRole,
   updateUserRoleAssignments,
   updateUserScopeAssignment,
 } from "../services/access-service";
@@ -64,6 +66,32 @@ export async function createCustomRoleAction(
 ): Promise<ActionResult<AdminRoleRecordDTO>> {
   const session = await getCurrentSession();
   const result = await createCustomRole(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace", "layout");
+    revalidatePath("/workspace/administration");
+    revalidatePath("/workspace/audit");
+  }
+  return result;
+}
+
+export async function updateCustomRoleAction(
+  payload: unknown
+): Promise<ActionResult<AdminRoleRecordDTO>> {
+  const session = await getCurrentSession();
+  const result = await updateCustomRole(session, payload);
+  if (result.success) {
+    revalidatePath("/workspace", "layout");
+    revalidatePath("/workspace/administration");
+    revalidatePath("/workspace/audit");
+  }
+  return result;
+}
+
+export async function deleteCustomRoleAction(
+  payload: unknown
+): Promise<ActionResult<{ roleId: string; code: string; name: string }>> {
+  const session = await getCurrentSession();
+  const result = await deleteCustomRole(session, payload);
   if (result.success) {
     revalidatePath("/workspace", "layout");
     revalidatePath("/workspace/administration");

@@ -25,16 +25,18 @@ import { getRoleLabel, type SystemRole } from "@/lib/status";
 import {
   applyUserPermissionOverrideAction,
   createCustomRoleAction,
+  deleteCustomRoleAction,
   provisionNewPlatformUserAction,
   removeUserPermissionOverrideAction,
   resetUserToDefaultPasswordAction,
   setPlatformUserActiveStateAction,
+  updateCustomRoleAction,
   updateUserRoleAssignmentsAction,
   updateUserScopeAssignmentAction,
 } from "../actions/administration-actions";
 import type {
   AdministrationWorkspaceViewDTO,
-  AdminPermissionRecordDTO,
+  AdminRoleRecordDTO,
   AdminUserRecordDTO,
 } from "../types/administration-types";
 import type { CreateCustomRoleFormValues } from "../validators/custom-role-schema";
@@ -42,6 +44,7 @@ import type { ProvisionUserFormValues } from "../validators/provision-user-schem
 import { CreateCustomRoleDialog } from "./create-custom-role-dialog";
 import { ManageUserAccountSheet } from "./manage-user-account-sheet";
 import { ProvisionUserDialog } from "./provision-user-dialog";
+import { RolesPermissionsTab } from "./roles-permissions-tab";
 
 export interface AdministrationWorkspaceClientProps {
   view: AdministrationWorkspaceViewDTO;
@@ -86,11 +89,10 @@ export function AdministrationWorkspaceClient({
 
   const [provisionOpen, setProvisionOpen] = React.useState(false);
   const [customRoleOpen, setCustomRoleOpen] = React.useState(false);
+  const [editingRole, setEditingRole] =
+    React.useState<AdminRoleRecordDTO | null>(null);
   const [managingUserId, setManagingUserId] = React.useState<string | null>(
     null
-  );
-  const [expandedRoleIds, setExpandedRoleIds] = React.useState<Set<string>>(
-    () => new Set()
   );
 
   const managingUser = React.useMemo<AdminUserRecordDTO | null>(
@@ -219,13 +221,35 @@ export function AdministrationWorkspaceClient({
     }
   }
 
-  async function handleCreateCustomRole(
-    values: CreateCustomRoleFormValues
+  async function handleSaveCustomRole(
+    values: CreateCustomRoleFormValues,
+    editingRoleId: string | null
   ): Promise<boolean> {
     if (!guardOnline() || pending) return false;
     setPending(true);
     setFeedback(null);
     try {
+      if (editingRoleId) {
+        const res = await updateCustomRoleAction({
+          roleId: editingRoleId,
+          name: values.name,
+          description: values.description?.trim() || null,
+          permissionCodes: values.permissionCodes,
+        });
+        if (!res.success) {
+          setFeedback({ tone: "danger", message: res.error.message });
+          return false;
+        }
+        setCustomRoleOpen(false);
+        setEditingRole(null);
+        setFeedback({
+          tone: "success",
+          message: `Peran kustom "${res.data.name}" berhasil diperbarui.`,
+        });
+        router.refresh();
+        return true;
+      }
+
       const res = await createCustomRoleAction({
         code: values.code,
         name: values.name,
@@ -246,6 +270,34 @@ export function AdministrationWorkspaceClient({
     } finally {
       setPending(false);
     }
+  }
+
+  async function handleDeleteCustomRole(
+    role: AdminRoleRecordDTO
+  ): Promise<boolean> {
+    if (!guardOnline() || pending) return false;
+    setPending(true);
+    setFeedback(null);
+    try {
+      const res = await deleteCustomRoleAction({ roleId: role.id });
+      if (!res.success) {
+        setFeedback({ tone: "danger", message: res.error.message });
+        return false;
+      }
+      setFeedback({
+        tone: "success",
+        message: `Peran kustom "${res.data.name}" berhasil dihapus.`,
+      });
+      router.refresh();
+      return true;
+    } finally {
+      setPending(false);
+    }
+  }
+
+  function handleFilterUsersByRole(roleLabel: string) {
+    setUserSearch(roleLabel);
+    handleTabChange("users");
   }
 
   async function handleApplyOverride(values: {
@@ -365,19 +417,18 @@ export function AdministrationWorkspaceClient({
       (u) =>
         u.name.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
-        u.roles.some((r) => r.name.toLowerCase().includes(q))
+        u.roles.some((r) => {
+          const localized = (
+            getRoleLabel(r.code as SystemRole) ?? r.name
+          ).toLowerCase();
+          return (
+            localized.includes(q) ||
+            r.name.toLowerCase().includes(q) ||
+            r.code.toLowerCase().includes(q)
+          );
+        })
     );
   }, [userSearch, view.users]);
-
-  const permissionsByModule = React.useMemo(() => {
-    const map = new Map<string, AdminPermissionRecordDTO[]>();
-    for (const p of view.permissions) {
-      const list = map.get(p.module) ?? [];
-      list.push(p);
-      map.set(p.module, list);
-    }
-    return Array.from(map.entries());
-  }, [view.permissions]);
 
   return (
     <div className="space-y-6">
@@ -400,7 +451,10 @@ export function AdministrationWorkspaceClient({
               type="button"
               variant="primary"
               disabled={isOffline}
-              onClick={() => setCustomRoleOpen(true)}
+              onClick={() => {
+                setEditingRole(null);
+                setCustomRoleOpen(true);
+              }}
               leftIcon={<Icon icon={Plus} size="sm" />}
             >
               Buat peran kustom
@@ -536,118 +590,19 @@ export function AdministrationWorkspaceClient({
 
       {/* TAB 2: PERAN & HAK AKSES */}
       {activeTab === "roles" && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {view.roles.map((role) => {
-              const isExpanded = expandedRoleIds.has(role.id);
-              const visiblePerms = isExpanded
-                ? role.permissionCodes
-                : role.permissionCodes.slice(0, 8);
-              return (
-                <section
-                  key={role.id}
-                  className="rounded-card border border-border bg-surface p-5 space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-base font-semibold text-foreground">
-                          {getRoleLabel(role.code as SystemRole) ?? role.name}
-                        </h2>
-                        <Badge
-                          variant={role.isSystem ? "neutral" : "info"}
-                          size="sm"
-                        >
-                          {role.isSystem ? "Peran sistem" : "Peran kustom"}
-                        </Badge>
-                      </div>
-                      <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                        {role.code} · {role.assignedUserCount} pengguna
-                      </p>
-                    </div>
-                    <Badge variant="primary" size="sm">
-                      {role.permissionCodes.length} izin
-                    </Badge>
-                  </div>
-
-                  {role.description && (
-                    <p className="text-xs text-secondary-foreground leading-relaxed">
-                      {role.description}
-                    </p>
-                  )}
-
-                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border-subtle">
-                    {visiblePerms.map((code) => (
-                      <span
-                        key={code}
-                        className="rounded-xs bg-surface-subtle px-2 py-0.5 text-[11px] font-mono text-secondary-foreground"
-                      >
-                        {code}
-                      </span>
-                    ))}
-                  </div>
-
-                  {role.permissionCodes.length > 8 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setExpandedRoleIds((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(role.id)) next.delete(role.id);
-                          else next.add(role.id);
-                          return next;
-                        });
-                      }}
-                      className="text-xs font-medium text-primary hover:underline cursor-pointer"
-                    >
-                      {isExpanded
-                        ? "Ringkas daftar izin"
-                        : `Lihat semua izin (${role.permissionCodes.length})`}
-                    </button>
-                  )}
-                </section>
-              );
-            })}
-          </div>
-
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold text-foreground">
-              Kamus hak akses ({view.permissions.length} kode izin)
-            </h2>
-            <div className="space-y-3">
-              {permissionsByModule.map(([modName, perms]) => (
-                <div
-                  key={modName}
-                  className="rounded-card border border-border bg-surface p-4 sm:p-5 space-y-3"
-                >
-                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-border-subtle">
-                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Modul: {modName}
-                    </h3>
-                    <Badge variant="neutral" size="sm">
-                      {perms.length} izin
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                    {perms.map((p) => (
-                      <div
-                        key={p.id}
-                        className="rounded-control border border-border-subtle bg-surface-subtle/40 p-2.5 space-y-0.5"
-                      >
-                        <p className="font-mono text-xs font-semibold text-primary">
-                          {p.code}
-                        </p>
-                        <p className="text-xs font-medium text-foreground">
-                          {p.name}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
+        <RolesPermissionsTab
+          roles={view.roles}
+          permissions={view.permissions}
+          canManageRoles={canManageRoles}
+          pending={pending}
+          isOffline={isOffline}
+          onFilterUsersByRole={handleFilterUsersByRole}
+          onEditCustomRole={(role) => {
+            setEditingRole(role);
+            setCustomRoleOpen(true);
+          }}
+          onDeleteCustomRole={handleDeleteCustomRole}
+        />
       )}
 
       {/* TAB 3 (DEV-ONLY): LINGKUNGAN UJI COBA */}
@@ -704,8 +659,12 @@ export function AdministrationWorkspaceClient({
 
       <CreateCustomRoleDialog
         open={customRoleOpen}
-        onOpenChange={setCustomRoleOpen}
-        onSubmit={handleCreateCustomRole}
+        onOpenChange={(open) => {
+          setCustomRoleOpen(open);
+          if (!open) setEditingRole(null);
+        }}
+        editingRole={editingRole}
+        onSubmit={handleSaveCustomRole}
         pending={pending}
         permissions={view.permissions}
       />

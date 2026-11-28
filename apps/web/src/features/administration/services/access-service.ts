@@ -26,13 +26,16 @@ import {
   canAccessSandboxEnvironment,
 } from "../permissions/administration-policy";
 import {
+  archiveCustomRole,
   deleteUserPermissionOverride,
   findAllPermissionsRegistry,
   findAllRolesWithDetails,
+  findRoleByIdWithUsage,
   findUserRoleAndOverrideMaps,
   findUserRoleAndPermissionRaw,
   insertCustomRoleWithPermissions,
   replaceUserRolesByCodes,
+  updateCustomRoleWithPermissions,
   upsertUserPermissionOverride,
 } from "../repositories/rbac-repository";
 import type {
@@ -43,9 +46,11 @@ import type {
 import {
   assignUserScopeSchema,
   createCustomRoleSchema,
+  deleteCustomRoleSchema,
   provisionUserSchema,
   setPermissionOverrideSchema,
   setUserActiveStatusSchema,
+  updateCustomRoleSchema,
   updateUserRolesSchema,
 } from "../validators/administration-validator";
 import { computeEffectivePermissions } from "./permission-resolver";
@@ -424,6 +429,147 @@ export async function createCustomRole(
   });
 
   return ok(created);
+}
+
+/**
+ * Tab 2 — Update Custom Role (name, description, permissionCodes).
+ * System roles (`isSystem === true`) are strictly protected and immutable.
+ */
+export async function updateCustomRole(
+  user: SessionUser | null | undefined,
+  rawInput: unknown
+): Promise<ActionResult<AdminRoleRecordDTO>> {
+  const parsed = updateCustomRoleSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return fail(
+      "VALIDATION_FAILED",
+      parsed.error.issues[0]?.message ??
+        getHumanErrorMessage("VALIDATION_FAILED"),
+      parsed.error.flatten().fieldErrors
+    );
+  }
+
+  const authz = authorizeManageRoles(user);
+  if (!authz.success) return authz;
+  if (!user?.id) {
+    return fail("UNAUTHORIZED", getHumanErrorMessage("UNAUTHORIZED"));
+  }
+
+  const existing = await findRoleByIdWithUsage(parsed.data.roleId);
+  if (!existing || existing.archivedAt) {
+    return fail("RESOURCE_NOT_FOUND", "Peran yang dipilih tidak ditemukan.");
+  }
+  if (existing.isSystem) {
+    return fail(
+      "POLICY_DENIED",
+      "Peran sistem bawaan tidak dapat diubah demi menjaga integritas tata kelola."
+    );
+  }
+
+  const updated = await updateCustomRoleWithPermissions({
+    roleId: parsed.data.roleId,
+    name: parsed.data.name,
+    description: parsed.data.description ?? null,
+    permissionCodes: Array.from(new Set(parsed.data.permissionCodes)),
+    actorId: user.id,
+  });
+
+  if (!updated) {
+    return fail(
+      "VALIDATION_FAILED",
+      "Terdapat kode hak akses yang tidak terdaftar pada registri sistem."
+    );
+  }
+
+  await recordAuditLog({
+    organizationId: user.memberships[0]?.organizationId ?? null,
+    serviceUnitId: user.memberships[0]?.serviceUnitId ?? null,
+    actorId: user.id,
+    action: "CustomRoleUpdated",
+    entityType: "role",
+    entityId: updated.id,
+    description: `Memperbarui peran kustom "${updated.name}" (${updated.code}) menjadi ${updated.permissionCodes.length} hak akses.`,
+    metadata: {
+      code: updated.code,
+      name: updated.name,
+      permissionCodes: updated.permissionCodes,
+    },
+  });
+
+  return ok(updated);
+}
+
+/**
+ * Tab 2 — Soft-Archive Custom Role (only when no active user is assigned).
+ * System roles (`isSystem === true`) can never be deleted/archived.
+ */
+export async function deleteCustomRole(
+  user: SessionUser | null | undefined,
+  rawInput: unknown
+): Promise<ActionResult<{ roleId: string; code: string; name: string }>> {
+  const parsed = deleteCustomRoleSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return fail(
+      "VALIDATION_FAILED",
+      parsed.error.issues[0]?.message ??
+        getHumanErrorMessage("VALIDATION_FAILED"),
+      parsed.error.flatten().fieldErrors
+    );
+  }
+
+  const authz = authorizeManageRoles(user);
+  if (!authz.success) return authz;
+  if (!user?.id) {
+    return fail("UNAUTHORIZED", getHumanErrorMessage("UNAUTHORIZED"));
+  }
+
+  const existing = await findRoleByIdWithUsage(parsed.data.roleId);
+  if (!existing || existing.archivedAt) {
+    return fail("RESOURCE_NOT_FOUND", "Peran yang dipilih tidak ditemukan.");
+  }
+  if (existing.isSystem) {
+    return fail(
+      "POLICY_DENIED",
+      "Peran sistem bawaan tidak dapat dihapus demi menjaga integritas tata kelola."
+    );
+  }
+  if (existing.assignedUserCount > 0) {
+    return fail(
+      "RESOURCE_CONFLICT",
+      `Peran "${existing.name}" masih digunakan oleh ${existing.assignedUserCount} pengguna. Pindahkan peran pengguna tersebut terlebih dahulu sebelum menghapus peran ini.`
+    );
+  }
+
+  const archived = await archiveCustomRole({
+    roleId: existing.id,
+    actorId: user.id,
+  });
+  if (!archived) {
+    return fail(
+      "RESOURCE_NOT_FOUND",
+      "Peran kustom tidak dapat diarsipkan karena sudah tidak aktif."
+    );
+  }
+
+  await recordAuditLog({
+    organizationId: user.memberships[0]?.organizationId ?? null,
+    serviceUnitId: user.memberships[0]?.serviceUnitId ?? null,
+    actorId: user.id,
+    action: "CustomRoleArchived",
+    entityType: "role",
+    entityId: existing.id,
+    description: `Mengarsipkan peran kustom "${existing.name}" (${existing.code}).`,
+    metadata: {
+      code: existing.code,
+      name: existing.name,
+    },
+  });
+
+  return ok({
+    roleId: existing.id,
+    code: existing.code,
+    name: existing.name,
+  });
 }
 
 /**

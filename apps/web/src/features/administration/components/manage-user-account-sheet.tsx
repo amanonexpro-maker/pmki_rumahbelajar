@@ -647,6 +647,20 @@ export function ManageUserAccountSheet({
         {/* TAB 2: IZIN KHUSUS (OVERRIDE) */}
         {activeTab === "overrides" && canManagePermissions && (
           <div className="space-y-5">
+            <div className="rounded-control bg-surface-subtle/60 px-3.5 py-2.5 flex items-start gap-2 text-xs text-secondary-foreground leading-relaxed">
+              <Icon
+                icon={ICON_MAP.info}
+                size="xs"
+                className="text-primary shrink-0 mt-0.5"
+              />
+              <span>
+                Gunakan tab ini hanya untuk pengecualian 1–2 izin. Untuk
+                tambahan tugas rutin, lebih sederhana menggabungkan peran di tab{" "}
+                <strong className="text-foreground">Peran &amp; Lingkup</strong>
+                .
+              </span>
+            </div>
+
             {currentUser.overrides.length > 0 && (
               <div className="rounded-control bg-surface-subtle/60 p-3.5 space-y-2">
                 <div className="flex flex-wrap items-baseline justify-between gap-1">

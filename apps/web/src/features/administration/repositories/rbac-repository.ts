@@ -338,3 +338,118 @@ export async function replaceUserRolesByCodes(params: {
 
   return true;
 }
+
+export async function findRoleByIdWithUsage(roleId: string): Promise<{
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  isSystem: boolean;
+  archivedAt: Date | null;
+  assignedUserCount: number;
+} | null> {
+  const [roleRow] = await db
+    .select({
+      id: roles.id,
+      code: roles.code,
+      name: roles.name,
+      description: roles.description,
+      isSystem: roles.isSystem,
+      archivedAt: roles.archivedAt,
+    })
+    .from(roles)
+    .where(eq(roles.id, roleId))
+    .limit(1);
+
+  if (!roleRow) return null;
+
+  const assigned = await db
+    .select({ userId: userRoles.userId })
+    .from(userRoles)
+    .where(eq(userRoles.roleId, roleId));
+
+  return {
+    ...roleRow,
+    assignedUserCount: assigned.length,
+  };
+}
+
+export async function updateCustomRoleWithPermissions(params: {
+  roleId: string;
+  name: string;
+  description?: string | null;
+  permissionCodes: string[];
+  actorId: string;
+}): Promise<AdminRoleRecordDTO | null> {
+  const permRows = await db
+    .select({ id: permissions.id, code: permissions.code })
+    .from(permissions)
+    .where(inArray(permissions.code, params.permissionCodes));
+
+  if (permRows.length !== params.permissionCodes.length) {
+    return null;
+  }
+
+  return db.transaction(async (tx) => {
+    const [updatedRole] = await tx
+      .update(roles)
+      .set({
+        name: params.name,
+        description: params.description ?? null,
+        updatedAt: new Date(),
+        updatedBy: params.actorId,
+      })
+      .where(and(eq(roles.id, params.roleId), eq(roles.isSystem, false), isNull(roles.archivedAt)))
+      .returning();
+
+    if (!updatedRole) return null;
+
+    await tx
+      .delete(rolePermissions)
+      .where(eq(rolePermissions.roleId, params.roleId));
+
+    for (const perm of permRows) {
+      await tx
+        .insert(rolePermissions)
+        .values({
+          roleId: updatedRole.id,
+          permissionId: perm.id,
+        })
+        .onConflictDoNothing();
+    }
+
+    const assigned = await tx
+      .select({ userId: userRoles.userId })
+      .from(userRoles)
+      .where(eq(userRoles.roleId, updatedRole.id));
+
+    return {
+      id: updatedRole.id,
+      code: updatedRole.code,
+      name: updatedRole.name,
+      description: updatedRole.description,
+      isSystem: updatedRole.isSystem,
+      permissionCodes: permRows.map((p) => p.code).sort(),
+      assignedUserCount: assigned.length,
+    };
+  });
+}
+
+export async function archiveCustomRole(params: {
+  roleId: string;
+  actorId: string;
+}): Promise<boolean> {
+  const now = new Date();
+  const [archived] = await db
+    .update(roles)
+    .set({
+      archivedAt: now,
+      archivedBy: params.actorId,
+      updatedAt: now,
+      updatedBy: params.actorId,
+    })
+    .where(and(eq(roles.id, params.roleId), eq(roles.isSystem, false), isNull(roles.archivedAt)))
+    .returning({ id: roles.id });
+
+  return Boolean(archived);
+}

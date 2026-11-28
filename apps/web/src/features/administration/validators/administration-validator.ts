@@ -100,6 +100,36 @@ export const createCustomRoleSchema = z.object({
 
 export type CreateCustomRoleInput = z.infer<typeof createCustomRoleSchema>;
 
+export const updateCustomRoleSchema = z.object({
+  roleId: z.string().uuid("ID peran tidak valid."),
+  name: z
+    .string()
+    .trim()
+    .min(3, "Masukkan nama peran kustom (minimal 3 karakter).")
+    .max(80, "Nama peran maksimal 80 karakter."),
+  description: z
+    .string()
+    .trim()
+    .max(400, "Deskripsi peran maksimal 400 karakter.")
+    .optional()
+    .nullable(),
+  permissionCodes: z
+    .array(z.string().trim().min(3))
+    .min(1, "Pilih minimal 1 hak akses untuk peran kustom ini.")
+    .refine(
+      (codes) => codes.every((c) => isPermissionCodePolicySafe(c)),
+      "Peran kustom tidak boleh memiliki hak akses yang melanggar imutabilitas jejak audit atau kebijakan global."
+    ),
+});
+
+export type UpdateCustomRoleInput = z.infer<typeof updateCustomRoleSchema>;
+
+export const deleteCustomRoleSchema = z.object({
+  roleId: z.string().uuid("ID peran tidak valid."),
+});
+
+export type DeleteCustomRoleInput = z.infer<typeof deleteCustomRoleSchema>;
+
 export const setPermissionOverrideSchema = z.object({
   userId: z.string().uuid("Pilih pengguna terlebih dahulu."),
   permissionCode: z

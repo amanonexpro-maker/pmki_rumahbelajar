@@ -9,9 +9,11 @@ import {
 } from "./permissions/administration-policy";
 import {
   createCustomRoleSchema,
+  deleteCustomRoleSchema,
   isPermissionCodePolicySafe,
   setPermissionOverrideSchema,
   setUserActiveStatusSchema,
+  updateCustomRoleSchema,
 } from "./validators/administration-validator";
 
 const ORG_ID = "01950000-0000-7000-8000-000000000001";
@@ -80,6 +82,28 @@ describe("Administration Domain — Custom Role Validators, Sandbox Isolation, P
       permissionCodes: ["audit.read", "audit.delete"],
     });
     expect(forbiddenCustomRole.success).toBe(false);
+
+    const validUpdate = updateCustomRoleSchema.safeParse({
+      roleId: ORG_ID,
+      name: "Koordinator Remaja Senior",
+      description: "Pembaruan cakupan pendampingan.",
+      permissionCodes: ["student.read", "attendance.read"],
+    });
+    expect(validUpdate.success).toBe(true);
+
+    const forbiddenUpdate = updateCustomRoleSchema.safeParse({
+      roleId: ORG_ID,
+      name: "Koordinator Remaja Senior",
+      permissionCodes: ["audit.delete"],
+    });
+    expect(forbiddenUpdate.success).toBe(false);
+
+    expect(deleteCustomRoleSchema.safeParse({ roleId: ORG_ID }).success).toBe(
+      true
+    );
+    expect(
+      deleteCustomRoleSchema.safeParse({ roleId: "not-a-uuid" }).success
+    ).toBe(false);
   });
 
   it("requires mandatory reason for permission overrides and user deactivation", () => {

@@ -8,7 +8,7 @@ import type { SessionUser } from "@/server/auth/session";
 import { createSupabaseServerClient } from "@/server/auth/supabase-server";
 import { fail, ok, type ActionResult } from "@/server/contracts/result";
 import {
-  DEFAULT_GENERIC_PASSWORD,
+  generateSuggestedPassword,
   type ChangePasswordInput,
   type LoginInput,
   type ResetPasswordInput,
@@ -166,11 +166,12 @@ export async function provisionIdentityUserViaAdminApi(params: {
 export async function resetIdentityUserPasswordToDefault(params: {
   userId: string;
   actorId: string | null;
-}): Promise<ActionResult<{ reset: true }>> {
+}): Promise<ActionResult<{ reset: true; temporaryPassword: string }>> {
+  const temporaryPassword = generateSuggestedPassword();
   const supabaseAdmin = createSupabaseAuthAdminClient();
   const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
     params.userId,
-    { password: DEFAULT_GENERIC_PASSWORD }
+    { password: temporaryPassword }
   );
 
   if (authError) {
@@ -194,7 +195,7 @@ export async function resetIdentityUserPasswordToDefault(params: {
     return fail("RESOURCE_NOT_FOUND", "Data pengguna tidak ditemukan.");
   }
 
-  return ok({ reset: true });
+  return ok({ reset: true, temporaryPassword });
 }
 
 export async function updateIdentityUserActiveState(params: {
@@ -202,6 +203,22 @@ export async function updateIdentityUserActiveState(params: {
   active: boolean;
   actorId: string;
 }): Promise<ActionResult<IdentityUserSummaryDTO>> {
+  const supabaseAdmin = createSupabaseAuthAdminClient();
+  const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+    params.userId,
+    { ban_duration: params.active ? "none" : "876000h" }
+  );
+  if (authError) {
+    console.error(
+      "[updateIdentityUserActiveState] Supabase Auth ban/unban failed:",
+      authError
+    );
+    return fail(
+      "INTERNAL_ERROR",
+      "Gagal memperbarui status sesi pengguna pada layanan autentikasi."
+    );
+  }
+
   const [updated] = await db
     .update(users)
     .set({
@@ -372,9 +389,9 @@ const MODULE_LABELS: Record<string, string> = {
   publication: "Publikasi",
   report: "Laporan & Tata Kelola",
   audit: "Jejak Audit",
-  user: "Administrasi Pengguna",
-  role: "Administrasi Peran",
-  permission: "Administrasi Hak Akses",
+  user: "Administrasi",
+  role: "Administrasi",
+  permission: "Administrasi",
 };
 
 export async function getMyProfileView(
@@ -467,8 +484,23 @@ export async function updateMyProfile(
 
 export async function updateMyAvatarUrl(
   userId: string,
-  avatarUrl: string
-): Promise<ActionResult<{ avatarUrl: string }>> {
+  avatarUrl: string | null
+): Promise<
+  ActionResult<{
+    avatarUrl: string | null;
+    previousAvatarUrl: string | null;
+  }>
+> {
+  const [existing] = await db
+    .select({ avatarUrl: users.avatarUrl })
+    .from(users)
+    .where(and(eq(users.id, userId), isNull(users.archivedAt)))
+    .limit(1);
+
+  if (!existing) {
+    return fail("RESOURCE_NOT_FOUND", "Profil pengguna tidak ditemukan.");
+  }
+
   const [updated] = await db
     .update(users)
     .set({
@@ -483,7 +515,10 @@ export async function updateMyAvatarUrl(
     return fail("RESOURCE_NOT_FOUND", "Profil pengguna tidak ditemukan.");
   }
 
-  return ok({ avatarUrl: updated.avatarUrl ?? avatarUrl });
+  return ok({
+    avatarUrl: updated.avatarUrl ?? null,
+    previousAvatarUrl: existing.avatarUrl ?? null,
+  });
 }
 
 export interface PublicOptInIdentityProfileDTO {

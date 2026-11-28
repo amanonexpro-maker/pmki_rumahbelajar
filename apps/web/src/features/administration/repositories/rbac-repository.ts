@@ -40,9 +40,10 @@ export async function findUserRoleAndPermissionRaw(
       code: permissions.code,
     })
     .from(userRoles)
+    .innerJoin(roles, eq(userRoles.roleId, roles.id))
     .innerJoin(rolePermissions, eq(userRoles.roleId, rolePermissions.roleId))
     .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-    .where(eq(userRoles.userId, userId));
+    .where(and(eq(userRoles.userId, userId), isNull(roles.archivedAt)));
 
   const now = new Date();
   const overrideRows = await db

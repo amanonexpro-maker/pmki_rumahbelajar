@@ -16,6 +16,7 @@ import {
   type MembershipRecord,
 } from "@/features/organization";
 import { getHumanErrorMessage } from "@/lib/messages";
+import { getPermissionLabel } from "@/lib/status";
 import type { SessionUser } from "@/server/auth/session";
 import { fail, ok, type ActionResult } from "@/server/contracts/result";
 import {
@@ -630,8 +631,8 @@ export async function applyUserPermissionOverride(
     entityId: `${parsed.data.userId}:${parsed.data.permissionCode}`,
     description:
       parsed.data.mode === "GRANT"
-        ? `Memberikan hak akses khusus "${parsed.data.permissionCode}" kepada pengguna (Alasan: ${parsed.data.reason}).`
-        : `Mencabut hak akses "${parsed.data.permissionCode}" dari pengguna (Alasan: ${parsed.data.reason}).`,
+        ? `Memberikan izin khusus "${getPermissionLabel(parsed.data.permissionCode)}" kepada pengguna (Alasan: ${parsed.data.reason}).`
+        : `Mencabut izin "${getPermissionLabel(parsed.data.permissionCode)}" dari pengguna (Alasan: ${parsed.data.reason}).`,
     metadata: {
       targetUserId: parsed.data.userId,
       permissionCode: parsed.data.permissionCode,
@@ -716,7 +717,7 @@ export async function updateUserScopeAssignment(
 export async function resetUserToDefaultPassword(
   user: SessionUser | null | undefined,
   targetUserId: string
-): Promise<ActionResult<{ reset: true }>> {
+): Promise<ActionResult<{ reset: true; temporaryPassword: string }>> {
   const authz = authorizeManageUsers(user);
   if (!authz.success) return authz;
 
@@ -734,17 +735,17 @@ export async function resetUserToDefaultPassword(
     organizationId: user.memberships[0]?.organizationId ?? null,
     serviceUnitId: user.memberships[0]?.serviceUnitId ?? null,
     actorId: user.id,
-    action: "USER_PASSWORD_RESET_TO_DEFAULT",
+    action: "UserPasswordReset",
     entityType: "user",
     entityId: targetUserId,
     description:
-      "Menyetel ulang kata sandi pengguna ke sandi bawaan (wajib ganti saat masuk berikutnya).",
+      "Menyetel ulang kata sandi pengguna ke sandi sementara sekali pakai (wajib ganti saat masuk berikutnya).",
     metadata: {
       targetUserId,
     },
   });
 
-  return ok({ reset: true });
+  return ok({ reset: true, temporaryPassword: res.data.temporaryPassword });
 }
 
 export async function removeUserPermissionOverride(
@@ -768,10 +769,10 @@ export async function removeUserPermissionOverride(
     organizationId: user.memberships[0]?.organizationId ?? null,
     serviceUnitId: user.memberships[0]?.serviceUnitId ?? null,
     actorId: user.id,
-    action: "USER_PERMISSION_OVERRIDE_REMOVED",
+    action: "PermissionOverrideRemoved",
     entityType: "user_permission",
     entityId: targetUserId,
-    description: `Menghapus izin khusus "${permissionCode}" agar pengguna kembali mengikuti bawaan peran.`,
+    description: `Menghapus izin khusus "${getPermissionLabel(permissionCode)}" agar pengguna kembali mengikuti bawaan peran.`,
     metadata: {
       targetUserId,
       permissionCode,

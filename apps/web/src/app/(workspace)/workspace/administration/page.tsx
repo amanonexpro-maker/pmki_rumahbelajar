@@ -17,6 +17,10 @@ export const metadata: Metadata = {
 interface AdministrationPageProps {
   searchParams: Promise<{
     tab?: string;
+    search?: string;
+    status?: string;
+    unit?: string;
+    page?: string;
   }>;
 }
 
@@ -49,10 +53,17 @@ export default async function WorkspaceAdministrationPage({
   const canManagePermissions =
     can(session, "permission.manage") || can(session, "role.manage");
 
+  const parsedPage = Number.parseInt(resolvedParams.page ?? "1", 10);
+  const initialPage = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+
   return (
     <AdministrationWorkspaceClient
       view={viewRes.data}
       initialTab={resolvedParams.tab ?? "users"}
+      initialSearch={resolvedParams.search ?? ""}
+      initialStatus={resolvedParams.status ?? "ALL"}
+      initialUnit={resolvedParams.unit ?? "ALL"}
+      initialPage={initialPage}
       currentUserId={session.id}
       canManageUsers={canManageUsers}
       canManageRoles={canManageRoles}

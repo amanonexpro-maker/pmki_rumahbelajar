@@ -26,7 +26,22 @@ export const resetPasswordSchema = z.object({
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
-export const DEFAULT_GENERIC_PASSWORD = "Rbga@2026";
+const TEMP_PASSWORD_CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+
+/**
+ * Generates a cryptographically-random, unambiguous one-time temporary password
+ * (e.g. `Pmki-K7m9-R4x2!`) safe in both Node server and browser runtimes.
+ * Replaces static hardcoded default passwords in client/server bundles.
+ */
+export function generateSuggestedPassword(): string {
+  const bytes = new Uint8Array(8);
+  globalThis.crypto.getRandomValues(bytes);
+  const pick = (b: number) =>
+    TEMP_PASSWORD_CHARSET[b % TEMP_PASSWORD_CHARSET.length] ?? "K";
+  const part1 = `${pick(bytes[0] ?? 0)}${pick(bytes[1] ?? 1)}${pick(bytes[2] ?? 2)}${pick(bytes[3] ?? 3)}`;
+  const part2 = `${pick(bytes[4] ?? 4)}${pick(bytes[5] ?? 5)}${pick(bytes[6] ?? 6)}${pick(bytes[7] ?? 7)}`;
+  return `Pmki-${part1}-${part2}!`;
+}
 
 const FORBIDDEN_DEFAULT_PASSWORDS = new Set([
   "rbga@2026",

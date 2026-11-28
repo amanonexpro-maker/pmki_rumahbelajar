@@ -21,10 +21,13 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   UserDeactivated: "Pengguna dinonaktifkan",
   UserActivated: "Pengguna diaktifkan kembali",
   UserRolesUpdated: "Peran diperbarui",
+  UserPasswordReset: "Kata sandi pengguna disetel ulang",
   CustomRoleCreated: "Peran kustom baru dibuat",
+  CustomRoleUpdated: "Peran kustom diperbarui",
+  CustomRoleArchived: "Peran kustom diarsipkan",
   PermissionOverrideGranted: "Hak akses khusus diberikan",
   PermissionOverrideRevoked: "Hak akses khusus dicabut",
-  PermissionOverrideRemoved: "Override hak akses dihapus",
+  PermissionOverrideRemoved: "Izin khusus dihapus",
   UserScopeUpdated: "Lingkup penugasan diperbarui",
 };
 

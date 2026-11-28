@@ -32,7 +32,7 @@ export {
 } from "./services/auth-service";
 export {
   changePasswordSchema,
-  DEFAULT_GENERIC_PASSWORD,
+  generateSuggestedPassword,
   loginSchema,
   resetPasswordSchema,
   updateMyProfileSchema,

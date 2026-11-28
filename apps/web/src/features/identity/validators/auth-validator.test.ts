@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { loginSchema, resetPasswordSchema } from "./auth-validator";
+import {
+  changePasswordSchema,
+  generateSuggestedPassword,
+  loginSchema,
+  resetPasswordSchema,
+} from "./auth-validator";
 
 describe("Identity Auth Validators (10 §12–14)", () => {
   it("accepts valid email and 8+ character password", () => {
@@ -31,6 +36,27 @@ describe("Identity Auth Validators (10 §12–14)", () => {
       resetPasswordSchema.safeParse({ email: "superadmin@pmki.org" }).success
     ).toBe(true);
     expect(resetPasswordSchema.safeParse({ email: "" }).success).toBe(false);
+  });
+
+  it("generates unique cryptographically-random temporary passwords and rejects forbidden defaults", () => {
+    const first = generateSuggestedPassword();
+    const second = generateSuggestedPassword();
+    expect(first).toMatch(/^Pmki-[A-Za-z2-9]{4}-[A-Za-z2-9]{4}!$/);
+    expect(second).toMatch(/^Pmki-[A-Za-z2-9]{4}-[A-Za-z2-9]{4}!$/);
+    expect(first).not.toBe(second);
+
+    expect(
+      changePasswordSchema.safeParse({
+        newPassword: "Rbga@2026",
+        confirmPassword: "Rbga@2026",
+      }).success
+    ).toBe(false);
+    expect(
+      changePasswordSchema.safeParse({
+        newPassword: first,
+        confirmPassword: first,
+      }).success
+    ).toBe(true);
   });
 });
 

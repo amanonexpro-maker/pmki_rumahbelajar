@@ -141,7 +141,7 @@ export async function updateUserScopeAssignmentAction(
 
 export async function resetUserToDefaultPasswordAction(
   targetUserId: string
-): Promise<ActionResult<{ reset: true }>> {
+): Promise<ActionResult<{ reset: true; temporaryPassword: string }>> {
   const session = await getCurrentSession();
   const result = await resetUserToDefaultPassword(session, targetUserId);
   if (result.success) {

@@ -36,6 +36,89 @@ const DEFAULT_VALUES: CreateCustomRoleFormValues = {
   permissionCodes: ["student.read", "attendance.read"],
 };
 
+function PermissionModulesPicker({
+  groupedModules,
+  selectedPerms,
+  errorMessage,
+  onClearAll,
+  onTogglePermission,
+  onToggleModuleAll,
+}: {
+  groupedModules: Array<[string, AdminPermissionRecordDTO[]]>;
+  selectedPerms: string[];
+  errorMessage?: string;
+  onClearAll: () => void;
+  onTogglePermission: (code: string) => void;
+  onToggleModuleAll: (modulePerms: AdminPermissionRecordDTO[]) => void;
+}) {
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-foreground">
+          Pilih hak akses ({selectedPerms.length} dipilih) *
+        </p>
+        {selectedPerms.length > 0 && (
+          <button
+            type="button"
+            onClick={onClearAll}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            Kosongkan pilihan
+          </button>
+        )}
+      </div>
+
+      <div className="max-h-64 overflow-y-auto rounded-control border border-border bg-surface-subtle/30 p-3 space-y-4 [scrollbar-width:thin]">
+        {groupedModules.map(([moduleLabel, modulePerms]) => {
+          const allSelected = modulePerms.every((p) =>
+            selectedPerms.includes(p.code)
+          );
+          return (
+            <div key={moduleLabel} className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-foreground">
+                  {moduleLabel}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => onToggleModuleAll(modulePerms)}
+                  className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
+                >
+                  {allSelected ? "Batal pilih modul" : "Pilih semua"}
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {modulePerms.map((p) => {
+                  const checked = selectedPerms.includes(p.code);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => onTogglePermission(p.code)}
+                      aria-pressed={checked}
+                      className={
+                        checked
+                          ? "inline-flex items-center gap-1 rounded-pill border border-primary bg-primary-soft px-2.5 py-1 text-xs font-medium text-primary transition-colors cursor-pointer focus-ring"
+                          : "inline-flex items-center gap-1 rounded-pill border border-border bg-surface px-2.5 py-1 text-xs text-secondary-foreground hover:bg-surface-subtle transition-colors cursor-pointer focus-ring"
+                      }
+                    >
+                      {checked && (
+                        <Icon icon={Check} size="xs" className="shrink-0" />
+                      )}
+                      <span>{p.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {errorMessage && <p className="text-xs text-danger">{errorMessage}</p>}
+    </div>
+  );
+}
+
 export function CreateCustomRoleDialog({
   open,
   onOpenChange,
@@ -86,57 +169,35 @@ export function CreateCustomRoleDialog({
     }
   }, [open, editingRole, reset]);
 
-  const selectedPerms =
-    useWatch({
-      control,
-      name: "permissionCodes",
-    }) ?? [];
+  const selectedPerms = useWatch({ control, name: "permissionCodes" }) ?? [];
 
   const nameRegister = register("name", {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (isEditing) return;
-      const val = e.target.value;
-      if (!getValues("code")) {
-        setValue(
-          "code",
-          val
-            .toUpperCase()
-            .replace(/[^A-Z0-9]+/g, "_")
-            .replace(/^_|_$/g, ""),
-          { shouldValidate: false }
-        );
-      }
+      if (isEditing || getValues("code")) return;
+      setValue(
+        "code",
+        e.target.value
+          .toUpperCase()
+          .replace(/[^A-Z0-9]+/g, "_")
+          .replace(/^_|_$/g, ""),
+        { shouldValidate: false }
+      );
     },
   });
 
   const codeRegister = register("code", {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (isEditing) return;
-      setValue("code", e.target.value.toUpperCase(), { shouldValidate: true });
+      if (!isEditing) {
+        setValue("code", e.target.value.toUpperCase(), {
+          shouldValidate: true,
+        });
+      }
     },
   });
 
-  function togglePermission(code: string) {
-    const next = selectedPerms.includes(code)
-      ? selectedPerms.filter((c) => c !== code)
-      : [...selectedPerms, code];
-    setValue("permissionCodes", next, { shouldValidate: true });
-  }
-
-  function toggleModuleAll(modulePerms: AdminPermissionRecordDTO[]) {
-    const codes = modulePerms.map((p) => p.code);
-    const allSelected = codes.every((c) => selectedPerms.includes(c));
-    const next = allSelected
-      ? selectedPerms.filter((c) => !codes.includes(c))
-      : Array.from(new Set([...selectedPerms, ...codes]));
-    setValue("permissionCodes", next, { shouldValidate: true });
-  }
-
   async function handleFormSubmit(values: CreateCustomRoleFormValues) {
     const succeeded = await onSubmit(values, editingRole?.id ?? null);
-    if (succeeded && !isEditing) {
-      reset(DEFAULT_VALUES);
-    }
+    if (succeeded && !isEditing) reset(DEFAULT_VALUES);
   }
 
   return (
@@ -151,27 +212,11 @@ export function CreateCustomRoleDialog({
       }
       footer={(formId, isMobile) => (
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            disabled={pending}
-            fullWidth={isMobile}
-          >
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={pending} fullWidth={isMobile}>
             Batal
           </Button>
-          <Button
-            type="submit"
-            form={formId}
-            variant="primary"
-            disabled={pending}
-            fullWidth={isMobile}
-          >
-            {pending
-              ? "Menyimpan..."
-              : isEditing
-                ? "Simpan perubahan"
-                : "Simpan peran kustom"}
+          <Button type="submit" form={formId} variant="primary" disabled={pending} fullWidth={isMobile}>
+            {pending ? "Menyimpan..." : isEditing ? "Simpan perubahan" : "Simpan peran kustom"}
           </Button>
         </div>
       )}
@@ -245,76 +290,28 @@ export function CreateCustomRoleDialog({
             )}
           </div>
 
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-medium text-foreground">
-                Pilih hak akses ({selectedPerms.length} dipilih) *
-              </p>
-              {selectedPerms.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setValue("permissionCodes", [], { shouldValidate: true })
-                  }
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                >
-                  Kosongkan pilihan
-                </button>
-              )}
-            </div>
-
-            <div className="max-h-64 overflow-y-auto rounded-control border border-border bg-surface-subtle/30 p-3 space-y-4 [scrollbar-width:thin]">
-              {groupedModules.map(([moduleLabel, modulePerms]) => {
-                const allSelected = modulePerms.every((p) =>
-                  selectedPerms.includes(p.code)
-                );
-                return (
-                  <div key={moduleLabel} className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold text-foreground">
-                        {moduleLabel}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => toggleModuleAll(modulePerms)}
-                        className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
-                      >
-                        {allSelected ? "Batal pilih modul" : "Pilih semua"}
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {modulePerms.map((p) => {
-                        const checked = selectedPerms.includes(p.code);
-                        return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => togglePermission(p.code)}
-                            aria-pressed={checked}
-                            className={
-                              checked
-                                ? "inline-flex items-center gap-1 rounded-pill border border-primary bg-primary-soft px-2.5 py-1 text-xs font-medium text-primary transition-colors cursor-pointer focus-ring"
-                                : "inline-flex items-center gap-1 rounded-pill border border-border bg-surface px-2.5 py-1 text-xs text-secondary-foreground hover:bg-surface-subtle transition-colors cursor-pointer focus-ring"
-                            }
-                          >
-                            {checked && (
-                              <Icon icon={Check} size="xs" className="shrink-0" />
-                            )}
-                            <span>{p.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {errors.permissionCodes && (
-              <p className="text-xs text-danger">
-                {errors.permissionCodes.message}
-              </p>
-            )}
-          </div>
+          <PermissionModulesPicker
+            groupedModules={groupedModules}
+            selectedPerms={selectedPerms}
+            errorMessage={errors.permissionCodes?.message}
+            onClearAll={() =>
+              setValue("permissionCodes", [], { shouldValidate: true })
+            }
+            onTogglePermission={(code) => {
+              const next = selectedPerms.includes(code)
+                ? selectedPerms.filter((c) => c !== code)
+                : [...selectedPerms, code];
+              setValue("permissionCodes", next, { shouldValidate: true });
+            }}
+            onToggleModuleAll={(modulePerms) => {
+              const codes = modulePerms.map((p) => p.code);
+              const allSelected = codes.every((c) => selectedPerms.includes(c));
+              const next = allSelected
+                ? selectedPerms.filter((c) => !codes.includes(c))
+                : Array.from(new Set([...selectedPerms, ...codes]));
+              setValue("permissionCodes", next, { shouldValidate: true });
+            }}
+          />
         </form>
       )}
     </FormBottomSheet>

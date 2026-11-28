@@ -7,11 +7,9 @@ import {
   FlaskConical,
   Plus,
   Shield,
-  Sliders,
   UserPlus,
   Users,
 } from "lucide-react";
-import { EmptyState, SearchInput } from "@/components/compositions";
 import {
   DetailTabs,
   FeedbackBanner,
@@ -19,9 +17,13 @@ import {
   PageHeader,
   type DetailTabItem,
 } from "@/components/patterns";
-import { Badge, Button, Icon } from "@/components/ui";
+import { Button, Icon } from "@/components/ui";
 import { useTierCGuard } from "@/hooks/use-tier-c-guard";
-import { getRoleLabel, type SystemRole } from "@/lib/status";
+import {
+  getPermissionLabel,
+  getRoleLabel,
+  type SystemRole,
+} from "@/lib/status";
 import {
   applyUserPermissionOverrideAction,
   createCustomRoleAction,
@@ -45,15 +47,27 @@ import { CreateCustomRoleDialog } from "./create-custom-role-dialog";
 import { ManageUserAccountSheet } from "./manage-user-account-sheet";
 import { ProvisionUserDialog } from "./provision-user-dialog";
 import { RolesPermissionsTab } from "./roles-permissions-tab";
+import { UsersListTab } from "./users-list-tab";
 
 export interface AdministrationWorkspaceClientProps {
   view: AdministrationWorkspaceViewDTO;
   initialTab: string;
+  initialSearch?: string;
+  initialStatus?: string;
+  initialUnit?: string;
+  initialPage?: number;
   currentUserId: string;
   canManageUsers: boolean;
   canManageRoles: boolean;
   canManagePermissions: boolean;
 }
+
+const USERS_PAGE_SIZE = 10;
+const USER_STATUS_OPTIONS = [
+  { value: "ALL", label: "Semua status" },
+  { value: "ACTIVE", label: "Akun aktif" },
+  { value: "INACTIVE", label: "Akun nonaktif" },
+] as const;
 
 function normalizeTab(tab: string, isSandboxAllowed: boolean): string {
   if (tab === "roles" || tab === "permissions") return "roles";
@@ -61,360 +75,327 @@ function normalizeTab(tab: string, isSandboxAllowed: boolean): string {
   return "users";
 }
 
-export function AdministrationWorkspaceClient({
+function normalizeUserStatus(status?: string): "ALL" | "ACTIVE" | "INACTIVE" {
+  if (status === "ACTIVE" || status === "INACTIVE") return status;
+  return "ALL";
+}
+
+function SandboxEnvironmentTab() {
+  return (
+    <section className="rounded-card border border-warning/40 bg-warning-soft/30 p-5 sm:p-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <Icon icon={FlaskConical} size="sm" className="text-warning" />
+        <h2 className="text-base font-semibold text-foreground">
+          Lingkungan Uji Coba (Khusus Pengembangan · Administrator Platform)
+        </h2>
+      </div>
+      <p className="text-xs text-secondary-foreground leading-relaxed">
+        Area ini terisolasi dan hanya tersedia bagi{" "}
+        <strong>Administrator Platform</strong> saat aplikasi berjalan di luar
+        mode produksi (<code>NODE_ENV !== &quot;production&quot;</code>). Di
+        lingkungan produksi, tab ini dinonaktifkan sepenuhnya.
+      </p>
+      <div className="rounded-control border border-border bg-surface p-4 space-y-2 text-xs">
+        <p className="font-semibold text-foreground">
+          Ringkasan kebijakan tata kelola yang selalu aktif (Tidak dapat
+          dimatikan):
+        </p>
+        <ul className="list-disc pl-5 space-y-1 text-secondary-foreground">
+          <li>
+            <strong>Separation of Duties (SoD):</strong> Penyusun laporan,
+            pengunggah dokumentasi, dan penulis publikasi tidak dapat menyetujui
+            karyanya sendiri (termasuk Administrator Platform).
+          </li>
+          <li>
+            <strong>Imutabilitas Audit &amp; Riwayat Laporan:</strong> Tabel{" "}
+            <code>audit_logs</code> dan <code>report_workflow_logs</code> dijaga
+            oleh trigger PostgreSQL append-only.
+          </li>
+          <li>
+            <strong>Klasifikasi Data CONFIDENTIAL:</strong> Kontak wali, catatan
+            perkembangan rahasia, dan bukti persetujuan default DENY di sisi
+            server.
+          </li>
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function useAdministrationMutations({
+  guardOnline,
+  pending,
+  setPending,
+  setFeedback,
+  onProvisionSuccess,
+  onCustomRoleSuccess,
+}: {
+  guardOnline: () => boolean;
+  pending: boolean;
+  setPending: (v: boolean) => void;
+  setFeedback: (
+    f: { tone: "success" | "danger" | "warning"; message: string } | null
+  ) => void;
+  onProvisionSuccess: () => void;
+  onCustomRoleSuccess: () => void;
+}) {
+  const router = useRouter();
+
+  async function runGuarded<T>(
+    fn: () => Promise<
+      { success: true; data: T } | { success: false; error: { message: string } }
+    >,
+    onSuccess: (data: T) => void
+  ): Promise<T | null> {
+    if (!guardOnline() || pending) return null;
+    setPending(true);
+    setFeedback(null);
+    try {
+      const res = await fn();
+      if (!res.success) {
+        setFeedback({ tone: "danger", message: res.error.message });
+        return null;
+      }
+      onSuccess(res.data);
+      router.refresh();
+      return res.data;
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return {
+    handleProvisionUser: async (values: ProvisionUserFormValues) =>
+      Boolean(
+        await runGuarded(
+          () =>
+            provisionNewPlatformUserAction({
+              name: values.name,
+              email: values.email,
+              initialPassword: values.initialPassword,
+              roleCode: values.roleCode,
+              organizationId: values.organizationId,
+              serviceUnitId: values.serviceUnitId,
+            }),
+          (d) => {
+            onProvisionSuccess();
+            setFeedback({
+              tone: "success",
+              message: `Akun ${d.email} berhasil dibuat dan wajib mengganti kata sandi saat pertama masuk.`,
+            });
+          }
+        )
+      ),
+    handleSaveUserRoles: async (userId: string, roleCodes: string[]) =>
+      Boolean(
+        await runGuarded(
+          () => updateUserRoleAssignmentsAction({ userId, roleCodes }),
+          () =>
+            setFeedback({
+              tone: "success",
+              message:
+                "Peran diperbarui dan langsung berlaku efektif pada permintaan berikutnya.",
+            })
+        )
+      ),
+    handleToggleActive: async (
+      userId: string,
+      active: boolean,
+      reason: string | null
+    ) =>
+      Boolean(
+        await runGuarded(
+          () => setPlatformUserActiveStateAction({ userId, active, reason }),
+          () =>
+            setFeedback({
+              tone: "success",
+              message: active
+                ? "Pengguna diaktifkan kembali."
+                : "Pengguna dinonaktifkan.",
+            })
+        )
+      ),
+    handleResetDefaultPassword: async (userId: string) => {
+      const data = await runGuarded(
+        () => resetUserToDefaultPasswordAction(userId),
+        () =>
+          setFeedback({
+            tone: "success",
+            message:
+              "Sandi sementara sekali pakai berhasil dibuat. Salin dan berikan kepada pengguna.",
+          })
+      );
+      return data?.temporaryPassword ?? null;
+    },
+    handleSaveCustomRole: async (
+      values: CreateCustomRoleFormValues,
+      editingRoleId: string | null
+    ) =>
+      Boolean(
+        await runGuarded(
+          () =>
+            editingRoleId
+              ? updateCustomRoleAction({
+                  roleId: editingRoleId,
+                  name: values.name,
+                  description: values.description?.trim() || null,
+                  permissionCodes: values.permissionCodes,
+                })
+              : createCustomRoleAction({
+                  code: values.code,
+                  name: values.name,
+                  description: values.description?.trim() || null,
+                  permissionCodes: values.permissionCodes,
+                }),
+          (d) => {
+            onCustomRoleSuccess();
+            setFeedback({
+              tone: "success",
+              message: editingRoleId
+                ? `Peran kustom "${d.name}" berhasil diperbarui.`
+                : `Peran kustom "${d.name}" (${d.code}) berhasil dibuat.`,
+            });
+          }
+        )
+      ),
+    handleDeleteCustomRole: async (role: AdminRoleRecordDTO) =>
+      Boolean(
+        await runGuarded(
+          () => deleteCustomRoleAction({ roleId: role.id }),
+          (d) =>
+            setFeedback({
+              tone: "success",
+              message: `Peran kustom "${d.name}" berhasil dihapus.`,
+            })
+        )
+      ),
+    handleApplyOverride: async (values: {
+      userId: string;
+      permissionCode: string;
+      mode: "GRANT" | "REVOKE";
+      reason: string;
+    }) =>
+      Boolean(
+        await runGuarded(
+          () => applyUserPermissionOverrideAction(values),
+          (d) => {
+            const label = getPermissionLabel(d.permissionCode);
+            setFeedback({
+              tone: "success",
+              message:
+                d.mode === "GRANT"
+                  ? `Izin khusus "${label}" berhasil diberikan.`
+                  : `Izin "${label}" berhasil dicabut dari akun ini.`,
+            });
+          }
+        )
+      ),
+    handleRemoveOverride: async (userId: string, permissionCode: string) =>
+      Boolean(
+        await runGuarded(
+          () => removeUserPermissionOverrideAction(userId, permissionCode),
+          (d) =>
+            setFeedback({
+              tone: "success",
+              message: `Izin khusus "${getPermissionLabel(d.permissionCode)}" dihapus; akun kembali mengikuti bawaan peran.`,
+            })
+        )
+      ),
+    handleAssignScope: async (values: {
+      userId: string;
+      organizationId: string;
+      serviceUnitId: string;
+      programId?: string | null;
+    }) =>
+      Boolean(
+        await runGuarded(
+          () => updateUserScopeAssignmentAction({ ...values, active: true }),
+          () =>
+            setFeedback({
+              tone: "success",
+              message:
+                "Lingkup penugasan unit layanan berhasil diperbarui dan tercatat dalam jejak audit.",
+            })
+        )
+      ),
+  };
+}
+
+function useUserDirectoryFilters({
   view,
   initialTab,
-  currentUserId,
-  canManageUsers,
-  canManageRoles,
-  canManagePermissions,
-}: AdministrationWorkspaceClientProps) {
+  initialSearch,
+  initialStatus,
+  initialUnit,
+  initialPage,
+}: {
+  view: AdministrationWorkspaceViewDTO;
+  initialTab: string;
+  initialSearch: string;
+  initialStatus: string;
+  initialUnit: string;
+  initialPage: number;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = React.useState(() =>
     normalizeTab(initialTab, view.isSandboxAllowed)
   );
-  const [userSearch, setUserSearch] = React.useState("");
-  const [pending, setPending] = React.useState(false);
-  const [feedback, setFeedback] = React.useState<{
-    tone: "success" | "danger" | "warning";
-    message: string;
-  } | null>(null);
-  const { isOnline, checkOnline: guardOnline } = useTierCGuard(
-    "Administrasi & Hak Akses",
-    (message) => setFeedback({ tone: "warning", message })
+  const [userSearch, setUserSearch] = React.useState(initialSearch);
+  const [userStatus, setUserStatus] = React.useState<
+    "ALL" | "ACTIVE" | "INACTIVE"
+  >(() => normalizeUserStatus(initialStatus));
+  const [userUnit, setUserUnit] = React.useState(initialUnit);
+  const [userPage, setUserPage] = React.useState(() =>
+    Math.max(1, initialPage)
   );
-  const isOffline = !isOnline;
-
-  const [provisionOpen, setProvisionOpen] = React.useState(false);
-  const [customRoleOpen, setCustomRoleOpen] = React.useState(false);
-  const [editingRole, setEditingRole] =
-    React.useState<AdminRoleRecordDTO | null>(null);
-  const [managingUserId, setManagingUserId] = React.useState<string | null>(
+  const searchDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
 
-  const managingUser = React.useMemo<AdminUserRecordDTO | null>(
-    () => view.users.find((u) => u.id === managingUserId) ?? null,
-    [view.users, managingUserId]
-  );
-
-  function handleTabChange(nextTab: string) {
-    setActiveTab(nextTab);
+  function syncUrlParams(updates: Record<string, string | null>) {
     const next = new URLSearchParams(searchParams?.toString() ?? "");
-    if (nextTab === "users") next.delete("tab");
-    else next.set("tab", nextTab);
+    for (const [k, v] of Object.entries(updates)) {
+      if (
+        !v ||
+        v === "ALL" ||
+        (k === "page" && v === "1") ||
+        (k === "tab" && v === "users")
+      ) {
+        next.delete(k);
+      } else {
+        next.set(k, v);
+      }
+    }
     const qs = next.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
-  async function handleProvisionUser(
-    values: ProvisionUserFormValues
-  ): Promise<boolean> {
-    if (!guardOnline() || pending) return false;
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await provisionNewPlatformUserAction({
-        name: values.name,
-        email: values.email,
-        initialPassword: values.initialPassword,
-        roleCode: values.roleCode,
-        organizationId: values.organizationId,
-        serviceUnitId: values.serviceUnitId,
-      });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return false;
-      }
-      setProvisionOpen(false);
-      setFeedback({
-        tone: "success",
-        message: `Akun ${res.data.email} berhasil dibuat dan wajib mengganti kata sandi bawaan saat pertama masuk.`,
-      });
-      router.refresh();
-      return true;
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleSaveUserRoles(
-    userId: string,
-    roleCodes: string[]
-  ): Promise<boolean> {
-    if (!guardOnline() || pending) return false;
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await updateUserRoleAssignmentsAction({
-        userId,
-        roleCodes,
-      });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return false;
-      }
-      setFeedback({
-        tone: "success",
-        message:
-          "Peran diperbarui dan langsung berlaku efektif pada permintaan berikutnya.",
-      });
-      router.refresh();
-      return true;
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleToggleActive(
-    userId: string,
-    active: boolean,
-    reason: string | null
-  ): Promise<boolean> {
-    if (!guardOnline() || pending) return false;
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await setPlatformUserActiveStateAction({
-        userId,
-        active,
-        reason,
-      });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return false;
-      }
-      setFeedback({
-        tone: "success",
-        message: active
-          ? "Pengguna diaktifkan kembali."
-          : "Pengguna dinonaktifkan.",
-      });
-      router.refresh();
-      return true;
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleResetDefaultPassword(userId: string): Promise<boolean> {
-    if (!guardOnline() || pending) return false;
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await resetUserToDefaultPasswordAction(userId);
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return false;
-      }
-      setFeedback({
-        tone: "success",
-        message:
-          "Kata sandi disetel ulang ke sandi bawaan dan wajib diganti saat pengguna masuk berikutnya.",
-      });
-      router.refresh();
-      return true;
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleSaveCustomRole(
-    values: CreateCustomRoleFormValues,
-    editingRoleId: string | null
-  ): Promise<boolean> {
-    if (!guardOnline() || pending) return false;
-    setPending(true);
-    setFeedback(null);
-    try {
-      if (editingRoleId) {
-        const res = await updateCustomRoleAction({
-          roleId: editingRoleId,
-          name: values.name,
-          description: values.description?.trim() || null,
-          permissionCodes: values.permissionCodes,
-        });
-        if (!res.success) {
-          setFeedback({ tone: "danger", message: res.error.message });
-          return false;
-        }
-        setCustomRoleOpen(false);
-        setEditingRole(null);
-        setFeedback({
-          tone: "success",
-          message: `Peran kustom "${res.data.name}" berhasil diperbarui.`,
-        });
-        router.refresh();
-        return true;
-      }
-
-      const res = await createCustomRoleAction({
-        code: values.code,
-        name: values.name,
-        description: values.description?.trim() || null,
-        permissionCodes: values.permissionCodes,
-      });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return false;
-      }
-      setCustomRoleOpen(false);
-      setFeedback({
-        tone: "success",
-        message: `Peran kustom "${res.data.name}" (${res.data.code}) berhasil dibuat.`,
-      });
-      router.refresh();
-      return true;
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleDeleteCustomRole(
-    role: AdminRoleRecordDTO
-  ): Promise<boolean> {
-    if (!guardOnline() || pending) return false;
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await deleteCustomRoleAction({ roleId: role.id });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return false;
-      }
-      setFeedback({
-        tone: "success",
-        message: `Peran kustom "${res.data.name}" berhasil dihapus.`,
-      });
-      router.refresh();
-      return true;
-    } finally {
-      setPending(false);
-    }
-  }
-
-  function handleFilterUsersByRole(roleLabel: string) {
-    setUserSearch(roleLabel);
-    handleTabChange("users");
-  }
-
-  async function handleApplyOverride(values: {
-    userId: string;
-    permissionCode: string;
-    mode: "GRANT" | "REVOKE";
-    reason: string;
-  }): Promise<boolean> {
-    if (!guardOnline() || pending) return false;
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await applyUserPermissionOverrideAction(values);
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return false;
-      }
-      setFeedback({
-        tone: "success",
-        message:
-          res.data.mode === "GRANT"
-            ? `Hak akses khusus "${res.data.permissionCode}" berhasil diberikan.`
-            : `Hak akses "${res.data.permissionCode}" berhasil dicabut (REVOKE selalu menang).`,
-      });
-      router.refresh();
-      return true;
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleRemoveOverride(
-    userId: string,
-    permissionCode: string
-  ): Promise<boolean> {
-    if (!guardOnline() || pending) return false;
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await removeUserPermissionOverrideAction(
-        userId,
-        permissionCode
-      );
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return false;
-      }
-      setFeedback({
-        tone: "success",
-        message: `Izin khusus "${res.data.permissionCode}" dihapus; akun kembali mengikuti bawaan peran.`,
-      });
-      router.refresh();
-      return true;
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function handleAssignScope(values: {
-    userId: string;
-    organizationId: string;
-    serviceUnitId: string;
-    programId?: string | null;
-  }): Promise<boolean> {
-    if (!guardOnline() || pending) return false;
-    setPending(true);
-    setFeedback(null);
-    try {
-      const res = await updateUserScopeAssignmentAction({
-        ...values,
-        active: true,
-      });
-      if (!res.success) {
-        setFeedback({ tone: "danger", message: res.error.message });
-        return false;
-      }
-      setFeedback({
-        tone: "success",
-        message:
-          "Lingkup penugasan unit layanan berhasil diperbarui dan tercatat dalam jejak audit.",
-      });
-      router.refresh();
-      return true;
-    } finally {
-      setPending(false);
-    }
-  }
-
-  const tabs: DetailTabItem[] = [
-    {
-      id: "users",
-      label: "Pengguna",
-      count: view.users.length,
-      icon: <Icon icon={Users} size="xs" />,
-    },
-    {
-      id: "roles",
-      label: "Peran & Hak Akses",
-      count: view.roles.length,
-      icon: <Icon icon={Shield} size="xs" />,
-    },
-    ...(view.isSandboxAllowed
-      ? [
-          {
-            id: "sandbox",
-            label: "Lingkungan Uji Coba",
-            icon: <Icon icon={FlaskConical} size="xs" />,
-          },
-        ]
-      : []),
-  ];
+  const unitOptions = React.useMemo(
+    () => [
+      { value: "ALL", label: "Semua unit layanan" },
+      ...view.scopeCatalog.serviceUnits.map((u) => ({
+        value: u.id,
+        label: u.name,
+      })),
+    ],
+    [view.scopeCatalog.serviceUnits]
+  );
 
   const filteredUsers = React.useMemo(() => {
     const q = userSearch.trim().toLowerCase();
-    if (!q) return view.users;
-    return view.users.filter(
-      (u) =>
+    return view.users.filter((u) => {
+      if (userStatus === "ACTIVE" && !u.active) return false;
+      if (userStatus === "INACTIVE" && u.active) return false;
+      if (
+        userUnit !== "ALL" &&
+        !u.memberships.some((m) => m.serviceUnitId === userUnit)
+      ) {
+        return false;
+      }
+      if (!q) return true;
+      return (
         u.name.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
         u.roles.some((r) => {
@@ -427,8 +408,136 @@ export function AdministrationWorkspaceClient({
             r.code.toLowerCase().includes(q)
           );
         })
-    );
-  }, [userSearch, view.users]);
+      );
+    });
+  }, [userSearch, userStatus, userUnit, view.users]);
+
+  const totalUserPages = Math.max(
+    1,
+    Math.ceil(filteredUsers.length / USERS_PAGE_SIZE)
+  );
+  const safeUserPage = Math.min(userPage, totalUserPages);
+  const paginatedUsers = React.useMemo(() => {
+    const start = (safeUserPage - 1) * USERS_PAGE_SIZE;
+    return filteredUsers.slice(start, start + USERS_PAGE_SIZE);
+  }, [filteredUsers, safeUserPage]);
+
+  return {
+    activeTab,
+    userSearch,
+    userStatus,
+    userUnit,
+    unitOptions,
+    filteredUsers,
+    totalUserPages,
+    safeUserPage,
+    paginatedUsers,
+    handleTabChange: (nextTab: string) => {
+      setActiveTab(nextTab);
+      syncUrlParams({ tab: nextTab });
+    },
+    handleSearchChange: (val: string) => {
+      setUserSearch(val);
+      setUserPage(1);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = setTimeout(() => {
+        syncUrlParams({ search: val.trim() || null, page: null });
+      }, 250);
+    },
+    handleStatusChange: (val: string) => {
+      const norm = normalizeUserStatus(val);
+      setUserStatus(norm);
+      setUserPage(1);
+      syncUrlParams({ status: norm, page: null });
+    },
+    handleUnitChange: (val: string) => {
+      setUserUnit(val);
+      setUserPage(1);
+      syncUrlParams({ unit: val, page: null });
+    },
+    handleResetFilters: () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      setUserSearch("");
+      setUserStatus("ALL");
+      setUserUnit("ALL");
+      setUserPage(1);
+      syncUrlParams({ search: null, status: null, unit: null, page: null });
+    },
+    handlePageChange: (nextPage: number) => {
+      setUserPage(nextPage);
+      syncUrlParams({ page: String(nextPage) });
+    },
+    handleFilterUsersByRole: (roleLabel: string) => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      setActiveTab("users");
+      setUserSearch(roleLabel);
+      setUserStatus("ALL");
+      setUserUnit("ALL");
+      setUserPage(1);
+      syncUrlParams({
+        tab: "users",
+        search: roleLabel,
+        status: null,
+        unit: null,
+        page: null,
+      });
+    },
+  };
+}
+
+function buildAdminTabs(view: AdministrationWorkspaceViewDTO): DetailTabItem[] {
+  return [
+    { id: "users", label: "Pengguna", count: view.users.length, icon: <Icon icon={Users} size="xs" /> },
+    { id: "roles", label: "Peran & Hak Akses", count: view.roles.length, icon: <Icon icon={Shield} size="xs" /> },
+    ...(view.isSandboxAllowed
+      ? [{ id: "sandbox", label: "Lingkungan Uji Coba", icon: <Icon icon={FlaskConical} size="xs" /> }]
+      : []),
+  ];
+}
+
+export function AdministrationWorkspaceClient({
+  view,
+  initialTab,
+  initialSearch = "",
+  initialStatus = "ALL",
+  initialUnit = "ALL",
+  initialPage = 1,
+  currentUserId,
+  canManageUsers,
+  canManageRoles,
+  canManagePermissions,
+}: AdministrationWorkspaceClientProps) {
+  const f = useUserDirectoryFilters({ view, initialTab, initialSearch, initialStatus, initialUnit, initialPage });
+  const [pending, setPending] = React.useState(false);
+  const [feedback, setFeedback] = React.useState<{ tone: "success" | "danger" | "warning"; message: string } | null>(null);
+  const { isOnline, checkOnline: guardOnline } = useTierCGuard("Administrasi & Hak Akses", (message) =>
+    setFeedback({ tone: "warning", message })
+  );
+  const isOffline = !isOnline;
+
+  const [provisionOpen, setProvisionOpen] = React.useState(false);
+  const [customRoleOpen, setCustomRoleOpen] = React.useState(false);
+  const [editingRole, setEditingRole] = React.useState<AdminRoleRecordDTO | null>(null);
+  const [managingUserId, setManagingUserId] = React.useState<string | null>(null);
+
+  const mutations = useAdministrationMutations({
+    guardOnline,
+    pending,
+    setPending,
+    setFeedback,
+    onProvisionSuccess: () => setProvisionOpen(false),
+    onCustomRoleSuccess: () => {
+      setCustomRoleOpen(false);
+      setEditingRole(null);
+    },
+  });
+
+  const managingUser = React.useMemo<AdminUserRecordDTO | null>(
+    () => view.users.find((u) => u.id === managingUserId) ?? null,
+    [view.users, managingUserId]
+  );
+
+  const tabs = buildAdminTabs(view);
 
   return (
     <div className="space-y-6">
@@ -436,7 +545,7 @@ export function AdministrationWorkspaceClient({
         title="Administrasi"
         description="Kelola akun pengguna, peran, lingkup unit layanan, dan pengecualian hak akses secara terpadu."
         primaryAction={
-          activeTab === "users" && canManageUsers ? (
+          f.activeTab === "users" && canManageUsers ? (
             <Button
               type="button"
               variant="primary"
@@ -446,7 +555,7 @@ export function AdministrationWorkspaceClient({
             >
               Tambah pengguna baru
             </Button>
-          ) : activeTab === "roles" && canManageRoles ? (
+          ) : f.activeTab === "roles" && canManageRoles ? (
             <Button
               type="button"
               variant="primary"
@@ -474,7 +583,7 @@ export function AdministrationWorkspaceClient({
             className="text-warning shrink-0 mt-0.5"
           />
           <span>
-            Modul Administrasi & Hak Akses memerlukan koneksi internet aktif
+            Modul Administrasi &amp; Hak Akses memerlukan koneksi internet aktif
             (Tier C Online-Only).
           </span>
         </div>
@@ -490,167 +599,61 @@ export function AdministrationWorkspaceClient({
 
       <DetailTabs
         tabs={tabs}
-        activeTab={activeTab}
-        onChange={handleTabChange}
+        activeTab={f.activeTab}
+        onChange={f.handleTabChange}
         ariaLabel="Tab modul administrasi"
       />
 
-      {/* TAB 1: PENGGUNA (Satu pintu per pengguna) */}
-      {activeTab === "users" && (
-        <div className="space-y-4">
-          <div className="max-w-md">
-            <SearchInput
-              value={userSearch}
-              onValueChange={setUserSearch}
-              placeholder="Cari nama, email, atau peran pengguna..."
-            />
-          </div>
-
-          {filteredUsers.length === 0 ? (
-            <EmptyState
-              icon={Users}
-              title="Pengguna tidak ditemukan"
-              description="Tidak ada akun yang cocok dengan kata kunci pencarian Anda. Coba ubah kata kunci atau reset pencarian."
-              action={
-                userSearch ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setUserSearch("")}
-                  >
-                    Tampilkan semua pengguna
-                  </Button>
-                ) : undefined
-              }
-            />
-          ) : (
-            <div className="rounded-card border border-border bg-surface divide-y divide-border">
-              {filteredUsers.map((u) => (
-                <div
-                  key={u.id}
-                  className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1.5 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-sm text-foreground">
-                        {u.name}
-                      </p>
-                      <Badge variant={u.active ? "success" : "danger"} size="sm">
-                        {u.active ? "Aktif" : "Nonaktif"}
-                      </Badge>
-                      {u.roles.map((r) => (
-                        <Badge key={r.id} variant="primary" size="sm">
-                          {getRoleLabel(r.code as SystemRole) ?? r.name}
-                        </Badge>
-                      ))}
-                      {u.overrides.length > 0 && (
-                        <Badge variant="warning" size="sm">
-                          {u.overrides.length} override
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground font-mono truncate">
-                      {u.email}
-                    </p>
-                    <p className="text-xs text-secondary-foreground">
-                      Lingkup:{" "}
-                      {u.memberships.length > 0
-                        ? u.memberships
-                            .map(
-                              (m) =>
-                                `${m.organizationName} → ${m.serviceUnitName}`
-                            )
-                            .join(" · ")
-                        : "Belum ditetapkan"}
-                    </p>
-                  </div>
-
-                  {(canManageUsers || canManageRoles || canManagePermissions) && (
-                    <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        disabled={isOffline}
-                        onClick={() => setManagingUserId(u.id)}
-                        leftIcon={<Icon icon={Sliders} size="xs" />}
-                        className="w-full lg:w-auto"
-                      >
-                        Kelola akun
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      {f.activeTab === "users" && (
+        <UsersListTab
+          paginatedUsers={f.paginatedUsers}
+          totalFilteredCount={f.filteredUsers.length}
+          pageSize={USERS_PAGE_SIZE}
+          currentPage={f.safeUserPage}
+          totalPages={f.totalUserPages}
+          userSearch={f.userSearch}
+          userStatus={f.userStatus}
+          userUnit={f.userUnit}
+          activeFilterCount={
+            (f.userStatus !== "ALL" ? 1 : 0) + (f.userUnit !== "ALL" ? 1 : 0)
+          }
+          statusOptions={USER_STATUS_OPTIONS}
+          unitOptions={f.unitOptions}
+          canManageAny={canManageUsers || canManageRoles || canManagePermissions}
+          isOffline={isOffline}
+          onSearchChange={f.handleSearchChange}
+          onStatusChange={f.handleStatusChange}
+          onUnitChange={f.handleUnitChange}
+          onResetFilters={f.handleResetFilters}
+          onPageChange={f.handlePageChange}
+          onSelectUser={setManagingUserId}
+        />
       )}
 
-      {/* TAB 2: PERAN & HAK AKSES */}
-      {activeTab === "roles" && (
+      {f.activeTab === "roles" && (
         <RolesPermissionsTab
           roles={view.roles}
           permissions={view.permissions}
           canManageRoles={canManageRoles}
           pending={pending}
           isOffline={isOffline}
-          onFilterUsersByRole={handleFilterUsersByRole}
+          onFilterUsersByRole={f.handleFilterUsersByRole}
           onEditCustomRole={(role) => {
             setEditingRole(role);
             setCustomRoleOpen(true);
           }}
-          onDeleteCustomRole={handleDeleteCustomRole}
+          onDeleteCustomRole={mutations.handleDeleteCustomRole}
         />
       )}
 
-      {/* TAB 3 (DEV-ONLY): LINGKUNGAN UJI COBA */}
-      {activeTab === "sandbox" && view.isSandboxAllowed && (
-        <section className="rounded-card border border-warning/40 bg-warning-soft/30 p-5 sm:p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <Icon icon={FlaskConical} size="sm" className="text-warning" />
-            <h2 className="text-base font-semibold text-foreground">
-              Lingkungan Uji Coba (Khusus Pengembangan · Administrator Platform)
-            </h2>
-          </div>
-          <p className="text-xs text-secondary-foreground leading-relaxed">
-            Area ini terisolasi dan hanya tersedia bagi{" "}
-            <strong>Administrator Platform</strong> saat aplikasi berjalan di
-            luar mode produksi (<code>NODE_ENV !== &quot;production&quot;</code>
-            ). Di lingkungan produksi, tab ini dinonaktifkan sepenuhnya.
-          </p>
-
-          <div className="rounded-control border border-border bg-surface p-4 space-y-2 text-xs">
-            <p className="font-semibold text-foreground">
-              Ringkasan kebijakan tata kelola yang selalu aktif (Tidak dapat
-              dimatikan):
-            </p>
-            <ul className="list-disc pl-5 space-y-1 text-secondary-foreground">
-              <li>
-                <strong>Separation of Duties (SoD):</strong> Penyusun laporan,
-                pengunggah dokumentasi, dan penulis publikasi tidak dapat
-                menyetujui karyanya sendiri (termasuk Administrator Platform).
-              </li>
-              <li>
-                <strong>Imutabilitas Audit & Riwayat Laporan:</strong> Tabel{" "}
-                <code>audit_logs</code> dan <code>report_workflow_logs</code>{" "}
-                dijaga oleh trigger PostgreSQL append-only.
-              </li>
-              <li>
-                <strong>Klasifikasi Data CONFIDENTIAL:</strong> Kontak wali,
-                catatan perkembangan rahasia, dan bukti persetujuan default DENY
-                di sisi server.
-              </li>
-            </ul>
-          </div>
-        </section>
+      {f.activeTab === "sandbox" && view.isSandboxAllowed && (
+        <SandboxEnvironmentTab />
       )}
 
       <ProvisionUserDialog
         open={provisionOpen}
         onOpenChange={setProvisionOpen}
-        onSubmit={handleProvisionUser}
+        onSubmit={mutations.handleProvisionUser}
         pending={pending}
         roles={view.roles}
         organizations={view.scopeCatalog.organizations}
@@ -664,7 +667,7 @@ export function AdministrationWorkspaceClient({
           if (!open) setEditingRole(null);
         }}
         editingRole={editingRole}
-        onSubmit={handleSaveCustomRole}
+        onSubmit={mutations.handleSaveCustomRole}
         pending={pending}
         permissions={view.permissions}
       />
@@ -685,12 +688,12 @@ export function AdministrationWorkspaceClient({
         canManagePermissions={canManagePermissions}
         pending={pending}
         isOffline={isOffline}
-        onSaveRoles={handleSaveUserRoles}
-        onSaveScope={handleAssignScope}
-        onApplyOverride={handleApplyOverride}
-        onRemoveOverride={handleRemoveOverride}
-        onToggleActive={handleToggleActive}
-        onResetDefaultPassword={handleResetDefaultPassword}
+        onSaveRoles={mutations.handleSaveUserRoles}
+        onSaveScope={mutations.handleAssignScope}
+        onApplyOverride={mutations.handleApplyOverride}
+        onRemoveOverride={mutations.handleRemoveOverride}
+        onToggleActive={mutations.handleToggleActive}
+        onResetDefaultPassword={mutations.handleResetDefaultPassword}
       />
 
       {feedback && (

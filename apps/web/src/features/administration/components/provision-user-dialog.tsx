@@ -2,7 +2,12 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import {
+  Controller,
+  useForm,
+  type Control,
+  type FieldErrors,
+} from "react-hook-form";
 import { FormBottomSheet } from "@/components/patterns";
 import {
   Button,
@@ -13,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui";
-import { DEFAULT_GENERIC_PASSWORD } from "@/features/identity/validators/auth-validator";
+import { generateSuggestedPassword } from "@/features/identity/validators/auth-validator";
 import { PRIVACY_MESSAGES } from "@/lib/messages";
 import { getRoleLabel, type SystemRole } from "@/lib/status";
 import type { AdministrationWorkspaceViewDTO } from "../types/administration-types";
@@ -32,6 +37,120 @@ export interface ProvisionUserDialogProps {
   serviceUnits: AdministrationWorkspaceViewDTO["scopeCatalog"]["serviceUnits"];
 }
 
+function ProvisionRoleAndScopeFields({
+  control,
+  errors,
+  roles,
+  organizations,
+  serviceUnits,
+}: {
+  control: Control<ProvisionUserFormValues>;
+  errors: FieldErrors<ProvisionUserFormValues>;
+  roles: ProvisionUserDialogProps["roles"];
+  organizations: ProvisionUserDialogProps["organizations"];
+  serviceUnits: ProvisionUserDialogProps["serviceUnits"];
+}) {
+  return (
+    <>
+      <div className="space-y-1">
+        <label
+          htmlFor="prov-role"
+          className="block text-xs font-medium text-foreground"
+        >
+          Peran awal *
+        </label>
+        <Controller
+          control={control}
+          name="roleCode"
+          render={({ field }) => (
+            <Select value={field.value} onValueChange={field.onChange}>
+              <SelectTrigger id="prov-role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                {roles.map((r) => (
+                  <SelectItem key={r.id} value={r.code}>
+                    {getRoleLabel(r.code as SystemRole) ?? r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.roleCode && (
+          <p className="text-xs text-danger">{errors.roleCode.message}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label
+            htmlFor="prov-org"
+            className="block text-xs font-medium text-foreground"
+          >
+            Organisasi *
+          </label>
+          <Controller
+            control={control}
+            name="organizationId"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id="prov-org">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                  {organizations.map((o) => (
+                    <SelectItem key={o.id} value={o.id}>
+                      {o.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.organizationId && (
+            <p className="text-xs text-danger">
+              {errors.organizationId.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <label
+            htmlFor="prov-unit"
+            className="block text-xs font-medium text-foreground"
+          >
+            Unit layanan *
+          </label>
+          <Controller
+            control={control}
+            name="serviceUnitId"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id="prov-unit">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
+                  {serviceUnits.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.serviceUnitId && (
+            <p className="text-xs text-danger">
+              {errors.serviceUnitId.message}
+            </p>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function ProvisionUserDialog({
   open,
   onOpenChange,
@@ -45,7 +164,7 @@ export function ProvisionUserDialog({
     () => ({
       name: "",
       email: "",
-      initialPassword: DEFAULT_GENERIC_PASSWORD,
+      initialPassword: generateSuggestedPassword(),
       roleCode: "TEACHER",
       organizationId: organizations[0]?.id ?? "",
       serviceUnitId: serviceUnits[0]?.id ?? "",
@@ -62,15 +181,22 @@ export function ProvisionUserDialog({
     control,
     register,
     handleSubmit,
+    setValue,
     reset,
     formState: { errors },
   } = form;
 
-  async function handleFormSubmit(values: ProvisionUserFormValues) {
-    const succeeded = await onSubmit(values);
-    if (succeeded) {
-      reset(defaultValues);
+  React.useEffect(() => {
+    if (open) {
+      reset({
+        ...defaultValues,
+        initialPassword: generateSuggestedPassword(),
+      });
     }
+  }, [open, defaultValues, reset]);
+
+  async function handleFormSubmit(values: ProvisionUserFormValues) {
+    if (await onSubmit(values)) reset(defaultValues);
   }
 
   return (
@@ -145,12 +271,25 @@ export function ProvisionUserDialog({
               )}
             </div>
             <div className="space-y-1">
-              <label
-                htmlFor="prov-pass"
-                className="block text-xs font-medium text-foreground"
-              >
-                Kata sandi awal (bawaan) *
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label
+                  htmlFor="prov-pass"
+                  className="block text-xs font-medium text-foreground"
+                >
+                  Kata sandi sementara awal *
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setValue("initialPassword", generateSuggestedPassword(), {
+                      shouldValidate: true,
+                    })
+                  }
+                  className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
+                >
+                  Acak ulang
+                </button>
+              </div>
               <Input
                 id="prov-pass"
                 type="text"
@@ -158,7 +297,7 @@ export function ProvisionUserDialog({
                 {...register("initialPassword")}
               />
               <p className="text-[11px] text-muted-foreground">
-                Pengguna wajib mengganti kata sandi bawaan saat pertama kali
+                Salin sandi ini untuk pengguna; wajib diganti saat pertama kali
                 masuk.
               </p>
               {errors.initialPassword && (
@@ -169,101 +308,13 @@ export function ProvisionUserDialog({
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label
-              htmlFor="prov-role"
-              className="block text-xs font-medium text-foreground"
-            >
-              Peran awal *
-            </label>
-            <Controller
-              control={control}
-              name="roleCode"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="prov-role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
-                    {roles.map((r) => (
-                      <SelectItem key={r.id} value={r.code}>
-                        {getRoleLabel(r.code as SystemRole) ?? r.name} ({r.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.roleCode && (
-              <p className="text-xs text-danger">{errors.roleCode.message}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label
-                htmlFor="prov-org"
-                className="block text-xs font-medium text-foreground"
-              >
-                Organisasi *
-              </label>
-              <Controller
-                control={control}
-                name="organizationId"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="prov-org">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
-                      {organizations.map((o) => (
-                        <SelectItem key={o.id} value={o.id}>
-                          {o.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.organizationId && (
-                <p className="text-xs text-danger">
-                  {errors.organizationId.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <label
-                htmlFor="prov-unit"
-                className="block text-xs font-medium text-foreground"
-              >
-                Unit layanan *
-              </label>
-              <Controller
-                control={control}
-                name="serviceUnitId"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="prov-unit">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
-                      {serviceUnits.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.serviceUnitId && (
-                <p className="text-xs text-danger">
-                  {errors.serviceUnitId.message}
-                </p>
-              )}
-            </div>
-          </div>
+          <ProvisionRoleAndScopeFields
+            control={control}
+            errors={errors}
+            roles={roles}
+            organizations={organizations}
+            serviceUnits={serviceUnits}
+          />
         </form>
       )}
     </FormBottomSheet>

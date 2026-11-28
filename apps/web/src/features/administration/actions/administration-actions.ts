@@ -7,6 +7,7 @@ import {
   applyUserPermissionOverride,
   createCustomRole,
   provisionNewPlatformUser,
+  removeUserPermissionOverride,
   resetUserToDefaultPassword,
   setPlatformUserActiveState,
   updateUserRoleAssignments,
@@ -116,6 +117,24 @@ export async function resetUserToDefaultPasswordAction(
   const session = await getCurrentSession();
   const result = await resetUserToDefaultPassword(session, targetUserId);
   if (result.success) {
+    revalidatePath("/workspace/administration");
+    revalidatePath("/workspace/audit");
+  }
+  return result;
+}
+
+export async function removeUserPermissionOverrideAction(
+  targetUserId: string,
+  permissionCode: string
+): Promise<ActionResult<{ removed: true; permissionCode: string }>> {
+  const session = await getCurrentSession();
+  const result = await removeUserPermissionOverride(
+    session,
+    targetUserId,
+    permissionCode
+  );
+  if (result.success) {
+    revalidatePath("/workspace", "layout");
     revalidatePath("/workspace/administration");
     revalidatePath("/workspace/audit");
   }

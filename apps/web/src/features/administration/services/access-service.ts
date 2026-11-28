@@ -600,3 +600,37 @@ export async function resetUserToDefaultPassword(
 
   return ok({ reset: true });
 }
+
+export async function removeUserPermissionOverride(
+  user: SessionUser | null | undefined,
+  targetUserId: string,
+  permissionCode: string
+): Promise<ActionResult<{ removed: true; permissionCode: string }>> {
+  const authz = authorizeManagePermissions(user);
+  if (!authz.success) return authz;
+
+  if (!targetUserId || !permissionCode || !user?.id) {
+    return fail("VALIDATION_FAILED", getHumanErrorMessage("VALIDATION_FAILED"));
+  }
+
+  await deleteUserPermissionOverride({
+    userId: targetUserId,
+    permissionCode,
+  });
+
+  await recordAuditLog({
+    organizationId: user.memberships[0]?.organizationId ?? null,
+    serviceUnitId: user.memberships[0]?.serviceUnitId ?? null,
+    actorId: user.id,
+    action: "USER_PERMISSION_OVERRIDE_REMOVED",
+    entityType: "user_permission",
+    entityId: targetUserId,
+    description: `Menghapus izin khusus "${permissionCode}" agar pengguna kembali mengikuti bawaan peran.`,
+    metadata: {
+      targetUserId,
+      permissionCode,
+    },
+  });
+
+  return ok({ removed: true, permissionCode });
+}

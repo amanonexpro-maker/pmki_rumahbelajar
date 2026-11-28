@@ -26,6 +26,7 @@ import {
   applyUserPermissionOverrideAction,
   createCustomRoleAction,
   provisionNewPlatformUserAction,
+  removeUserPermissionOverrideAction,
   resetUserToDefaultPasswordAction,
   setPlatformUserActiveStateAction,
   updateUserRoleAssignmentsAction,
@@ -268,6 +269,33 @@ export function AdministrationWorkspaceClient({
           res.data.mode === "GRANT"
             ? `Hak akses khusus "${res.data.permissionCode}" berhasil diberikan.`
             : `Hak akses "${res.data.permissionCode}" berhasil dicabut (REVOKE selalu menang).`,
+      });
+      router.refresh();
+      return true;
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleRemoveOverride(
+    userId: string,
+    permissionCode: string
+  ): Promise<boolean> {
+    if (!guardOnline() || pending) return false;
+    setPending(true);
+    setFeedback(null);
+    try {
+      const res = await removeUserPermissionOverrideAction(
+        userId,
+        permissionCode
+      );
+      if (!res.success) {
+        setFeedback({ tone: "danger", message: res.error.message });
+        return false;
+      }
+      setFeedback({
+        tone: "success",
+        message: `Izin khusus "${res.data.permissionCode}" dihapus; akun kembali mengikuti bawaan peran.`,
       });
       router.refresh();
       return true;
@@ -701,6 +729,7 @@ export function AdministrationWorkspaceClient({
         onSaveRoles={handleSaveUserRoles}
         onSaveScope={handleAssignScope}
         onApplyOverride={handleApplyOverride}
+        onRemoveOverride={handleRemoveOverride}
         onToggleActive={handleToggleActive}
         onResetDefaultPassword={handleResetDefaultPassword}
       />

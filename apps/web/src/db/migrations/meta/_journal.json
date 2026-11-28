@@ -15,6 +15,20 @@
       "when": 1795161102401,
       "tag": "0001_pmki_platform_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795865018548,
+      "tag": "0002_thankful_frightful_four",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795865633064,
+      "tag": "0003_cold_nuke",
+      "breakpoints": true
     }
   ]
 }

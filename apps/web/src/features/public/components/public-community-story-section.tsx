@@ -32,6 +32,7 @@ import type {
   PublicVolunteerTeacherDTO,
 } from "../types/public-types";
 import type { PublicGalleryFilterCode } from "../validators/public-validator";
+import { VolunteerGrid } from "./volunteer-grid";
 
 export interface PublicCommunityStorySectionProps {
   volunteerTeachers: PublicVolunteerTeacherDTO[];
@@ -199,31 +200,7 @@ export function PublicCommunityStorySection({
                 peserta didik.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 text-xs">
-                {volunteerTeachers.map((teacher) => (
-                  <div
-                    key={teacher.name}
-                    className="p-3.5 rounded-control bg-surface border border-border space-y-1"
-                  >
-                    <p className="font-semibold text-foreground">
-                      {teacher.name}
-                    </p>
-                    <p className="text-secondary-foreground">
-                      {teacher.originInstitution}
-                    </p>
-                    <span
-                      className={cn(
-                        "text-[11px] font-medium block",
-                        teacher.isCoordinator
-                          ? "text-primary"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      {teacher.focusRole}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <VolunteerGrid teachers={volunteerTeachers} />
             </div>
           </div>
         </section>

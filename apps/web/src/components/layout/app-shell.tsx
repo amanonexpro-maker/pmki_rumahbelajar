@@ -113,7 +113,7 @@ export const DEFAULT_WORKSPACE_NAV: SidebarNavGroup[] = [
   {
     id: "sistem",
     title: "Sistem",
-    personas: ["SUPERADMIN"],
+    personas: ["PENGURUS", "SUPERADMIN"],
     items: [
       {
         id: "audit",
@@ -127,7 +127,7 @@ export const DEFAULT_WORKSPACE_NAV: SidebarNavGroup[] = [
         label: "Administrasi",
         href: "/workspace/administration",
         icon: Settings,
-        requiredPermission: "user.read",
+        requiredPermissions: ["user.read", "role.manage", "permission.manage"],
       },
     ],
   },
@@ -171,7 +171,11 @@ export function AppShell({
         (item.href !== "/workspace" && pathname.startsWith(`${item.href}/`))
     );
 
-  const currentViewLabel = activeItem?.label ?? "Dashboard";
+  const currentViewLabel =
+    pathname === "/workspace/profile" ||
+    pathname.startsWith("/workspace/profile/")
+      ? "Profil Saya"
+      : (activeItem?.label ?? "Dashboard");
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col overflow-x-clip">

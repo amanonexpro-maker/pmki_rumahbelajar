@@ -2,9 +2,18 @@ import { createClient } from "@supabase/supabase-js";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { users } from "@/db/schema";
+import { getOrganizationScopeCatalog } from "@/features/organization";
+import { getRoleLabel, type SystemRole } from "@/lib/status";
+import type { SessionUser } from "@/server/auth/session";
 import { createSupabaseServerClient } from "@/server/auth/supabase-server";
 import { fail, ok, type ActionResult } from "@/server/contracts/result";
-import type { LoginInput, ResetPasswordInput } from "../validators/auth-validator";
+import {
+  DEFAULT_GENERIC_PASSWORD,
+  type ChangePasswordInput,
+  type LoginInput,
+  type ResetPasswordInput,
+  type UpdateMyProfileInput,
+} from "../validators/auth-validator";
 
 export interface IdentityUserSummaryDTO {
   id: string;
@@ -46,11 +55,21 @@ export async function getUserNamesByIds(
   return map;
 }
 
-export async function getIdentityUserStatusById(
-  userId: string
-): Promise<{ id: string; name: string; active: boolean } | null> {
+export async function getIdentityUserStatusById(userId: string): Promise<{
+  id: string;
+  name: string;
+  active: boolean;
+  mustChangePassword: boolean;
+  avatarUrl: string | null;
+} | null> {
   const [row] = await db
-    .select({ id: users.id, name: users.name, active: users.active })
+    .select({
+      id: users.id,
+      name: users.name,
+      active: users.active,
+      mustChangePassword: users.mustChangePassword,
+      avatarUrl: users.avatarUrl,
+    })
     .from(users)
     .where(and(eq(users.id, userId), isNull(users.archivedAt)))
     .limit(1);
@@ -125,6 +144,7 @@ export async function provisionIdentityUserViaAdminApi(params: {
       name: params.name.trim(),
       email: normalizedEmail,
       active: true,
+      mustChangePassword: true,
       createdBy: params.actorId,
       updatedBy: params.actorId,
     })
@@ -143,6 +163,40 @@ export async function provisionIdentityUserViaAdminApi(params: {
 /**
  * Soft Activate / Deactivate User Profile (No hard delete — 04, 05 §16).
  */
+export async function resetIdentityUserPasswordToDefault(params: {
+  userId: string;
+  actorId: string | null;
+}): Promise<ActionResult<{ reset: true }>> {
+  const supabaseAdmin = createSupabaseAuthAdminClient();
+  const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+    params.userId,
+    { password: DEFAULT_GENERIC_PASSWORD }
+  );
+
+  if (authError) {
+    return fail(
+      "INTERNAL_ERROR",
+      "Gagal menyetel ulang kata sandi pengguna pada layanan autentikasi."
+    );
+  }
+
+  const [updated] = await db
+    .update(users)
+    .set({
+      mustChangePassword: true,
+      updatedAt: new Date(),
+      updatedBy: params.actorId,
+    })
+    .where(eq(users.id, params.userId))
+    .returning({ id: users.id });
+
+  if (!updated) {
+    return fail("RESOURCE_NOT_FOUND", "Data pengguna tidak ditemukan.");
+  }
+
+  return ok({ reset: true });
+}
+
 export async function updateIdentityUserActiveState(params: {
   userId: string;
   active: boolean;
@@ -220,7 +274,7 @@ export async function requestPasswordReset(
       : "https://pmkirumahbelajar-web.vercel.app");
 
   const { error } = await supabase.auth.resetPasswordForEmail(input.email, {
-    redirectTo: `${appUrl}/auth/login`,
+    redirectTo: `${appUrl}/auth/reset-password`,
   });
 
   if (error) {
@@ -231,4 +285,227 @@ export async function requestPasswordReset(
   }
 
   return ok({ requested: true });
+}
+
+export async function changeAuthenticatedUserPassword(
+  input: ChangePasswordInput
+): Promise<ActionResult<{ updated: true }>> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return fail(
+      "UNAUTHORIZED",
+      "Sesi tidak valid atau telah berakhir. Silakan masuk kembali."
+    );
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: input.newPassword,
+  });
+
+  if (error) {
+    return fail(
+      "INTERNAL_ERROR",
+      "Gagal memperbarui kata sandi. Pastikan kata sandi memenuhi syarat keamanan."
+    );
+  }
+
+  await db
+    .update(users)
+    .set({
+      mustChangePassword: false,
+      updatedAt: new Date(),
+      updatedBy: user.id,
+    })
+    .where(eq(users.id, user.id));
+
+  return ok({ updated: true });
+}
+
+export interface MyProfilePermissionGroupDTO {
+  moduleKey: string;
+  moduleLabel: string;
+  permissions: string[];
+}
+
+export interface MyProfileViewDTO {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  publicBio: string | null;
+  showOnPublic: boolean;
+  active: boolean;
+  mustChangePassword: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  roles: Array<{ code: string; label: string }>;
+  memberships: Array<{
+    organizationId: string;
+    organizationName: string;
+    serviceUnitId: string;
+    serviceUnitName: string;
+  }>;
+  permissionGroups: MyProfilePermissionGroupDTO[];
+  totalPermissions: number;
+}
+
+const MODULE_LABELS: Record<string, string> = {
+  student: "Peserta Didik",
+  guardian: "Data Wali",
+  attendance: "Kehadiran",
+  development: "Perkembangan Peserta",
+  academic: "Kelas & Pengajar",
+  class: "Kelas & Pengajar",
+  unit: "Kelas & Pengajar",
+  consent: "Persetujuan",
+  media: "Dokumentasi",
+  publication: "Publikasi",
+  report: "Laporan & Tata Kelola",
+  audit: "Jejak Audit",
+  user: "Administrasi Pengguna",
+  role: "Administrasi Peran",
+  permission: "Administrasi Hak Akses",
+};
+
+export async function getMyProfileView(
+  session: SessionUser
+): Promise<ActionResult<MyProfileViewDTO>> {
+  const [userRows, scopeCatalog] = await Promise.all([
+    db
+      .select()
+      .from(users)
+      .where(and(eq(users.id, session.id), isNull(users.archivedAt)))
+      .limit(1),
+    getOrganizationScopeCatalog(),
+  ]);
+
+  const row = userRows[0];
+  if (!row) {
+    return fail("RESOURCE_NOT_FOUND", "Profil pengguna tidak ditemukan.");
+  }
+
+  const orgNameMap = new Map(
+    scopeCatalog.organizations.map((o) => [o.id, o.name])
+  );
+  const unitNameMap = new Map(
+    scopeCatalog.serviceUnits.map((u) => [u.id, u.name])
+  );
+
+  const grouped = new Map<string, string[]>();
+  for (const perm of session.permissions) {
+    const prefix = perm.split(".")[0] ?? "lainnya";
+    const label = MODULE_LABELS[prefix] ?? "Lainnya";
+    const list = grouped.get(label) ?? [];
+    list.push(perm);
+    grouped.set(label, list);
+  }
+
+  return ok({
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    avatarUrl: row.avatarUrl ?? null,
+    publicBio: row.publicBio ?? null,
+    showOnPublic: row.showOnPublic,
+    active: row.active,
+    mustChangePassword: row.mustChangePassword,
+    lastLoginAt: row.lastLoginAt ? row.lastLoginAt.toISOString() : null,
+    createdAt: row.createdAt.toISOString(),
+    roles: session.roles.map((code) => ({
+      code,
+      label: getRoleLabel(code as SystemRole) ?? code,
+    })),
+    memberships: session.memberships.map((m) => ({
+      organizationId: m.organizationId,
+      organizationName: orgNameMap.get(m.organizationId) ?? "Organisasi PMKI",
+      serviceUnitId: m.serviceUnitId,
+      serviceUnitName: unitNameMap.get(m.serviceUnitId) ?? "Unit Layanan",
+    })),
+    permissionGroups: Array.from(grouped.entries()).map(
+      ([moduleLabel, permissions]) => ({
+        moduleKey: moduleLabel.toLowerCase().replace(/\s+/g, "-"),
+        moduleLabel,
+        permissions,
+      })
+    ),
+    totalPermissions: session.permissions.length,
+  });
+}
+
+export async function updateMyProfile(
+  session: SessionUser,
+  input: UpdateMyProfileInput
+): Promise<ActionResult<{ updated: true }>> {
+  const [updated] = await db
+    .update(users)
+    .set({
+      name: input.name.trim(),
+      publicBio: input.publicBio?.trim() || null,
+      showOnPublic: input.showOnPublic,
+      updatedAt: new Date(),
+      updatedBy: session.id,
+    })
+    .where(and(eq(users.id, session.id), isNull(users.archivedAt)))
+    .returning({ id: users.id });
+
+  if (!updated) {
+    return fail("RESOURCE_NOT_FOUND", "Profil pengguna tidak ditemukan.");
+  }
+
+  return ok({ updated: true });
+}
+
+export async function updateMyAvatarUrl(
+  userId: string,
+  avatarUrl: string
+): Promise<ActionResult<{ avatarUrl: string }>> {
+  const [updated] = await db
+    .update(users)
+    .set({
+      avatarUrl,
+      updatedAt: new Date(),
+      updatedBy: userId,
+    })
+    .where(and(eq(users.id, userId), isNull(users.archivedAt)))
+    .returning({ avatarUrl: users.avatarUrl });
+
+  if (!updated) {
+    return fail("RESOURCE_NOT_FOUND", "Profil pengguna tidak ditemukan.");
+  }
+
+  return ok({ avatarUrl: updated.avatarUrl ?? avatarUrl });
+}
+
+export interface PublicOptInIdentityProfileDTO {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  publicBio: string | null;
+}
+
+export async function listPublicOptInIdentityProfiles(): Promise<
+  PublicOptInIdentityProfileDTO[]
+> {
+  const rows = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+      publicBio: users.publicBio,
+    })
+    .from(users)
+    .where(
+      and(
+        eq(users.active, true),
+        eq(users.showOnPublic, true),
+        isNull(users.archivedAt)
+      )
+    );
+
+  return rows;
 }

@@ -3,45 +3,30 @@
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  Building2,
   CloudOff,
   FlaskConical,
-  KeyRound,
   Plus,
   Shield,
   Sliders,
   UserPlus,
   Users,
 } from "lucide-react";
-import { SearchInput } from "@/components/compositions";
+import { EmptyState, SearchInput } from "@/components/compositions";
 import {
   DetailTabs,
   FeedbackBanner,
   FloatingFeedbackToast,
   PageHeader,
-  StatSummary,
   type DetailTabItem,
 } from "@/components/patterns";
-import {
-  Badge,
-  Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Icon,
-  Textarea,
-} from "@/components/ui";
+import { Badge, Button, Icon } from "@/components/ui";
 import { useTierCGuard } from "@/hooks/use-tier-c-guard";
-import { PRIVACY_MESSAGES } from "@/lib/messages";
 import { getRoleLabel, type SystemRole } from "@/lib/status";
 import {
   applyUserPermissionOverrideAction,
   createCustomRoleAction,
   provisionNewPlatformUserAction,
+  resetUserToDefaultPasswordAction,
   setPlatformUserActiveStateAction,
   updateUserRoleAssignmentsAction,
   updateUserScopeAssignmentAction,
@@ -52,19 +37,10 @@ import type {
   AdminUserRecordDTO,
 } from "../types/administration-types";
 import type { CreateCustomRoleFormValues } from "../validators/custom-role-schema";
-import type { EditUserRolesFormValues } from "../validators/edit-role-schema";
 import type { ProvisionUserFormValues } from "../validators/provision-user-schema";
 import { CreateCustomRoleDialog } from "./create-custom-role-dialog";
-import { EditRoleDialog } from "./edit-role-dialog";
-import {
-  OverridesTabContent,
-  type OverrideFormValues,
-} from "./overrides-tab-content";
+import { ManageUserAccountSheet } from "./manage-user-account-sheet";
 import { ProvisionUserDialog } from "./provision-user-dialog";
-import {
-  ScopesTabContent,
-  type ScopeAssignmentFormValues,
-} from "./scopes-tab-content";
 
 export interface AdministrationWorkspaceClientProps {
   view: AdministrationWorkspaceViewDTO;
@@ -73,6 +49,12 @@ export interface AdministrationWorkspaceClientProps {
   canManageUsers: boolean;
   canManageRoles: boolean;
   canManagePermissions: boolean;
+}
+
+function normalizeTab(tab: string, isSandboxAllowed: boolean): string {
+  if (tab === "roles" || tab === "permissions") return "roles";
+  if (tab === "sandbox" && isSandboxAllowed) return "sandbox";
+  return "users";
 }
 
 export function AdministrationWorkspaceClient({
@@ -86,7 +68,9 @@ export function AdministrationWorkspaceClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = React.useState(initialTab);
+  const [activeTab, setActiveTab] = React.useState(() =>
+    normalizeTab(initialTab, view.isSandboxAllowed)
+  );
   const [userSearch, setUserSearch] = React.useState("");
   const [pending, setPending] = React.useState(false);
   const [feedback, setFeedback] = React.useState<{
@@ -99,20 +83,19 @@ export function AdministrationWorkspaceClient({
   );
   const isOffline = !isOnline;
 
-  // Dialog 1: Provision new user via Supabase Admin API
   const [provisionOpen, setProvisionOpen] = React.useState(false);
-
-  // Dialog 2: Assign user roles
-  const [editingRoleUser, setEditingRoleUser] =
-    React.useState<AdminUserRecordDTO | null>(null);
-
-  // Dialog 3: Deactivate / Activate user confirmation
-  const [togglingUser, setTogglingUser] =
-    React.useState<AdminUserRecordDTO | null>(null);
-  const [toggleReason, setToggleReason] = React.useState("");
-
-  // Dialog 4: Create custom role without coding
   const [customRoleOpen, setCustomRoleOpen] = React.useState(false);
+  const [managingUserId, setManagingUserId] = React.useState<string | null>(
+    null
+  );
+  const [expandedRoleIds, setExpandedRoleIds] = React.useState<Set<string>>(
+    () => new Set()
+  );
+
+  const managingUser = React.useMemo<AdminUserRecordDTO | null>(
+    () => view.users.find((u) => u.id === managingUserId) ?? null,
+    [view.users, managingUserId]
+  );
 
   function handleTabChange(nextTab: string) {
     setActiveTab(nextTab);
@@ -145,7 +128,7 @@ export function AdministrationWorkspaceClient({
       setProvisionOpen(false);
       setFeedback({
         tone: "success",
-        message: `Akun pengguna ${res.data.email} berhasil dibuat melalui Supabase Admin API dan dicatat dalam jejak audit.`,
+        message: `Akun ${res.data.email} berhasil dibuat dan wajib mengganti kata sandi bawaan saat pertama masuk.`,
       });
       router.refresh();
       return true;
@@ -155,21 +138,21 @@ export function AdministrationWorkspaceClient({
   }
 
   async function handleSaveUserRoles(
-    values: EditUserRolesFormValues
+    userId: string,
+    roleCodes: string[]
   ): Promise<boolean> {
-    if (!editingRoleUser || !guardOnline() || pending) return false;
+    if (!guardOnline() || pending) return false;
     setPending(true);
     setFeedback(null);
     try {
       const res = await updateUserRoleAssignmentsAction({
-        userId: editingRoleUser.id,
-        roleCodes: values.roleCodes,
+        userId,
+        roleCodes,
       });
       if (!res.success) {
         setFeedback({ tone: "danger", message: res.error.message });
         return false;
       }
-      setEditingRoleUser(null);
       setFeedback({
         tone: "success",
         message:
@@ -182,31 +165,54 @@ export function AdministrationWorkspaceClient({
     }
   }
 
-  async function handleConfirmToggleActive(e: React.FormEvent) {
-    e.preventDefault();
-    if (!togglingUser || !guardOnline() || pending) return;
+  async function handleToggleActive(
+    userId: string,
+    active: boolean,
+    reason: string | null
+  ): Promise<boolean> {
+    if (!guardOnline() || pending) return false;
     setPending(true);
     setFeedback(null);
     try {
-      const nextActive = !togglingUser.active;
       const res = await setPlatformUserActiveStateAction({
-        userId: togglingUser.id,
-        active: nextActive,
-        reason: toggleReason.trim() || null,
+        userId,
+        active,
+        reason,
       });
       if (!res.success) {
         setFeedback({ tone: "danger", message: res.error.message });
-        return;
+        return false;
       }
-      setTogglingUser(null);
-      setToggleReason("");
       setFeedback({
         tone: "success",
-        message: nextActive
+        message: active
           ? "Pengguna diaktifkan kembali."
           : "Pengguna dinonaktifkan.",
       });
       router.refresh();
+      return true;
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleResetDefaultPassword(userId: string): Promise<boolean> {
+    if (!guardOnline() || pending) return false;
+    setPending(true);
+    setFeedback(null);
+    try {
+      const res = await resetUserToDefaultPasswordAction(userId);
+      if (!res.success) {
+        setFeedback({ tone: "danger", message: res.error.message });
+        return false;
+      }
+      setFeedback({
+        tone: "success",
+        message:
+          "Kata sandi disetel ulang ke sandi bawaan dan wajib diganti saat pengguna masuk berikutnya.",
+      });
+      router.refresh();
+      return true;
     } finally {
       setPending(false);
     }
@@ -232,7 +238,7 @@ export function AdministrationWorkspaceClient({
       setCustomRoleOpen(false);
       setFeedback({
         tone: "success",
-        message: `Peran kustom "${res.data.name}" (${res.data.code}) berhasil dibuat tanpa perubahan kode.`,
+        message: `Peran kustom "${res.data.name}" (${res.data.code}) berhasil dibuat.`,
       });
       router.refresh();
       return true;
@@ -241,19 +247,17 @@ export function AdministrationWorkspaceClient({
     }
   }
 
-  async function handleApplyOverride(
-    values: OverrideFormValues
-  ): Promise<boolean> {
+  async function handleApplyOverride(values: {
+    userId: string;
+    permissionCode: string;
+    mode: "GRANT" | "REVOKE";
+    reason: string;
+  }): Promise<boolean> {
     if (!guardOnline() || pending) return false;
     setPending(true);
     setFeedback(null);
     try {
-      const res = await applyUserPermissionOverrideAction({
-        userId: values.userId,
-        permissionCode: values.permissionCode,
-        mode: values.mode,
-        reason: values.reason,
-      });
+      const res = await applyUserPermissionOverrideAction(values);
       if (!res.success) {
         setFeedback({ tone: "danger", message: res.error.message });
         return false;
@@ -262,8 +266,8 @@ export function AdministrationWorkspaceClient({
         tone: "success",
         message:
           res.data.mode === "GRANT"
-            ? `Hak akses khusus "${res.data.permissionCode}" berhasil diberikan dan efektif seketika.`
-            : `Hak akses "${res.data.permissionCode}" berhasil dicabut (REVOKE selalu menang) dan efektif seketika.`,
+            ? `Hak akses khusus "${res.data.permissionCode}" berhasil diberikan.`
+            : `Hak akses "${res.data.permissionCode}" berhasil dicabut (REVOKE selalu menang).`,
       });
       router.refresh();
       return true;
@@ -272,18 +276,18 @@ export function AdministrationWorkspaceClient({
     }
   }
 
-  async function handleAssignScope(
-    values: ScopeAssignmentFormValues
-  ): Promise<boolean> {
+  async function handleAssignScope(values: {
+    userId: string;
+    organizationId: string;
+    serviceUnitId: string;
+    programId?: string | null;
+  }): Promise<boolean> {
     if (!guardOnline() || pending) return false;
     setPending(true);
     setFeedback(null);
     try {
       const res = await updateUserScopeAssignmentAction({
-        userId: values.userId,
-        organizationId: values.organizationId,
-        serviceUnitId: values.serviceUnitId,
-        programId: values.programId || null,
+        ...values,
         active: true,
       });
       if (!res.success) {
@@ -311,25 +315,9 @@ export function AdministrationWorkspaceClient({
     },
     {
       id: "roles",
-      label: "Peran",
+      label: "Peran & Hak Akses",
       count: view.roles.length,
       icon: <Icon icon={Shield} size="xs" />,
-    },
-    {
-      id: "permissions",
-      label: "Hak Akses",
-      count: view.permissions.length,
-      icon: <Icon icon={KeyRound} size="xs" />,
-    },
-    {
-      id: "overrides",
-      label: "Override akses",
-      icon: <Icon icon={Sliders} size="xs" />,
-    },
-    {
-      id: "scopes",
-      label: "Penetapan lingkup",
-      icon: <Icon icon={Building2} size="xs" />,
     },
     ...(view.isSandboxAllowed
       ? [
@@ -367,7 +355,7 @@ export function AdministrationWorkspaceClient({
     <div className="space-y-6">
       <PageHeader
         title="Administrasi"
-        description="Kelola Pengguna, Peran (termasuk peran kustom tanpa deploy), Registri Hak Akses, Override Akses (Grant/Revoke instan), dan Penetapan Lingkup Unit Layanan."
+        description="Kelola akun pengguna, peran, lingkup unit layanan, dan pengecualian hak akses secara terpadu."
         primaryAction={
           activeTab === "users" && canManageUsers ? (
             <Button
@@ -410,26 +398,6 @@ export function AdministrationWorkspaceClient({
         </div>
       )}
 
-      <StatSummary
-        items={[
-          {
-            id: "active-users",
-            label: "Pengguna aktif",
-            value: `${view.users.filter((u) => u.active).length} / ${view.users.length}`,
-          },
-          {
-            id: "roles-total",
-            label: "Peran terdaftar",
-            value: `${view.roles.filter((r) => r.isSystem).length} sistem · ${view.roles.filter((r) => !r.isSystem).length} kustom`,
-          },
-          {
-            id: "perms-total",
-            label: "Registri hak akses",
-            value: `${view.permissions.length} kode izin`,
-          },
-        ]}
-      />
-
       {feedback && (
         <FeedbackBanner
           tone={feedback.tone}
@@ -445,7 +413,7 @@ export function AdministrationWorkspaceClient({
         ariaLabel="Tab modul administrasi"
       />
 
-      {/* TAB 1: PENGGUNA */}
+      {/* TAB 1: PENGGUNA (Satu pintu per pengguna) */}
       {activeTab === "users" && (
         <div className="space-y-4">
           <div className="max-w-md">
@@ -456,201 +424,205 @@ export function AdministrationWorkspaceClient({
             />
           </div>
 
-          <div className="rounded-card border border-border bg-surface divide-y divide-border">
-            {filteredUsers.map((u) => (
-              <div
-                key={u.id}
-                className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
-              >
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-sm text-foreground">
-                      {u.name}
-                    </p>
-                    <Badge variant={u.active ? "success" : "danger"} size="sm">
-                      {u.active ? "Aktif" : "Nonaktif"}
-                    </Badge>
-                    {u.roles.map((r) => (
-                      <Badge key={r.id} variant="primary" size="sm">
-                        {getRoleLabel(r.code as SystemRole) ?? r.name}
+          {filteredUsers.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="Pengguna tidak ditemukan"
+              description="Tidak ada akun yang cocok dengan kata kunci pencarian Anda. Coba ubah kata kunci atau reset pencarian."
+              action={
+                userSearch ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setUserSearch("")}
+                  >
+                    Tampilkan semua pengguna
+                  </Button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <div className="rounded-card border border-border bg-surface divide-y divide-border">
+              {filteredUsers.map((u) => (
+                <div
+                  key={u.id}
+                  className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1.5 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-sm text-foreground">
+                        {u.name}
+                      </p>
+                      <Badge variant={u.active ? "success" : "danger"} size="sm">
+                        {u.active ? "Aktif" : "Nonaktif"}
                       </Badge>
+                      {u.roles.map((r) => (
+                        <Badge key={r.id} variant="primary" size="sm">
+                          {getRoleLabel(r.code as SystemRole) ?? r.name}
+                        </Badge>
+                      ))}
+                      {u.overrides.length > 0 && (
+                        <Badge variant="warning" size="sm">
+                          {u.overrides.length} override
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono truncate">
+                      {u.email}
+                    </p>
+                    <p className="text-xs text-secondary-foreground">
+                      Lingkup:{" "}
+                      {u.memberships.length > 0
+                        ? u.memberships
+                            .map(
+                              (m) =>
+                                `${m.organizationName} → ${m.serviceUnitName}`
+                            )
+                            .join(" · ")
+                        : "Belum ditetapkan"}
+                    </p>
+                  </div>
+
+                  {(canManageUsers || canManageRoles || canManagePermissions) && (
+                    <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={isOffline}
+                        onClick={() => setManagingUserId(u.id)}
+                        leftIcon={<Icon icon={Sliders} size="xs" />}
+                        className="w-full lg:w-auto"
+                      >
+                        Kelola akun
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: PERAN & HAK AKSES */}
+      {activeTab === "roles" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {view.roles.map((role) => {
+              const isExpanded = expandedRoleIds.has(role.id);
+              const visiblePerms = isExpanded
+                ? role.permissionCodes
+                : role.permissionCodes.slice(0, 8);
+              return (
+                <section
+                  key={role.id}
+                  className="rounded-card border border-border bg-surface p-5 space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-base font-semibold text-foreground">
+                          {getRoleLabel(role.code as SystemRole) ?? role.name}
+                        </h2>
+                        <Badge
+                          variant={role.isSystem ? "neutral" : "info"}
+                          size="sm"
+                        >
+                          {role.isSystem ? "Peran sistem" : "Peran kustom"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs font-mono text-muted-foreground mt-0.5">
+                        {role.code} · {role.assignedUserCount} pengguna
+                      </p>
+                    </div>
+                    <Badge variant="primary" size="sm">
+                      {role.permissionCodes.length} izin
+                    </Badge>
+                  </div>
+
+                  {role.description && (
+                    <p className="text-xs text-secondary-foreground leading-relaxed">
+                      {role.description}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border-subtle">
+                    {visiblePerms.map((code) => (
+                      <span
+                        key={code}
+                        className="rounded-xs bg-surface-subtle px-2 py-0.5 text-[11px] font-mono text-secondary-foreground"
+                      >
+                        {code}
+                      </span>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    {u.email}
-                  </p>
-                  <p className="text-xs text-secondary-foreground">
-                    Lingkup:{" "}
-                    {u.memberships.length > 0
-                      ? u.memberships
-                          .map(
-                            (m) =>
-                              `${m.organizationName} → ${m.serviceUnitName}`
-                          )
-                          .join(" · ")
-                      : "Belum ditetapkan"}
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
-                  {canManageRoles && (
-                    <Button
+                  {role.permissionCodes.length > 8 && (
+                    <button
                       type="button"
-                      variant="secondary"
-                      size="sm"
-                      disabled={isOffline}
                       onClick={() => {
-                        setEditingRoleUser(u);
+                        setExpandedRoleIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(role.id)) next.delete(role.id);
+                          else next.add(role.id);
+                          return next;
+                        });
                       }}
-                      className="flex-1 lg:flex-initial"
+                      className="text-xs font-medium text-primary hover:underline cursor-pointer"
                     >
-                      Tetapkan peran
-                    </Button>
+                      {isExpanded
+                        ? "Ringkas daftar izin"
+                        : `Lihat semua izin (${role.permissionCodes.length})`}
+                    </button>
                   )}
-                  {canManageUsers && u.id !== currentUserId && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={isOffline}
-                      onClick={() => {
-                        setTogglingUser(u);
-                        setToggleReason("");
-                      }}
-                      className="flex-1 lg:flex-initial"
-                    >
-                      {u.active ? "Nonaktifkan pengguna" : "Aktifkan pengguna"}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+                </section>
+              );
+            })}
           </div>
-        </div>
-      )}
 
-      {/* TAB 2: PERAN (System + Custom Roles) */}
-      {activeTab === "roles" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {view.roles.map((role) => (
-            <section
-              key={role.id}
-              className="rounded-card border border-border bg-surface p-5 space-y-3"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-base font-semibold text-foreground">
-                      {getRoleLabel(role.code as SystemRole) ?? role.name}
-                    </h2>
-                    <Badge
-                      variant={role.isSystem ? "neutral" : "info"}
-                      size="sm"
-                    >
-                      {role.isSystem ? "Peran sistem" : "Peran kustom"}
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold text-foreground">
+              Kamus hak akses ({view.permissions.length} kode izin)
+            </h2>
+            <div className="space-y-3">
+              {permissionsByModule.map(([modName, perms]) => (
+                <div
+                  key={modName}
+                  className="rounded-card border border-border bg-surface p-4 sm:p-5 space-y-3"
+                >
+                  <div className="flex items-center justify-between gap-2 pb-2 border-b border-border-subtle">
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Modul: {modName}
+                    </h3>
+                    <Badge variant="neutral" size="sm">
+                      {perms.length} izin
                     </Badge>
                   </div>
-                  <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                    {role.code} · {role.assignedUserCount} pengguna
-                  </p>
-                </div>
-                <Badge variant="primary" size="sm">
-                  {role.permissionCodes.length} hak akses
-                </Badge>
-              </div>
-
-              {role.description && (
-                <p className="text-xs text-secondary-foreground leading-relaxed">
-                  {role.description}
-                </p>
-              )}
-
-              <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border-subtle">
-                {role.permissionCodes.slice(0, 10).map((code) => (
-                  <span
-                    key={code}
-                    className="rounded-xs bg-surface-subtle px-2 py-0.5 text-[11px] font-mono text-secondary-foreground"
-                  >
-                    {code}
-                  </span>
-                ))}
-                {role.permissionCodes.length > 10 && (
-                  <span className="text-[11px] text-muted-foreground px-1">
-                    +{role.permissionCodes.length - 10} lainnya
-                  </span>
-                )}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
-
-      {/* TAB 3: HAK AKSES (Read-only Registry Grouped by Module) */}
-      {activeTab === "permissions" && (
-        <div className="space-y-4">
-          {permissionsByModule.map(([modName, perms]) => (
-            <section
-              key={modName}
-              className="rounded-card border border-border bg-surface p-5 space-y-3"
-            >
-              <div className="flex items-center justify-between gap-2 pb-2 border-b border-border-subtle">
-                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-                  Modul: {modName}
-                </h2>
-                <Badge variant="neutral" size="sm">
-                  {perms.length} hak akses
-                </Badge>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {perms.map((p) => (
-                  <div
-                    key={p.id}
-                    className="rounded-control border border-border-subtle bg-surface-subtle/40 p-3 space-y-1"
-                  >
-                    <p className="font-mono text-xs font-semibold text-primary">
-                      {p.code}
-                    </p>
-                    <p className="text-xs font-medium text-foreground">
-                      {p.name}
-                    </p>
-                    {p.description && (
-                      <p className="text-[11px] text-secondary-foreground">
-                        {p.description}
-                      </p>
-                    )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {perms.map((p) => (
+                      <div
+                        key={p.id}
+                        className="rounded-control border border-border-subtle bg-surface-subtle/40 p-2.5 space-y-0.5"
+                      >
+                        <p className="font-mono text-xs font-semibold text-primary">
+                          {p.code}
+                        </p>
+                        <p className="text-xs font-medium text-foreground">
+                          {p.name}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
-          ))}
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       )}
 
-      {/* TAB 4: OVERRIDE AKSES (Dynamic GRANT / REVOKE) */}
-      {activeTab === "overrides" && (
-        <OverridesTabContent
-          users={view.users}
-          permissions={view.permissions}
-          canManagePermissions={canManagePermissions}
-          isOffline={isOffline}
-          pending={pending}
-          onApplyOverride={handleApplyOverride}
-        />
-      )}
-
-      {/* TAB 5: PENETAPAN LINGKUP (Scope Assignment) */}
-      {activeTab === "scopes" && (
-        <ScopesTabContent
-          users={view.users}
-          scopeCatalog={view.scopeCatalog}
-          canManageUsers={canManageUsers}
-          isOffline={isOffline}
-          pending={pending}
-          onAssignScope={handleAssignScope}
-        />
-      )}
-
-      {/* TAB 6 (DEV-ONLY GATED PLATFORM_ADMIN): LINGKUNGAN UJI COBA (10 §26, U-08, U-12) */}
+      {/* TAB 3 (DEV-ONLY): LINGKUNGAN UJI COBA */}
       {activeTab === "sandbox" && view.isSandboxAllowed && (
         <section className="rounded-card border border-warning/40 bg-warning-soft/30 p-5 sm:p-6 space-y-4">
           <div className="flex items-center gap-2">
@@ -692,7 +664,6 @@ export function AdministrationWorkspaceClient({
         </section>
       )}
 
-      {/* Dialog: Tambah pengguna baru (Supabase Admin API) */}
       <ProvisionUserDialog
         open={provisionOpen}
         onOpenChange={setProvisionOpen}
@@ -703,7 +674,6 @@ export function AdministrationWorkspaceClient({
         serviceUnits={view.scopeCatalog.serviceUnits}
       />
 
-      {/* Dialog: Buat peran kustom tanpa coding */}
       <CreateCustomRoleDialog
         open={customRoleOpen}
         onOpenChange={setCustomRoleOpen}
@@ -712,83 +682,28 @@ export function AdministrationWorkspaceClient({
         permissions={view.permissions}
       />
 
-      {/* Dialog: Tetapkan peran pengguna */}
-      <EditRoleDialog
-        open={Boolean(editingRoleUser)}
+      <ManageUserAccountSheet
+        key={managingUser?.id ?? "none"}
+        open={Boolean(managingUser)}
         onOpenChange={(open) => {
-          if (!open) setEditingRoleUser(null);
+          if (!open) setManagingUserId(null);
         }}
-        user={editingRoleUser}
+        user={managingUser}
+        currentUserId={currentUserId}
         roles={view.roles}
-        onSubmit={handleSaveUserRoles}
+        permissions={view.permissions}
+        scopeCatalog={view.scopeCatalog}
+        canManageUsers={canManageUsers}
+        canManageRoles={canManageRoles}
+        canManagePermissions={canManagePermissions}
         pending={pending}
+        isOffline={isOffline}
+        onSaveRoles={handleSaveUserRoles}
+        onSaveScope={handleAssignScope}
+        onApplyOverride={handleApplyOverride}
+        onToggleActive={handleToggleActive}
+        onResetDefaultPassword={handleResetDefaultPassword}
       />
-
-      {/* Dialog: Konfirmasi Nonaktifkan / Aktifkan Pengguna */}
-      <Dialog
-        open={Boolean(togglingUser)}
-        onOpenChange={(open) => {
-          if (!open) setTogglingUser(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {togglingUser?.active
-                ? "Nonaktifkan pengguna"
-                : "Aktifkan kembali pengguna"}
-            </DialogTitle>
-            <DialogDescription>
-              {togglingUser?.active
-                ? `Menonaktifkan akun ${togglingUser.name} akan mencabut seluruh akses ruang kerja secara seketika tanpa menghapus riwayat jejak audit.`
-                : `Mengaktifkan kembali akun ${togglingUser?.name} akan memulihkan akses sesuai peran dan lingkupnya.`}{" "}
-              {PRIVACY_MESSAGES.auditLogged}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleConfirmToggleActive}>
-            <DialogBody className="space-y-3">
-              <div className="space-y-1">
-                <label
-                  htmlFor="toggle-user-reason"
-                  className="block text-xs font-medium text-foreground"
-                >
-                  Alasan perubahan status akun{" "}
-                  {togglingUser?.active ? "*" : "(opsional)"}
-                </label>
-                <Textarea
-                  id="toggle-user-reason"
-                  rows={2}
-                  required={Boolean(togglingUser?.active)}
-                  value={toggleReason}
-                  onChange={(e) => setToggleReason(e.target.value)}
-                  placeholder="Tuliskan alasan penonaktifan atau pengaktifan kembali akun..."
-                />
-              </div>
-            </DialogBody>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setTogglingUser(null)}
-                disabled={pending}
-              >
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                variant={togglingUser?.active ? "destructive" : "primary"}
-                disabled={pending}
-              >
-                {pending
-                  ? "Menyimpan..."
-                  : togglingUser?.active
-                    ? "Nonaktifkan pengguna"
-                    : "Aktifkan pengguna"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {feedback && (
         <FloatingFeedbackToast
@@ -800,4 +715,3 @@ export function AdministrationWorkspaceClient({
     </div>
   );
 }
-

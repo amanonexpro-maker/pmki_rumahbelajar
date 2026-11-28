@@ -1,3 +1,4 @@
+import { listPublicOptInIdentityProfiles } from "@/features/identity";
 import {
   listPublicGalleryMedia,
   MEDIA_CATEGORY_LABELS,
@@ -394,6 +395,22 @@ export async function getPublicPortalData(): Promise<PublicPortalDataDTO> {
     mappedNews.length > 0 ? mappedNews : CANONICAL_AUTHENTIC_PUBLICATIONS
   ).filter((post) => post.slug !== "sosialisasi-persiapan-ebta-sd-kelas-6");
 
+  const publicProfiles = await listPublicOptInIdentityProfiles().catch(
+    () => []
+  );
+  const profileByName = new Map(
+    publicProfiles.map((p) => [p.name.trim().toLowerCase(), p])
+  );
+  const volunteerTeachers = PUBLIC_VOLUNTEER_TEACHERS.map((teacher) => {
+    const matched = profileByName.get(teacher.name.trim().toLowerCase());
+    if (!matched) return teacher;
+    return {
+      ...teacher,
+      avatarUrl: matched.avatarUrl,
+      publicBio: matched.publicBio,
+    };
+  });
+
   return {
     serviceUnitName: "Rumah Belajar Griya Asih Lawang",
     organizationName: "PMKI Mupel Jawa Timur",
@@ -419,7 +436,7 @@ export async function getPublicPortalData(): Promise<PublicPortalDataDTO> {
     programs: PUBLIC_PROGRAMS_LIST,
     gradeTargets: PUBLIC_GRADE_TARGETS,
     scheduleSlots: PUBLIC_SCHEDULE_SLOTS,
-    volunteerTeachers: PUBLIC_VOLUNTEER_TEACHERS,
+    volunteerTeachers,
     coordinators: PUBLIC_COORDINATOR_CONTACTS,
     galleryItems,
     newsItems,

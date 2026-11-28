@@ -7,6 +7,7 @@ import {
   applyUserPermissionOverride,
   createCustomRole,
   provisionNewPlatformUser,
+  resetUserToDefaultPassword,
   setPlatformUserActiveState,
   updateUserRoleAssignments,
   updateUserScopeAssignment,
@@ -109,3 +110,14 @@ export async function updateUserScopeAssignmentAction(
   return result;
 }
 
+export async function resetUserToDefaultPasswordAction(
+  targetUserId: string
+): Promise<ActionResult<{ reset: true }>> {
+  const session = await getCurrentSession();
+  const result = await resetUserToDefaultPassword(session, targetUserId);
+  if (result.success) {
+    revalidatePath("/workspace/administration");
+    revalidatePath("/workspace/audit");
+  }
+  return result;
+}

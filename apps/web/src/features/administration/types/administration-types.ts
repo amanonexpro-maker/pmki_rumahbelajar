@@ -27,6 +27,10 @@ export interface AdminUserRecordDTO {
   roles: AdminUserRoleTagDTO[];
   overrides: AdminUserOverrideDTO[];
   memberships: UserMembershipDetailDTO[];
+  linkedTeacherUnits?: Array<{
+    serviceUnitId: string;
+    serviceUnitName: string;
+  }>;
 }
 
 export interface AdminRoleRecordDTO {

@@ -1,9 +1,11 @@
 import { cache } from "react";
+import { listTeachersForServiceUnit } from "@/features/academic";
 import { recordAuditLog } from "@/features/audit";
 import {
   getIdentityUserStatusById,
   listAllIdentityUsers,
   provisionIdentityUserViaAdminApi,
+  resetIdentityUserPasswordToDefault,
   updateIdentityUserActiveState,
 } from "@/features/identity";
 import {
@@ -51,6 +53,8 @@ import { computeEffectivePermissions } from "./permission-resolver";
 export interface ResolvedAccess {
   active: boolean;
   name: string;
+  avatarUrl: string | null;
+  mustChangePassword: boolean;
   roles: string[];
   permissions: string[];
   memberships: MembershipRecord[];
@@ -72,6 +76,8 @@ export async function resolveAccess(userId: string): Promise<ResolvedAccess> {
     return {
       active: false,
       name: userStatus?.name ?? "",
+      avatarUrl: null,
+      mustChangePassword: false,
       roles: [],
       permissions: [],
       memberships: [],
@@ -91,6 +97,8 @@ export async function resolveAccess(userId: string): Promise<ResolvedAccess> {
   return {
     active: true,
     name: userStatus.name,
+    avatarUrl: userStatus.avatarUrl,
+    mustChangePassword: userStatus.mustChangePassword,
     roles: raw.roleCodes,
     permissions,
     memberships,
@@ -134,6 +142,22 @@ export async function getAdministrationWorkspaceView(
     membershipsByUser.set(m.userId, list);
   }
 
+  const teacherUnitsByUserId = new Map<
+    string,
+    Array<{ serviceUnitId: string; serviceUnitName: string }>
+  >();
+  await Promise.all(
+    scopeCatalog.serviceUnits.map(async (unit) => {
+      const teachers = await listTeachersForServiceUnit(unit.id);
+      for (const t of teachers) {
+        if (!t.userId) continue;
+        const list = teacherUnitsByUserId.get(t.userId) ?? [];
+        list.push({ serviceUnitId: unit.id, serviceUnitName: unit.name });
+        teacherUnitsByUserId.set(t.userId, list);
+      }
+    })
+  );
+
   const adminUsers: AdminUserRecordDTO[] = identityUsers.map((u) => ({
     id: u.id,
     name: u.name,
@@ -144,6 +168,7 @@ export async function getAdministrationWorkspaceView(
     roles: roleOverrideMaps.rolesByUserId.get(u.id) ?? [],
     overrides: roleOverrideMaps.overridesByUserId.get(u.id) ?? [],
     memberships: membershipsByUser.get(u.id) ?? [],
+    linkedTeacherUnits: teacherUnitsByUserId.get(u.id) ?? [],
   }));
 
   return ok({
@@ -540,4 +565,38 @@ export async function updateUserScopeAssignment(
     serviceUnitId: membership.serviceUnitId,
     active: membership.active,
   });
+}
+
+export async function resetUserToDefaultPassword(
+  user: SessionUser | null | undefined,
+  targetUserId: string
+): Promise<ActionResult<{ reset: true }>> {
+  const authz = authorizeManageUsers(user);
+  if (!authz.success) return authz;
+
+  if (!targetUserId || !user?.id) {
+    return fail("VALIDATION_FAILED", getHumanErrorMessage("VALIDATION_FAILED"));
+  }
+
+  const res = await resetIdentityUserPasswordToDefault({
+    userId: targetUserId,
+    actorId: user.id,
+  });
+  if (!res.success) return res;
+
+  await recordAuditLog({
+    organizationId: user.memberships[0]?.organizationId ?? null,
+    serviceUnitId: user.memberships[0]?.serviceUnitId ?? null,
+    actorId: user.id,
+    action: "USER_PASSWORD_RESET_TO_DEFAULT",
+    entityType: "user",
+    entityId: targetUserId,
+    description:
+      "Menyetel ulang kata sandi pengguna ke sandi bawaan (wajib ganti saat masuk berikutnya).",
+    metadata: {
+      targetUserId,
+    },
+  });
+
+  return ok({ reset: true });
 }

@@ -42,6 +42,8 @@ export interface PublicVolunteerTeacherDTO {
   originInstitution: string;
   focusRole: string;
   isCoordinator?: boolean;
+  avatarUrl?: string | null;
+  publicBio?: string | null;
 }
 
 export interface PublicCoordinatorContactDTO {

@@ -67,7 +67,11 @@ export function WorkspaceHeader({
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {user ? (
-          <div className="flex items-center gap-2.5">
+          <Link
+            href="/workspace/profile"
+            aria-label="Buka Profil Saya"
+            className="flex items-center gap-2.5 rounded-control px-1.5 py-1 hover:bg-surface-subtle transition-colors focus-ring"
+          >
             <div className="relative inline-flex shrink-0">
               <Avatar name={user.name} src={user.avatarUrl} size="sm" />
               <ConnectivityIndicator
@@ -83,7 +87,7 @@ export function WorkspaceHeader({
                 {user.roleLabel}
               </p>
             </div>
-          </div>
+          </Link>
         ) : (
           <ConnectivityIndicator />
         )}

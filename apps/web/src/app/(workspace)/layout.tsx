@@ -1,6 +1,6 @@
 import * as React from "react";
 import { AppShell } from "@/components/layout";
-import { LogoutButton } from "@/features/identity";
+import { ChangePasswordCard, LogoutButton } from "@/features/identity";
 import { getRoleLabel, type SystemRole } from "@/lib/status";
 import { requireSession } from "@/server/auth/session";
 
@@ -29,6 +29,7 @@ export default async function WorkspaceLayout({
       user={{
         name: session.name,
         roleLabel: formatPrimaryRoleLabel(session.roles),
+        avatarUrl: session.avatarUrl,
       }}
       userPermissions={session.permissions}
       userPersona={session.persona}
@@ -36,7 +37,13 @@ export default async function WorkspaceLayout({
       mobileFooterActionSlot={<LogoutButton showLabelOnMobile />}
       collapsedFooterActionSlot={<LogoutButton compact />}
     >
-      {children}
+      {session.mustChangePassword ? (
+        <div className="mx-auto max-w-xl py-4 space-y-4">
+          <ChangePasswordCard forceMode />
+        </div>
+      ) : (
+        children
+      )}
     </AppShell>
   );
 }

@@ -19,6 +19,8 @@ export interface SessionUser {
   id: string;
   email: string;
   name: string;
+  avatarUrl?: string | null;
+  mustChangePassword?: boolean;
   roles: string[];
   permissions: string[];
   memberships: SessionMembership[];
@@ -54,6 +56,8 @@ export const getCurrentSession = cache(
       id: user.id,
       email: user.email ?? "",
       name: access.name || user.email || "Pengguna PMKI",
+      avatarUrl: access.avatarUrl,
+      mustChangePassword: access.mustChangePassword,
       roles: access.roles,
       permissions: access.permissions,
       memberships: access.memberships,

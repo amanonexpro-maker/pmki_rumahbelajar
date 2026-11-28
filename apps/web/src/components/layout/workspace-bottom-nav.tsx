@@ -50,7 +50,13 @@ export function WorkspaceBottomNav({
     return groups
       .flatMap((group) => group.items)
       .filter((item) => {
-        if (!item.requiredPermission || !userPermissions) return true;
+        if (!userPermissions) return true;
+        if (item.requiredPermissions && item.requiredPermissions.length > 0) {
+          return item.requiredPermissions.some((p) =>
+            userPermissions.includes(p)
+          );
+        }
+        if (!item.requiredPermission) return true;
         return userPermissions.includes(item.requiredPermission);
       });
   }, [groups, userPermissions]);

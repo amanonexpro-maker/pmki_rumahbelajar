@@ -13,8 +13,17 @@ export const metadata: Metadata = {
     "Informasi akun, peran, lingkup unit layanan, kewenangan akses, dan pengaturan kata sandi Anda.",
 };
 
-export default async function WorkspaceProfilePage() {
-  const session = await requireSession();
+interface WorkspaceProfilePageProps {
+  searchParams: Promise<{ tab?: string }>;
+}
+
+export default async function WorkspaceProfilePage({
+  searchParams,
+}: WorkspaceProfilePageProps) {
+  const [session, resolvedParams] = await Promise.all([
+    requireSession(),
+    searchParams,
+  ]);
   const profileRes = await getMyProfileView(session);
 
   if (!profileRes.success) {
@@ -29,6 +38,11 @@ export default async function WorkspaceProfilePage() {
     );
   }
 
-  return <MyProfileClient profile={profileRes.data} />;
+  return (
+    <MyProfileClient
+      profile={profileRes.data}
+      initialTab={resolvedParams.tab ?? "profile"}
+    />
+  );
 }
 

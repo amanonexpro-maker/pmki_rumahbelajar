@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  DetailTabs,
   FeedbackBanner,
   FloatingFeedbackToast,
   PageHeader,
+  type DetailTabItem,
 } from "@/components/patterns";
 import {
   Avatar,
@@ -32,12 +34,117 @@ import { ChangePasswordCard } from "./change-password-card";
 
 export interface MyProfileClientProps {
   profile: MyProfileViewDTO;
+  initialTab?: string;
 }
 
-export function MyProfileClient({ profile }: MyProfileClientProps) {
+const VALID_TABS = new Set(["profile", "access", "security"]);
+
+const ACTION_LABELS: Record<string, string> = {
+  read: "Lihat data",
+  create: "Tambah baru",
+  update: "Perbarui data",
+  archive: "Arsipkan",
+  record: "Catat data",
+  export: "Ekspor laporan",
+  review: "Tinjau kelayakan",
+  approve: "Setujui / sahkan",
+  publish: "Terbitkan ke publik",
+  manage: "Kelola penuh",
+  assign: "Tetapkan penempatan",
+  upload: "Unggah berkas",
+};
+
+function getPermissionActionLabel(code: string): string {
+  const action = code.split(".")[1] ?? "";
+  return ACTION_LABELS[action] ?? code;
+}
+
+export function MyProfileClient({
+  profile,
+  initialTab = "profile",
+}: MyProfileClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { status: connectivityStatus } = useConnectivity();
   const isOffline = connectivityStatus === "OFFLINE";
+
+  const [activeTab, setActiveTab] = React.useState(() =>
+    profile.mustChangePassword
+      ? "security"
+      : VALID_TABS.has(initialTab)
+        ? initialTab
+        : "profile"
+  );
+
+  function handleTabChange(nextTab: string) {
+    setActiveTab(nextTab);
+    const next = new URLSearchParams(searchParams?.toString() ?? "");
+    if (nextTab === "profile") next.delete("tab");
+    else next.set("tab", nextTab);
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }
+
+  const tabs: DetailTabItem[] = React.useMemo(
+    () => [
+      {
+        id: "profile",
+        label: "Profil & Publik",
+        icon: <Icon icon={ICON_MAP.peserta} size="xs" />,
+      },
+      {
+        id: "access",
+        label: "Peran & Kewenangan",
+        count: profile.totalPermissions,
+        icon: <Icon icon={ICON_MAP.shieldCheck} size="xs" />,
+      },
+      {
+        id: "security",
+        label: "Keamanan",
+        icon: <Icon icon={ICON_MAP.lock} size="xs" />,
+      },
+    ],
+    [profile.totalPermissions]
+  );
+
+  const mobileScrollRef = React.useRef<HTMLDivElement>(null);
+  const activeTabIndex = Math.max(
+    0,
+    tabs.findIndex((t) => t.id === activeTab)
+  );
+
+  function goToMobileTab(index: number) {
+    const target = tabs[index];
+    if (!target) return;
+    handleTabChange(target.id);
+    const el = mobileScrollRef.current;
+    if (el && el.clientWidth > 0) {
+      el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
+    }
+  }
+
+  function handleMobileScroll() {
+    const el = mobileScrollRef.current;
+    if (!el || el.clientWidth <= 0) return;
+    const nextIdx = Math.min(
+      tabs.length - 1,
+      Math.max(0, Math.round(el.scrollLeft / el.clientWidth))
+    );
+    const nextTab = tabs[nextIdx];
+    if (nextTab && nextTab.id !== activeTab) {
+      handleTabChange(nextTab.id);
+    }
+  }
+
+  React.useEffect(() => {
+    const el = mobileScrollRef.current;
+    if (!el || el.clientWidth <= 0) return;
+    const expectedLeft = activeTabIndex * el.clientWidth;
+    if (Math.abs(el.scrollLeft - expectedLeft) > 8) {
+      el.scrollTo({ left: expectedLeft, behavior: "auto" });
+    }
+  }, [activeTabIndex]);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const nameFieldId = React.useId();
@@ -54,6 +161,9 @@ export function MyProfileClient({ profile }: MyProfileClientProps) {
   const [uploadingPhoto, setUploadingPhoto] = React.useState(false);
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [savingProfile, setSavingProfile] = React.useState(false);
+  const [expandedModules, setExpandedModules] = React.useState<Set<string>>(
+    () => new Set()
+  );
   const [feedback, setFeedback] = React.useState<{
     tone: "success" | "danger" | "warning";
     message: string;
@@ -133,22 +243,8 @@ export function MyProfileClient({ profile }: MyProfileClientProps) {
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Profil Saya"
-        description="Informasi akun, foto profil, tampilan publik pengajar, kewenangan akses, dan keamanan kata sandi Anda."
-      />
-
-      {profile.mustChangePassword && (
-        <FeedbackBanner
-          tone="warning"
-          message="Akun Anda masih menggunakan kata sandi bawaan. Silakan ubah kata sandi Anda pada bagian Keamanan akun di bawah."
-        />
-      )}
-
-      {/* Identitas Dasar & Foto Profil */}
-      <section className="rounded-card border border-border bg-surface p-5 space-y-5">
+  const profileSection = (
+    <section className="rounded-card border border-border bg-surface p-5 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0">
             {avatarUrl ? (
@@ -295,117 +391,237 @@ export function MyProfileClient({ profile }: MyProfileClientProps) {
           </div>
         </form>
       </section>
+  );
 
-      {/* Peran & Lingkup Unit */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <section className="rounded-card border border-border bg-surface p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <Icon icon={ICON_MAP.shieldCheck} size="sm" className="text-primary" />
-            <h2 className="text-sm font-semibold text-foreground">
-              Peran yang dipegang
-            </h2>
-          </div>
-          {profile.roles.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profile.roles.map((r) => (
-                <Badge key={r.code} variant="primary" size="sm">
-                  {r.label}
-                </Badge>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-secondary-foreground">
-              Belum ada peran yang ditetapkan pada akun ini.
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Peran dan hak akses dikelola oleh Administrator Platform sesuai
-            kebutuhan tugas Anda.
-          </p>
-        </section>
-
-        <section className="rounded-card border border-border bg-surface p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <Icon icon={ICON_MAP.lokasi} size="sm" className="text-primary" />
-            <h2 className="text-sm font-semibold text-foreground">
-              Lingkup unit layanan
-            </h2>
-          </div>
-          {profile.memberships.length > 0 ? (
-            <ul className="space-y-2">
-              {profile.memberships.map((m) => (
-                <li
-                  key={`${m.organizationId}-${m.serviceUnitId}`}
-                  className="rounded-control border border-border-subtle bg-surface-subtle/40 px-3 py-2 text-xs"
-                >
-                  <p className="font-medium text-foreground">
-                    {m.serviceUnitName}
-                  </p>
-                  <p className="text-muted-foreground">{m.organizationName}</p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-secondary-foreground">
-              Belum ada lingkup unit layanan yang ditetapkan.
-            </p>
-          )}
-        </section>
-      </div>
-
-      {/* Ringkasan Kewenangan */}
-      <section className="rounded-card border border-border bg-surface p-5 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="space-y-0.5">
-            <h2 className="text-base font-semibold text-foreground">
-              Kewenangan akses Anda
-            </h2>
-            <p className="text-xs text-secondary-foreground">
-              Ringkasan hak akses aktif Anda per modul ruang kerja.
-            </p>
-          </div>
-          <Badge variant="neutral" size="sm">
-            {profile.totalPermissions} izin aktif
-          </Badge>
-        </div>
-
-        {profile.permissionGroups.length === 0 ? (
-          <p className="text-xs text-secondary-foreground">
-            Akun ini belum memiliki hak akses modul yang aktif.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {profile.permissionGroups.map((group) => (
-              <div
-                key={group.moduleKey}
-                className="rounded-control border border-border-subtle bg-surface-subtle/40 p-3 space-y-2"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-foreground">
-                    {group.moduleLabel}
-                  </p>
-                  <span className="text-[11px] text-muted-foreground">
-                    {group.permissions.length}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {group.permissions.map((perm) => (
-                    <span
-                      key={perm}
-                      className="rounded-xs bg-surface px-1.5 py-0.5 text-[11px] font-mono text-secondary-foreground border border-border-subtle"
-                    >
-                      {perm}
-                    </span>
+  const accessSection = (
+    <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <section className="rounded-card border border-border bg-surface p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Icon
+                  icon={ICON_MAP.shieldCheck}
+                  size="sm"
+                  className="text-primary"
+                />
+                <h2 className="text-sm font-semibold text-foreground">
+                  Peran yang dipegang
+                </h2>
+              </div>
+              {profile.roles.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.roles.map((r) => (
+                    <Badge key={r.code} variant="primary" size="sm">
+                      {r.label}
+                    </Badge>
                   ))}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+              ) : (
+                <p className="text-xs text-secondary-foreground">
+                  Belum ada peran yang ditetapkan pada akun ini.
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Peran dan hak akses dikelola oleh Administrator Platform sesuai
+                kebutuhan tugas Anda.
+              </p>
+            </section>
 
-      {/* Ubah Kata Sandi */}
-      <ChangePasswordCard />
+            <section className="rounded-card border border-border bg-surface p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Icon
+                  icon={ICON_MAP.lokasi}
+                  size="sm"
+                  className="text-primary"
+                />
+                <h2 className="text-sm font-semibold text-foreground">
+                  Lingkup unit layanan
+                </h2>
+              </div>
+              {profile.memberships.length > 0 ? (
+                <ul className="space-y-2">
+                  {profile.memberships.map((m) => (
+                    <li
+                      key={`${m.organizationId}-${m.serviceUnitId}`}
+                      className="rounded-control border border-border-subtle bg-surface-subtle/40 px-3 py-2 text-xs"
+                    >
+                      <p className="font-medium text-foreground">
+                        {m.serviceUnitName}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {m.organizationName}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-secondary-foreground">
+                  Belum ada lingkup unit layanan yang ditetapkan.
+                </p>
+              )}
+            </section>
+          </div>
+
+          <section className="rounded-card border border-border bg-surface p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="space-y-0.5">
+                <h2 className="text-base font-semibold text-foreground">
+                  Kewenangan akses Anda
+                </h2>
+                <p className="text-xs text-secondary-foreground">
+                  Pilih modul untuk melihat rincian hak akses aktif Anda.
+                </p>
+              </div>
+              <Badge variant="neutral" size="sm">
+                {profile.totalPermissions} izin aktif
+              </Badge>
+            </div>
+
+            {profile.permissionGroups.length === 0 ? (
+              <p className="text-xs text-secondary-foreground">
+                Akun ini belum memiliki hak akses modul yang aktif.
+              </p>
+            ) : (
+              <div className="rounded-control border border-border divide-y divide-border">
+                {profile.permissionGroups.map((group) => {
+                  const isExpanded = expandedModules.has(group.moduleKey);
+                  return (
+                    <div key={group.moduleKey} className="bg-surface">
+                      <button
+                        type="button"
+                        aria-expanded={isExpanded}
+                        onClick={() => {
+                          setExpandedModules((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(group.moduleKey)) {
+                              next.delete(group.moduleKey);
+                            } else {
+                              next.add(group.moduleKey);
+                            }
+                            return next;
+                          });
+                        }}
+                        className="w-full px-4 py-3 flex items-center justify-between gap-3 text-left hover:bg-surface-subtle/50 transition-colors cursor-pointer focus-ring"
+                      >
+                        <span className="text-sm font-medium text-foreground">
+                          {group.moduleLabel}
+                        </span>
+                        <span className="flex items-center gap-2 shrink-0">
+                          <Badge variant="neutral" size="sm">
+                            {group.permissions.length} izin
+                          </Badge>
+                          <span className="hidden sm:inline text-xs text-primary font-medium">
+                            {isExpanded ? "Tutup" : "Lihat detail"}
+                          </span>
+                          <Icon
+                            icon={ICON_MAP.chevronRight}
+                            size="xs"
+                            className={
+                              isExpanded
+                                ? "text-muted-foreground rotate-90 transition-transform duration-150"
+                                : "text-muted-foreground transition-transform duration-150"
+                            }
+                          />
+                        </span>
+                      </button>
+
+                      {isExpanded && (
+                        <div className="px-4 pb-3.5 pt-1 border-t border-border-subtle bg-surface-subtle/30">
+                          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-2">
+                            {group.permissions.map((perm) => (
+                              <li
+                                key={perm}
+                                className="flex items-center justify-between gap-2 rounded-xs bg-surface px-2.5 py-1.5 border border-border-subtle text-xs"
+                              >
+                                <span className="text-foreground font-medium">
+                                  {getPermissionActionLabel(perm)}
+                                </span>
+                                <span className="font-mono text-[11px] text-muted-foreground">
+                                  {perm}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+  );
+
+  const securitySection = <ChangePasswordCard />;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Profil Saya"
+        description="Informasi akun, foto profil, tampilan publik pengajar, kewenangan akses, dan keamanan kata sandi Anda."
+      />
+
+      {profile.mustChangePassword && (
+        <FeedbackBanner
+          tone="warning"
+          message="Akun Anda masih menggunakan kata sandi bawaan. Silakan ubah kata sandi Anda pada tab Keamanan."
+        />
+      )}
+
+      {/* Desktop: DetailTabs standar */}
+      <div className="hidden sm:block">
+        <DetailTabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onChange={handleTabChange}
+          ariaLabel="Tab profil saya"
+        />
+      </div>
+
+      {/* Mobile: 3 label tab bersih tanpa garis bawah (aktif dicetak tebal), tetap dukung swipe panel */}
+      <div
+        role="tablist"
+        aria-label="Tab profil saya"
+        className="sm:hidden flex items-center justify-around gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {tabs.map((tab, idx) => {
+          const isCurrent = idx === activeTabIndex;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isCurrent}
+              onClick={() => goToMobileTab(idx)}
+              className={
+                isCurrent
+                  ? "px-2 py-1.5 text-xs font-semibold text-primary whitespace-nowrap cursor-pointer focus-ring rounded-control"
+                  : "px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground whitespace-nowrap cursor-pointer focus-ring rounded-control"
+              }
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mobile: Swipeable horizontal panels sinkron dengan dot pagination */}
+      <div
+        ref={mobileScrollRef}
+        onScroll={handleMobileScroll}
+        className="sm:hidden flex overflow-x-auto snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <div className="w-full shrink-0 snap-start">{profileSection}</div>
+        <div className="w-full shrink-0 snap-start">{accessSection}</div>
+        <div className="w-full shrink-0 snap-start">{securitySection}</div>
+      </div>
+
+      {/* Desktop: Konten tab aktif */}
+      <div className="hidden sm:block">
+        {activeTab === "profile" && profileSection}
+        {activeTab === "access" && accessSection}
+        {activeTab === "security" && securitySection}
+      </div>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent>

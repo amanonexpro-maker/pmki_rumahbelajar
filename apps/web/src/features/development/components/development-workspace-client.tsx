@@ -4,31 +4,29 @@ import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CloudOff,
-  Lock,
+  Download,
+  History,
   Pencil,
   Plus,
   RefreshCw,
+  Share2,
   TrendingUp,
 } from "lucide-react";
 import { EmptyState, StatusBadge } from "@/components/compositions";
-import { PageHeader } from "@/components/patterns";
+import {
+  FeedbackBanner,
+  FloatingFeedbackToast,
+  PageHeader,
+} from "@/components/patterns";
 import {
   Badge,
   Button,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Icon,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Textarea,
 } from "@/components/ui";
 import type { StudentListItemDTO } from "@/features/students";
 import { useConnectivity } from "@/hooks/use-connectivity";
@@ -36,21 +34,19 @@ import { useDraftRecovery } from "@/hooks/use-draft-recovery";
 import { useOfflineQueue } from "@/hooks/use-offline-queue";
 import { OFFLINE_MESSAGES, SUCCESS_MESSAGES } from "@/lib/messages";
 import type { SyncStatus } from "@/lib/status";
-import { upsertDevelopmentNoteAction } from "../actions/development-actions";
+import { formatDateID, formatTimeID } from "@/utils/date-formatter";
+import {
+  listDevelopmentNoteRevisionsAction,
+  upsertDevelopmentNoteAction,
+} from "../actions/development-actions";
 import type {
   DevelopmentCategoryDTO,
   DevelopmentNoteDTO,
+  DevelopmentNoteRevisionDTO,
 } from "../types/development-types";
-
-interface DevelopmentDraftData {
-  noteId: string | null;
-  studentId: string;
-  categoryId: string;
-  observation: string;
-  progress: string;
-  followUp: string;
-  confidential: boolean;
-}
+import { CategoryQuickFilter } from "./category-quick-filter";
+import { NoteFormSheet, type DevelopmentDraftData } from "./note-form-sheet";
+import { NoteRevisionsSheet } from "./note-revisions-sheet";
 
 export interface DevelopmentWorkspaceClientProps {
   notes: DevelopmentNoteDTO[];
@@ -58,6 +54,9 @@ export interface DevelopmentWorkspaceClientProps {
   students: StudentListItemDTO[];
   initialStudentId: string;
   initialCategoryId: string;
+  page?: number;
+  totalPages?: number;
+  totalCount?: number;
   canCreate: boolean;
 }
 
@@ -67,6 +66,9 @@ export function DevelopmentWorkspaceClient({
   students,
   initialStudentId,
   initialCategoryId,
+  page = 1,
+  totalPages = 1,
+  totalCount,
   canCreate,
 }: DevelopmentWorkspaceClientProps) {
   const router = useRouter();
@@ -76,12 +78,150 @@ export function DevelopmentWorkspaceClient({
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
+  const [formError, setFormError] = React.useState<string | null>(null);
   const [syncBadgeState, setSyncBadgeState] =
     React.useState<SyncStatus | null>(null);
-  const [feedbackBanner, setFeedbackBanner] = React.useState<{
+  const [toastFeedback, setToastFeedback] = React.useState<{
     tone: "success" | "warning" | "danger";
     message: string;
   } | null>(null);
+
+  // Revision history sheet state
+  const [revisionsNote, setRevisionsNote] =
+    React.useState<DevelopmentNoteDTO | null>(null);
+  const [revisionsLoading, setRevisionsLoading] = React.useState(false);
+  const [revisionsError, setRevisionsError] = React.useState<string | null>(
+    null
+  );
+  const [revisions, setRevisions] = React.useState<
+    DevelopmentNoteRevisionDTO[]
+  >([]);
+  const [pdfActionMode, setPdfActionMode] = React.useState<
+    "download" | "share" | null
+  >(null);
+  const pdfCacheRef = React.useRef<
+    Map<string, { blob: Blob; filename: string }>
+  >(new Map());
+
+  const selectedStudent = React.useMemo(
+    () => students.find((s) => s.id === initialStudentId) ?? null,
+    [students, initialStudentId]
+  );
+
+  function triggerIframeDownload(downloadUrl: string) {
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.src = downloadUrl;
+    document.body.appendChild(iframe);
+    window.setTimeout(() => {
+      iframe.remove();
+    }, 15_000);
+  }
+
+  async function handleExportStudentPdf(mode: "download" | "share") {
+    if (initialStudentId === "ALL" || pdfActionMode) return;
+    setPdfActionMode(mode);
+    try {
+      const pdfUrl = `/api/development/summary-pdf?studentId=${encodeURIComponent(initialStudentId)}`;
+
+      if (mode === "download") {
+        const checkRes = await fetch(`${pdfUrl}&check=1`);
+        if (!checkRes.ok) {
+          const errPayload = (await checkRes.json().catch(() => null)) as {
+            error?: { message?: string };
+          } | null;
+          setToastFeedback({
+            tone: "danger",
+            message:
+              errPayload?.error?.message ??
+              (checkRes.status === 404
+                ? "Endpoint unduh ringkasan PDF tidak ditemukan (404). Muat ulang halaman lalu coba lagi."
+                : "Gagal membuat ringkasan perkembangan PDF."),
+          });
+          return;
+        }
+
+        triggerIframeDownload(pdfUrl);
+        setToastFeedback({
+          tone: "success",
+          message: "Ringkasan perkembangan PDF sedang diunduh.",
+        });
+        return;
+      }
+
+      const cacheKey = `${initialStudentId}:${notes.length}:${notes[0]?.updatedAt ?? ""}`;
+      let cached = pdfCacheRef.current.get(cacheKey);
+
+      if (!cached) {
+        const response = await fetch(pdfUrl);
+        if (!response.ok) {
+          const errPayload = (await response.json().catch(() => null)) as {
+            error?: { message?: string };
+          } | null;
+          setToastFeedback({
+            tone: "danger",
+            message:
+              errPayload?.error?.message ??
+              (response.status === 404
+                ? "Endpoint unduh ringkasan PDF tidak ditemukan (404). Muat ulang halaman lalu coba lagi."
+                : "Gagal membuat ringkasan perkembangan PDF."),
+          });
+          return;
+        }
+
+        const blob = await response.blob();
+        const disposition = response.headers.get("Content-Disposition") ?? "";
+        const filenameMatch = /filename="([^"]+)"/.exec(disposition);
+        const filename =
+          filenameMatch?.[1] ?? "ringkasan-perkembangan-peserta-didik.pdf";
+        cached = { blob, filename };
+        pdfCacheRef.current.set(cacheKey, cached);
+      }
+
+      const { blob, filename } = cached;
+      const pdfFile = new File([blob], filename, { type: "application/pdf" });
+      if (
+        typeof navigator !== "undefined" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [pdfFile] })
+      ) {
+        try {
+          await navigator.share({
+            files: [pdfFile],
+            title: `Ringkasan Perkembangan · ${selectedStudent?.fullName ?? "Peserta Didik"}`,
+            text: `Berikut ringkasan perkembangan ${selectedStudent?.fullName ?? "peserta didik"} dari Rumah Belajar PMKI.`,
+          });
+          setToastFeedback({
+            tone: "success",
+            message: "Ringkasan perkembangan PDF siap dibagikan.",
+          });
+          return;
+        } catch (shareError) {
+          if (
+            shareError instanceof Error &&
+            shareError.name === "AbortError"
+          ) {
+            return;
+          }
+        }
+      }
+
+      triggerIframeDownload(pdfUrl);
+      setToastFeedback({
+        tone: "warning",
+        message:
+          "Perangkat ini belum mendukung berbagi file langsung; PDF sedang diunduh.",
+      });
+    } catch {
+      setToastFeedback({
+        tone: "danger",
+        message: "Terjadi gangguan saat membuat ringkasan perkembangan PDF.",
+      });
+    } finally {
+      setPdfActionMode(null);
+    }
+  }
 
   const defaultDraft = React.useMemo<DevelopmentDraftData>(
     () => ({
@@ -117,7 +257,7 @@ export function DevelopmentWorkspaceClient({
 
   const { pendingCount, enqueue, flushQueue } = useOfflineQueue(() => {
     setSyncBadgeState("SYNCED");
-    setFeedbackBanner({
+    setToastFeedback({
       tone: "success",
       message: SUCCESS_MESSAGES.developmentNoteAdded,
     });
@@ -135,6 +275,7 @@ export function DevelopmentWorkspaceClient({
   }
 
   function openNewNoteDialog() {
+    setFormError(null);
     setDraft({
       noteId: null,
       studentId:
@@ -154,6 +295,7 @@ export function DevelopmentWorkspaceClient({
   }
 
   function openEditRevisionDialog(note: DevelopmentNoteDTO) {
+    setFormError(null);
     setDraft({
       noteId: note.id,
       studentId: note.studentId,
@@ -166,9 +308,30 @@ export function DevelopmentWorkspaceClient({
     setDialogOpen(true);
   }
 
+  async function openRevisionsSheet(note: DevelopmentNoteDTO) {
+    setRevisionsNote(note);
+    setRevisions([]);
+    setRevisionsError(null);
+    setRevisionsLoading(true);
+    try {
+      const res = await listDevelopmentNoteRevisionsAction(note.id);
+      if (!res.success) {
+        setRevisionsError(res.error.message);
+        return;
+      }
+      setRevisions(res.data);
+    } catch {
+      setRevisionsError("Gagal memuat riwayat revisi catatan perkembangan.");
+    } finally {
+      setRevisionsLoading(false);
+    }
+  }
+
   async function handleSaveNote(e: React.FormEvent) {
     e.preventDefault();
     if (!canCreate || submitting) return;
+    setSubmitting(true);
+    setFormError(null);
 
     const payload = {
       noteId: draft.noteId,
@@ -180,62 +343,62 @@ export function DevelopmentWorkspaceClient({
       confidential: draft.confidential,
     };
 
-    const isOffline =
-      connectivityStatus === "OFFLINE" ||
-      (typeof navigator !== "undefined" && navigator.onLine === false);
-
-    if (isOffline) {
-      await saveDraftNow(draft);
-      await enqueue({
-        operation: "DEVELOPMENT_NOTE_UPSERT",
-        entityType: "development_note",
-        entityId: draft.noteId ?? `${draft.studentId}:${Date.now()}`,
-        payload,
-      });
-      setDialogOpen(false);
-      setSyncBadgeState("PENDING_SYNC");
-      setFeedbackBanner({
-        tone: "warning",
-        message: `${OFFLINE_MESSAGES.savedLocally} ${OFFLINE_MESSAGES.syncPending}`,
-      });
-      return;
-    }
-
-    setSubmitting(true);
-    setFeedbackBanner(null);
-
     try {
+      if (connectivityStatus === "OFFLINE") {
+        await enqueue({
+          operation: "DEVELOPMENT_NOTE_UPSERT",
+          entityType: "development_note",
+          entityId: draft.noteId ?? draft.studentId,
+          payload: {
+            ...payload,
+            recordedOfflineAt: new Date().toISOString(),
+            isOfflineSync: true,
+          },
+        });
+        await clearDraft();
+        setSyncBadgeState("PENDING_SYNC");
+        setDialogOpen(false);
+        setToastFeedback({
+          tone: "warning",
+          message: OFFLINE_MESSAGES.savedLocally,
+        });
+        return;
+      }
+
       const res = await upsertDevelopmentNoteAction(payload);
       if (!res.success) {
-        setFeedbackBanner({
-          tone: "danger",
-          message: res.error.message,
-        });
+        setFormError(res.error.message);
         return;
       }
 
       await clearDraft();
       markSynced();
-      setDialogOpen(false);
       setSyncBadgeState("SYNCED");
-      setFeedbackBanner({
+      setDialogOpen(false);
+      setToastFeedback({
         tone: "success",
-        message: SUCCESS_MESSAGES.developmentNoteAdded,
+        message: res.data.isNewRevisionOnExisting
+          ? `Revisi catatan perkembangan v${res.data.version} berhasil disimpan.`
+          : SUCCESS_MESSAGES.developmentNoteAdded,
       });
       router.refresh();
     } catch {
-      await saveDraftNow(draft);
       await enqueue({
         operation: "DEVELOPMENT_NOTE_UPSERT",
         entityType: "development_note",
-        entityId: draft.noteId ?? `${draft.studentId}:${Date.now()}`,
-        payload,
+        entityId: draft.noteId ?? draft.studentId,
+        payload: {
+          ...payload,
+          recordedOfflineAt: new Date().toISOString(),
+          isOfflineSync: true,
+        },
       });
-      setDialogOpen(false);
+      await clearDraft();
       setSyncBadgeState("PENDING_SYNC");
-      setFeedbackBanner({
+      setDialogOpen(false);
+      setToastFeedback({
         tone: "warning",
-        message: `${OFFLINE_MESSAGES.savedLocally} ${OFFLINE_MESSAGES.syncPending}`,
+        message: OFFLINE_MESSAGES.savedLocally,
       });
     } finally {
       setSubmitting(false);
@@ -246,7 +409,7 @@ export function DevelopmentWorkspaceClient({
     <div className="space-y-6">
       <PageHeader
         title="Perkembangan Peserta"
-        description="Catat pengamatan, kemajuan belajar, dan rencana tindak lanjut peserta didik. Catatan bersifat rahasia secara bawaan dan berversi (tidak menimpa riwayat sebelumnya)."
+        description="Catatan kemajuan belajar, karakter, dan rencana tindak lanjut secara berversi. Bersifat rahasia (CONFIDENTIAL) secara bawaan."
         badge={
           syncBadgeState ? (
             <StatusBadge domain="sync" status={syncBadgeState} />
@@ -290,7 +453,9 @@ export function DevelopmentWorkspaceClient({
           </label>
           <Select
             value={initialStudentId}
-            onValueChange={(value) => updateUrl({ studentId: value })}
+            onValueChange={(value) =>
+              updateUrl({ studentId: value, page: null })
+            }
           >
             <SelectTrigger id="dev-student-filter">
               <SelectValue />
@@ -315,7 +480,9 @@ export function DevelopmentWorkspaceClient({
           </label>
           <Select
             value={initialCategoryId}
-            onValueChange={(value) => updateUrl({ categoryId: value })}
+            onValueChange={(value) =>
+              updateUrl({ categoryId: value, page: null })
+            }
           >
             <SelectTrigger id="dev-category-filter">
               <SelectValue />
@@ -330,54 +497,91 @@ export function DevelopmentWorkspaceClient({
             </SelectContent>
           </Select>
         </div>
+
+        <CategoryQuickFilter
+          categories={categories}
+          activeCategoryId={initialCategoryId}
+          onSelectCategory={(catId) =>
+            updateUrl({ categoryId: catId, page: null })
+          }
+        />
       </div>
 
-      {hasRecoveredDraft && draft.observation.trim().length > 0 && (
-        <div
-          role="status"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-warning/30 bg-warning-soft px-4 py-2.5 text-xs text-foreground"
-        >
-          <div className="flex items-center gap-2">
-            <Icon icon={CloudOff} size="xs" className="text-warning" />
-            <span>
-              Draft catatan perkembangan lokal tersedia di perangkat ini
-              (Disimpan lokal).
-            </span>
+      {initialStudentId !== "ALL" && (
+        <div className="rounded-card border border-border bg-surface p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="space-y-0.5 min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">
+              Ringkasan PDF
+              {selectedStudent ? ` · ${selectedStudent.fullName}` : ""}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Unduh atau bagikan ringkasan perkembangan ke orang tua/wali.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 shrink-0">
             <Button
               type="button"
               variant="secondary"
               size="sm"
-              onClick={openNewNoteDialog}
+              disabled={
+                pdfActionMode !== null || connectivityStatus === "OFFLINE"
+              }
+              onClick={() => void handleExportStudentPdf("download")}
+              leftIcon={<Icon icon={Download} size="xs" />}
+              className="w-full sm:w-auto"
             >
-              Lanjutkan menulis
+              {pdfActionMode === "download" ? "Mengunduh..." : "Unduh PDF"}
             </Button>
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               size="sm"
-              onClick={() => void clearDraft()}
+              disabled={
+                pdfActionMode !== null || connectivityStatus === "OFFLINE"
+              }
+              onClick={() => void handleExportStudentPdf("share")}
+              leftIcon={<Icon icon={Share2} size="xs" />}
+              className="w-full sm:w-auto"
             >
-              Hapus draft
+              {pdfActionMode === "share" ? "Menyiapkan..." : "Bagikan"}
             </Button>
           </div>
         </div>
       )}
 
-      {feedbackBanner && (
-        <div
-          role={feedbackBanner.tone === "danger" ? "alert" : "status"}
-          className={
-            feedbackBanner.tone === "success"
-              ? "rounded-control border border-success/30 bg-success-soft px-4 py-3 text-sm text-success"
-              : feedbackBanner.tone === "warning"
-                ? "rounded-control border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-warning-foreground"
-                : "rounded-control border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
+      {hasRecoveredDraft && draft.observation.trim().length > 0 && (
+        <FeedbackBanner
+          tone="warning"
+          message={
+            <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+              <span className="flex items-center gap-1.5">
+                <Icon icon={CloudOff} size="xs" />
+                <span>
+                  Draft catatan perkembangan lokal tersedia di perangkat ini
+                  (Disimpan lokal).
+                </span>
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={openNewNoteDialog}
+                >
+                  Lanjutkan menulis
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void clearDraft()}
+                >
+                  Hapus draft
+                </Button>
+              </div>
+            </div>
           }
-        >
-          {feedbackBanner.message}
-        </div>
+        />
       )}
 
       {notes.length === 0 ? (
@@ -402,10 +606,10 @@ export function DevelopmentWorkspaceClient({
           {notes.map((note) => (
             <article
               key={note.id}
-              className="rounded-card border border-border bg-surface p-5 space-y-4"
+              className="rounded-card border border-border bg-surface p-4 sm:p-5 space-y-4"
             >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="space-y-1">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-base font-semibold text-foreground">
                       {note.studentFullName}
@@ -418,28 +622,41 @@ export function DevelopmentWorkspaceClient({
                     </Badge>
                     {note.confidential && (
                       <Badge variant="confidential" size="sm">
-                        <Icon icon={Lock} size="xs" />
-                        <span>Catatan rahasia</span>
+                        Catatan rahasia
                       </Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Dicatat oleh {note.teacherName} ·{" "}
-                    {new Date(note.updatedAt).toLocaleString("id-ID")}
+                    {formatDateID(note.updatedAt)},{" "}
+                    {formatTimeID(note.updatedAt)} WIB
                   </p>
                 </div>
 
-                {canCreate && (
+                <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0">
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
-                    onClick={() => openEditRevisionDialog(note)}
-                    leftIcon={<Icon icon={Pencil} size="xs" />}
+                    onClick={() => void openRevisionsSheet(note)}
+                    leftIcon={<Icon icon={History} size="xs" />}
+                    className="w-full sm:w-auto min-h-11 sm:min-h-9"
                   >
-                    Tambah revisi (v{note.version + 1})
+                    Riwayat revisi
                   </Button>
-                )}
+                  {canCreate && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => openEditRevisionDialog(note)}
+                      leftIcon={<Icon icon={Pencil} size="xs" />}
+                      className="w-full sm:w-auto min-h-11 sm:min-h-9"
+                    >
+                      Revisi (v{note.version + 1})
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-border-subtle text-sm">
@@ -470,202 +687,82 @@ export function DevelopmentWorkspaceClient({
               </div>
             </article>
           ))}
+
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 text-xs text-secondary-foreground">
+              <span>
+                Halaman <strong className="text-foreground">{page}</strong> dari{" "}
+                <strong className="text-foreground">{totalPages}</strong> (
+                {totalCount ?? notes.length} catatan)
+              </span>
+              <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() =>
+                    updateUrl({ page: page - 1 <= 1 ? null : String(page - 1) })
+                  }
+                  className="w-full sm:w-auto min-h-11 sm:min-h-9"
+                >
+                  Sebelumnya
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => updateUrl({ page: String(page + 1) })}
+                  className="w-full sm:w-auto min-h-11 sm:min-h-9"
+                >
+                  Berikutnya
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Dialog: Tambah / Revisi Catatan Perkembangan */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {draft.noteId
-                ? "Tambah revisi catatan perkembangan"
-                : "Tambah catatan perkembangan"}
-            </DialogTitle>
-            <DialogDescription>
-              {draft.noteId
-                ? "Perubahan akan disimpan sebagai versi baru tanpa menghapus riwayat revisi sebelumnya."
-                : "Dokumentasikan pengamatan perkembangan peserta didik. Secara bawaan catatan bersifat rahasia."}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSaveNote}>
-            <DialogBody className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label
-                    htmlFor="note-student"
-                    className="block text-xs font-medium text-foreground"
-                  >
-                    Peserta didik *
-                  </label>
-                  <Select
-                    value={draft.studentId}
-                    disabled={Boolean(draft.noteId)}
-                    onValueChange={(val) => {
-                      setDraft((prev) => {
-                        const next = { ...prev, studentId: val };
-                        void saveDraftNow(next);
-                        return next;
-                      });
-                    }}
-                  >
-                    <SelectTrigger id="note-student">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
-                      {students.map((st) => (
-                        <SelectItem key={st.id} value={st.id}>
-                          {st.fullName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      <NoteFormSheet
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        draft={draft}
+        students={students}
+        categories={categories}
+        submitting={submitting}
+        errorMessage={formError}
+        onClearError={() => setFormError(null)}
+        onUpdateDraft={(updater, markLocalSaved) => {
+          if (markLocalSaved) setSyncBadgeState("LOCAL_SAVED");
+          setDraft((prev) => {
+            const next = updater(prev);
+            void saveDraftNow(next);
+            return next;
+          });
+        }}
+        onSubmit={handleSaveNote}
+      />
 
-                <div className="space-y-1">
-                  <label
-                    htmlFor="note-category"
-                    className="block text-xs font-medium text-foreground"
-                  >
-                    Kategori perkembangan *
-                  </label>
-                  <Select
-                    value={draft.categoryId}
-                    onValueChange={(val) => {
-                      setDraft((prev) => {
-                        const next = { ...prev, categoryId: val };
-                        void saveDraftNow(next);
-                        return next;
-                      });
-                    }}
-                  >
-                    <SelectTrigger id="note-category">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+      <NoteRevisionsSheet
+        open={Boolean(revisionsNote)}
+        onOpenChange={(open) => {
+          if (!open) setRevisionsNote(null);
+        }}
+        studentName={revisionsNote?.studentFullName ?? ""}
+        categoryName={revisionsNote?.categoryName ?? ""}
+        loading={revisionsLoading}
+        error={revisionsError}
+        revisions={revisions}
+      />
 
-              <div className="space-y-1">
-                <label
-                  htmlFor="note-observation"
-                  className="block text-xs font-medium text-foreground"
-                >
-                  Hasil pengamatan *
-                </label>
-                <Textarea
-                  id="note-observation"
-                  rows={3}
-                  required
-                  placeholder="Tuliskan hasil pengamatan perilaku, literasi, atau pemahaman peserta didik..."
-                  value={draft.observation}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSyncBadgeState("LOCAL_SAVED");
-                    setDraft((prev) => {
-                      const next = { ...prev, observation: val };
-                      void saveDraftNow(next);
-                      return next;
-                    });
-                  }}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label
-                  htmlFor="note-progress"
-                  className="block text-xs font-medium text-foreground"
-                >
-                  Kemajuan belajar (opsional)
-                </label>
-                <Textarea
-                  id="note-progress"
-                  rows={2}
-                  placeholder="Perkembangan positif yang terlihat dibanding sesi sebelumnya..."
-                  value={draft.progress}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSyncBadgeState("LOCAL_SAVED");
-                    setDraft((prev) => {
-                      const next = { ...prev, progress: val };
-                      void saveDraftNow(next);
-                      return next;
-                    });
-                  }}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label
-                  htmlFor="note-followup"
-                  className="block text-xs font-medium text-foreground"
-                >
-                  Rencana tindak lanjut (opsional)
-                </label>
-                <Textarea
-                  id="note-followup"
-                  rows={2}
-                  placeholder="Langkah pendampingan pada pertemuan berikutnya..."
-                  value={draft.followUp}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSyncBadgeState("LOCAL_SAVED");
-                    setDraft((prev) => {
-                      const next = { ...prev, followUp: val };
-                      void saveDraftNow(next);
-                      return next;
-                    });
-                  }}
-                />
-              </div>
-
-              <label className="flex items-start gap-2.5 rounded-control border border-border bg-surface-subtle/50 p-3 text-xs text-foreground cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4"
-                  checked={draft.confidential}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setDraft((prev) => {
-                      const next = { ...prev, confidential: checked };
-                      void saveDraftNow(next);
-                      return next;
-                    });
-                  }}
-                />
-                <span>
-                  <strong>Catatan rahasia (CONFIDENTIAL — bawaan):</strong>{" "}
-                  Hanya dapat dilihat oleh pengajar pencatat dan koordinator
-                  peninjau yang memiliki izin <code>development.review</code>.
-                </span>
-              </label>
-            </DialogBody>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setDialogOpen(false)}
-                disabled={submitting}
-              >
-                Batal
-              </Button>
-              <Button type="submit" variant="primary" disabled={submitting}>
-                {submitting
-                  ? "Menyimpan..."
-                  : "Simpan catatan perkembangan"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {toastFeedback && (
+        <FloatingFeedbackToast
+          tone={toastFeedback.tone}
+          message={toastFeedback.message}
+          onDismiss={() => setToastFeedback(null)}
+        />
+      )}
     </div>
   );
 }
-

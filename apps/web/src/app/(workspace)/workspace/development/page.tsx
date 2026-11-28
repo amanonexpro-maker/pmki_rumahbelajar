@@ -20,6 +20,7 @@ interface DevelopmentPageProps {
   searchParams: Promise<{
     studentId?: string;
     categoryId?: string;
+    page?: string;
   }>;
 }
 
@@ -34,6 +35,9 @@ export default async function WorkspaceDevelopmentPage({
   const primaryUnitId = session.memberships[0]?.serviceUnitId;
   const studentId = resolvedParams.studentId ?? "ALL";
   const categoryId = resolvedParams.categoryId ?? "ALL";
+  const parsedPage = Number.parseInt(resolvedParams.page ?? "1", 10);
+  const requestedPage =
+    Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
   const [notesRes, categories, studentsRes] = await Promise.all([
     listDevelopmentNotesForWorkspace(session, { studentId, categoryId }),
@@ -59,13 +63,23 @@ export default async function WorkspaceDevelopmentPage({
     can(session, "development.create", { serviceUnitId: primaryUnitId }) ||
     can(session, "development.update", { serviceUnitId: primaryUnitId });
 
+  const pageSize = 10;
+  const totalCount = notesRes.data.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const startIdx = (currentPage - 1) * pageSize;
+  const paginatedNotes = notesRes.data.slice(startIdx, startIdx + pageSize);
+
   return (
     <DevelopmentWorkspaceClient
-      notes={notesRes.data}
+      notes={paginatedNotes}
       categories={categories}
       students={studentsRes.success ? studentsRes.data.items : []}
       initialStudentId={studentId}
       initialCategoryId={categoryId}
+      page={currentPage}
+      totalPages={totalPages}
+      totalCount={totalCount}
       canCreate={canCreate}
     />
   );

@@ -15,6 +15,7 @@ export interface DevelopmentNoteRevisionDTO {
   followUp: string | null;
   confidential: boolean;
   actorId: string | null;
+  actorName: string | null;
   createdAt: string;
 }
 

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { SessionUser } from "@/server/auth/session";
+import { createSimplePdf } from "@/lib/pdf-builder";
 import {
   authorizeCreateOrUpdateDevelopment,
   canViewDevelopmentNoteRecord,
@@ -139,6 +140,25 @@ describe("Development Domain — Validators, Confidential Policy & Boundaries", 
       );
       expect(source).not.toMatch(/db\/schema\/(academic|students|consent)/);
     }
+  });
+
+  it("builds a valid multi-page PDF 1.4 buffer for student development summary", () => {
+    const pdf = createSimplePdf();
+    pdf.addText("Ringkasan Perkembangan Peserta Didik", {
+      fontSize: 16,
+      bold: true,
+    });
+    for (let i = 0; i < 45; i++) {
+      pdf.addText(
+        `Catatan ke-${i + 1}: Peserta didik menunjukkan kemajuan membaca kalimat pendek secara mandiri.`,
+        { fontSize: 10, gapAfter: 6 }
+      );
+    }
+    const bytes = pdf.build();
+    const content = new TextDecoder().decode(bytes);
+    expect(content.startsWith("%PDF-1.4\n")).toBe(true);
+    expect(content.includes("/Count 2")).toBe(true);
+    expect(content.trimEnd().endsWith("%%EOF")).toBe(true);
   });
 });
 

@@ -4,13 +4,17 @@
 export const DOMAIN_NAME = "development" as const;
 
 export {
+  generateStudentDevelopmentSummaryPdf,
   listDevelopmentCategories,
   listDevelopmentNoteRevisions,
   listDevelopmentNotesForWorkspace,
   upsertDevelopmentNote,
 } from "./services/development-service";
 
-export { upsertDevelopmentNoteAction } from "./actions/development-actions";
+export {
+  listDevelopmentNoteRevisionsAction,
+  upsertDevelopmentNoteAction,
+} from "./actions/development-actions";
 
 export {
   authorizeCreateOrUpdateDevelopment,
